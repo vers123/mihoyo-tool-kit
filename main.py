@@ -3,11 +3,12 @@
 米游社工具箱
 基于Playwright的米游社数据抓取和提取工具
 支持增量更新和自动备份
+适配平台：Windows / macOS / Linux / ZeroTermux(Termux/Android)
 """
 
 import sys
 import os
-import platform
+import platform as _platform_mod
 from typing import Dict, Optional
 
 # 添加项目路径
@@ -18,17 +19,35 @@ from core.config_manager import config_manager
 from utils.error_handler import handle_errors
 from utils.logger import setup_logger, log_function_call
 from utils.backup_manager import backup_manager
+from utils.platform_detector import get_platform_info, PlatformInfo
 
 # 设置日志
 logger = setup_logger("miHoYo_ToolKit")
 
 
 class MiHoYoToolKit:
-    """米游社工具箱主类"""
-    
+    """米游社工具箱主类
+    ZeroTermux 适配：
+      - 启动时检测运行环境，显示 ZeroTermux 专属 banner
+      - 清屏命令兼容 Android 终端（TERM=screen 或 tmux）
+      - 系统信息展示补充 ZeroTermux 版本、proot 容器名、内存信息等
+      - 依赖检查对 ZeroTermux 给出 proot-distro 安装指引
+    """
+
+    MIN_PYTHON_VERSION = (3, 8)
+
     def __init__(self):
         self.version = "2.1.0"
-        self.title = f"米游社工具箱 v{self.version}"
+        self.platform_info: PlatformInfo = get_platform_info()
+        # 附加版本标签：ZeroTermux 模式
+        mode_tag = ""
+        if self.platform_info.is_zerotermux:
+            mode_tag = " (ZeroTermux模式)"
+        elif self.platform_info.is_termux:
+            mode_tag = " (Termux模式)"
+        elif self.platform_info.is_android:
+            mode_tag = " (Android模式)"
+        self.title = f"米游社工具箱 v{self.version}{mode_tag}"
         self.options = self._setup_options()
         
     def _setup_options(self) -> Dict:
@@ -152,16 +171,68 @@ class MiHoYoToolKit:
         }
     
     def _clear_screen(self):
-        """清屏"""
-        os.system('cls' if os.name == 'nt' else 'clear')
-    
+        """清屏，兼容 Windows / POSIX / 窄终端（ZeroTermux 小屏幕）
+        优先尝试 ANSI escape，其次系统 shell 命令，失败则打印 40 空行兜底"""
+        try:
+            # ANSI ESC: 光标移原点 + 清屏到末尾
+            sys.stdout.write("\033[H\033[2J\033[3J")
+            sys.stdout.flush()
+            return
+        except Exception:
+            pass
+        try:
+            if os.name == "nt":
+                os.system("cls")
+            else:
+                term = os.environ.get("TERM", "")
+                if term in ("dumb", ""):
+                    # 无 TERM 的情况下打印空行兜底
+                    print("\n" * 40)
+                else:
+                    os.system("clear")
+        except Exception:
+            print("\n" * 40)
+
+    def _zerotermux_banner_line(self) -> Optional[str]:
+        """生成移动端专属 banner 文字（在标题下方展示，便于用户一眼看到运行模式状态）"""
+        info = self.platform_info
+        if not info.needs_mobile_optimized_browser:
+            return None
+        parts = []
+        if info.is_zerotermux:
+            ver = info.zerotermux_version or "0.118.3.64"
+            parts.append(f"ZeroTermux {ver}")
+        elif info.is_termux:
+            parts.append("Termux")
+        if info.is_proot_distro and info.proot_distro_name:
+            parts.append(f"proot({info.proot_distro_name})")
+        parts.append(f"arch={info.arch}")
+        if info.memory_total_mb > 0:
+            parts.append(f"RAM≈{info.memory_total_mb}MB")
+        parts.append(f"headless={'YES' if config_manager.get('headless') else 'NO'}")
+        return "  📱 " + "  |  ".join(parts)
+
     def _print_header(self):
-        """打印标题"""
-        print("=" * 70)
-        print(f"           {self.title}")
-        print("=" * 70)
+        """打印标题，窄终端自动缩短分隔线宽度"""
+        # 估算终端宽度（ZeroTermux 默认竖屏常 80 列以下）
+        try:
+            terminal_cols, _ = os.get_terminal_size()
+        except Exception:
+            terminal_cols = 70
+        banner_width = max(48, min(70, terminal_cols - 2))
+
+        print("=" * banner_width)
+        # 标题居中或靠左（窄屏靠左更合适）
+        if terminal_cols >= 60:
+            print(f"           {self.title}")
+        else:
+            print(f" {self.title}")
+        print("=" * banner_width)
+        zt_line = self._zerotermux_banner_line()
+        if zt_line:
+            print(zt_line)
         print("  基于Playwright的米游社数据抓取和提取工具")
-        print("=" * 70)
+        print("=" * banner_width)
     
     def _print_menu(self):
         """打印菜单"""
@@ -574,38 +645,85 @@ class MiHoYoToolKit:
     
     def _show_system_info(self):
         """显示系统信息"""
+        info = self.platform_info
         print("\n[SYSTEM] 系统信息：")
-        print(f"   操作系统: {platform.system()} {platform.release()}")
-        print(f"   Python版本: {platform.python_version()}")
+        print(f"   操作系统: {_platform_mod.system()} {_platform_mod.release()}")
+        print(f"   Python版本: {_platform_mod.python_version()}")
         print(f"   工作目录: {os.path.dirname(__file__)}")
         print(f"   配置文件: {config_manager.config_path}")
-        
+        print(f"   CPU架构: {info.arch}")
+        if info.is_zerotermux:
+            ver = info.zerotermux_version or "0.118.3.64"
+            print(f"   ✅ ZeroTermux版本: {ver}")
+        if info.is_termux and info.termux_prefix:
+            print(f"   Termux PREFIX: {info.termux_prefix}")
+        if info.is_proot_distro:
+            name = info.proot_distro_name or "unknown"
+            print(f"   proot-distro容器: {name}")
+        if info.memory_total_mb > 0:
+            print(f"   系统内存: 约 {info.memory_total_mb} MB" + (
+                "  （<4GB 已启用低内存模式）" if info.memory_total_mb < 4096 else ""
+            ))
+        if info.has_display:
+            print(f"   显示服务: YES ($DISPLAY=$DISPLAY)".replace("$DISPLAY", os.environ.get("DISPLAY", "") or os.environ.get("WAYLAND_DISPLAY", "")))
+        else:
+            print("   显示服务: NO  （将以 headless 模式启动浏览器）")
+        if info.needs_mobile_optimized_browser:
+            # 打印当前生效的 zerotermux 配置摘要
+            zt_cfg = config_manager.get("zerotermux_settings", {}) or {}
+            print(f"   移动端适配: 启用")
+            print(f"      · force_headless    = {zt_cfg.get('force_headless', True)}")
+            print(f"      · use_mobile_ua     = {zt_cfg.get('use_mobile_ua', True)}")
+            print(f"      · low_memory_mode   = {zt_cfg.get('enable_low_memory_mode', False)}")
+            m = zt_cfg.get('scroll_delay_multiplier', 1.0)
+            t = zt_cfg.get('timeout_multiplier', 1.0)
+            print(f"      · scroll × {m} / timeout × {t}")
+            # 提示 chromium 可执行路径
+            from core.scraper import _locate_chromium_executable
+            p = _locate_chromium_executable()
+            if p:
+                print(f"      · Chromium 路径: {p}")
+            else:
+                print("      · Chromium 路径: 未自动检测（运行 scripts/install_zerotermux.sh 或设置 MIHOYO_TOOLKIT_CHROMIUM_BIN）")
+
         # 检查Playwright
         try:
-            import playwright
+            import playwright  # noqa: F401
             from playwright._repo_version import version
             print(f"   Playwright版本: {version}")
         except ImportError:
             print("   Playwright: 未安装")
         except Exception as e:
             print(f"   Playwright版本: 无法获取 ({e})")
-    
+
     def run(self):
         """运行主程序"""
         logger.info("米游社工具箱启动")
-        
+        # ZeroTermux 模式启动时输出一次环境提示（写入日志文件）
+        if self.platform_info.needs_mobile_optimized_browser:
+            zt_cfg = config_manager.get("zerotermux_settings", {}) or {}
+            logger.info(
+                f"移动端适配已启用: "
+                f"zerotermux={self.platform_info.is_zerotermux}, "
+                f"termux={self.platform_info.is_termux}, "
+                f"proot={self.platform_info.is_proot_distro}, "
+                f"arch={self.platform_info.arch}, "
+                f"headless={config_manager.get('headless')}, "
+                f"mobile_ua={zt_cfg.get('use_mobile_ua', True)}"
+            )
+
         while True:
             self._clear_screen()
             self._print_header()
             self._print_menu()
-            
+
             choice = input("\n请输入序号：").strip()
-            
+
             if choice == "0":
                 print("\n感谢使用米游社工具箱，再见！")
                 logger.info("米游社工具箱退出")
                 sys.exit(0)
-            
+
             if choice in self.options:
                 try:
                     self.options[choice]["handler"]()
@@ -625,17 +743,40 @@ class MiHoYoToolKit:
 @handle_errors
 def main():
     """主函数"""
+    # 1. Python 版本前置检查（playwright 要求 3.8+，ZeroTermux/Python 3.11 常见）
+    py_ver = sys.version_info[:2]
+    if py_ver < MiHoYoToolKit.MIN_PYTHON_VERSION:
+        required = ".".join(str(x) for x in MiHoYoToolKit.MIN_PYTHON_VERSION)
+        actual = ".".join(str(x) for x in py_ver)
+        print(f"[FATAL] Python 版本过旧：需要 {required}+，当前 {actual}")
+        print("        ZeroTermux 中请运行: pkg install python")
+        return
+
     print("[START] 正在初始化米游社工具箱...")
-    
-    # 检查依赖
+    info = get_platform_info()
+    if info.is_zerotermux:
+        print("[INFO] 检测到 ZeroTermux 运行环境，已自动启用移动端适配方案（headless/mobile-UA/低内存优化）")
+    elif info.is_termux:
+        print("[INFO] 检测到 Termux 运行环境，已自动启用移动端适配方案")
+    elif info.is_android:
+        print("[INFO] 检测到 Android 环境，已自动启用移动端适配方案")
+
+    # 2. 依赖检查（ZeroTermux 下引导使用 proot-distro 安装 chromium）
     try:
-        import playwright
+        import playwright  # noqa: F401
         print("[OK] Playwright依赖检查通过")
     except ImportError:
-        print("[ERROR] 缺少Playwright依赖，请运行: pip install playwright")
-        print("然后运行: playwright install chromium")
+        print("[ERROR] 缺少Playwright依赖。")
+        if info.needs_mobile_optimized_browser:
+            print("       请在 ZeroTermux 中依次执行：")
+            print("       $  pkg install git python python-pip proot-distro")
+            print("       $  cd miHoYo_ToolKit")
+            print("       $  pip install -r requirements.txt")
+            print("       $  bash scripts/install_zerotermux.sh  # 自动安装 proot-distro + chromium")
+        else:
+            print("       请运行: pip install playwright && playwright install chromium")
         return
-    
+
     # 启动工具箱
     toolkit = MiHoYoToolKit()
     toolkit.run()

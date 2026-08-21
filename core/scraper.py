@@ -1,11 +1,54 @@
 from playwright.sync_api import sync_playwright, Page, Browser
 import os
+import sys
 import time
-from typing import Dict, Any, Set, Optional, List, Callable
+from typing import Dict, Any, Set, Optional, List, Callable, Tuple
 from dataclasses import dataclass, field
 from .config_manager import config_manager
 from utils.cookie_loader import load_firefox_cookies
 from utils.har_loader import find_har_file, load_api_pattern_from_har, print_har_instructions
+from utils.platform_detector import get_platform_info
+
+
+# ZeroTermux / Termux / proot-distro 环境中 Playwright 定位 Chromium 的特殊路径
+# Termux 上一般通过 proot-distro 安装的 Ubuntu/Debian 里装 chromium-browser / chromium，
+# 或直接使用 Termux 自己的 chromium 包（在 $PREFIX/bin/chromium）
+EXTRA_CHROMIUM_SEARCH_PATHS: Tuple[str, ...] = (
+    # Termux proot-distro: ubuntu
+    "/data/data/com.zerotermux/files/home/.proot-distro/ubuntu/usr/bin/chromium",
+    "/data/data/com.zerotermux/files/home/.proot-distro/ubuntu/usr/bin/chromium-browser",
+    "/data/data/com.termux/files/home/.proot-distro/ubuntu/usr/bin/chromium",
+    "/data/data/com.termux/files/home/.proot-distro/ubuntu/usr/bin/chromium-browser",
+    # Termux proot-distro: debian
+    "/data/data/com.zerotermux/files/home/.proot-distro/debian/usr/bin/chromium",
+    "/data/data/com.zerotermux/files/home/.proot-distro/debian/usr/bin/chromium-browser",
+    "/data/data/com.termux/files/home/.proot-distro/debian/usr/bin/chromium",
+    "/data/data/com.termux/files/home/.proot-distro/debian/usr/bin/chromium-browser",
+    # Termux 原生 chromium 包
+    "/data/data/com.zerotermux/files/usr/bin/chromium",
+    "/data/data/com.termux/files/usr/bin/chromium",
+    # 通用 linux 发行版
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/snap/bin/chromium",
+    # macOS
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+)
+
+
+def _locate_chromium_executable() -> Optional[str]:
+    """在 ZeroTermux/Termux/Linux 上定位可用的 Chromium。
+    优先使用环境变量 MIHOYO_TOOLKIT_CHROMIUM_BIN 强制覆盖。"""
+    env_override = os.environ.get("MIHOYO_TOOLKIT_CHROMIUM_BIN")
+    if env_override and os.path.isfile(env_override) and os.access(env_override, os.X_OK):
+        return env_override
+    for p in EXTRA_CHROMIUM_SEARCH_PATHS:
+        if os.path.isfile(p) and os.access(p, os.X_OK):
+            return p
+    return None
 
 
 @dataclass
@@ -25,15 +68,61 @@ class ScraperConfig:
     api_url_keywords: list = field(default_factory=list)  # API URL匹配关键词
     api_domain_filter: str = ""           # Cookie域名过滤
     use_firefox_cookies: bool = False     # 是否加载Firefox Cookie
+    # ZeroTermux 专属（运行时由基类自动注入）
+    custom_chromium_executable: Optional[str] = None
 
 
 class BaseScraper:
-    """基础抓取器类，提供通用的网页抓取功能"""
+    """基础抓取器类，提供通用的网页抓取功能
+    针对 ZeroTermux / Termux（Android）额外处理：
+    1. 无显示环境下 headless=false 自动回退为 true，避免 DISPLAY 崩溃报错
+    2. 自动检测 Termux/proot 下可用的 chromium/chromium-browser 可执行路径，
+       传入 executable_path，绕开 playwright install chromium 在 ARM 下的下载失败
+    3. 注入禁用音频 OOP、软件 GL、--single-process 等移动端稳定参数
+    """
 
     def __init__(self, config: ScraperConfig) -> None:
         self.config = config
+        self.platform_info = get_platform_info()
+
+        # 移动端/终端化无图形环境保护：强制 headless
+        if not self.config.headless and not self.platform_info.has_display:
+            print("[WARN] 当前环境无可用显示服务器（DISPLAY/WAYLAND_DISPLAY 未设置），自动切换到 headless=true")
+            self.config.headless = True
+
+        # 基础 browser_args
         if self.config.browser_args is None:
             self.config.browser_args = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+
+        # 在 ZeroTermux / Termux / Android 上追加稳定化参数（与 config_manager 的覆盖层一致）
+        if self.platform_info.needs_mobile_optimized_browser:
+            extra_args = list(self.platform_info.recommended_extra_browser_args)
+            for arg in extra_args:
+                if arg not in self.config.browser_args:
+                    self.config.browser_args.append(arg)
+            # ARM 环境下常用的规避崩溃参数
+            for arg in (
+                "--disable-web-security",
+                "--allow-running-insecure-content",
+                "--disable-background-timer-throttling",
+                "--disable-renderer-backgrounding",
+                "--disable-backgrounding-occluded-windows",
+            ):
+                if arg not in self.config.browser_args:
+                    self.config.browser_args.append(arg)
+            # <4GB 内存的低内存模式
+            if 0 < self.platform_info.memory_total_mb < 4096:
+                for arg in (
+                    "--memory-pressure-off",
+                    "--renderer-process-limit=1",
+                    "--in-process-gpu",
+                ):
+                    if arg not in self.config.browser_args:
+                        self.config.browser_args.append(arg)
+
+        # 自定义 chromium 可执行路径（Termux / proot 下找不到 playwright 打包二进制时使用）
+        if not self.config.custom_chromium_executable:
+            self.config.custom_chromium_executable = _locate_chromium_executable()
 
         self.html_dir = config_manager.get_output_dir("html")
         self.save_path = os.path.join(self.html_dir, self.config.output_filename)
@@ -55,15 +144,38 @@ class BaseScraper:
         if not self.config.headless:
             browser_args.extend(["--start-maximized"])
 
-        browser = playwright.chromium.launch(
-            headless=self.config.headless,
-            args=browser_args
-        )
+        launch_kwargs: Dict[str, Any] = {
+            "headless": self.config.headless,
+            "args": browser_args,
+        }
 
-        context = browser.new_context(
-            user_agent=self.config.user_agent,
-            no_viewport=True
-        )
+        if self.config.custom_chromium_executable:
+            launch_kwargs["executable_path"] = self.config.custom_chromium_executable
+            print(f"[INFO] 使用自定义 Chromium 路径: {self.config.custom_chromium_executable}")
+
+        try:
+            browser = playwright.chromium.launch(**launch_kwargs)
+        except Exception as exc:
+            # 典型错误 1：aarch64 上 Playwright 未下载 chromium；典型错误 2：缺少依赖库
+            # 给用户打印更友好的诊断信息
+            if self.platform_info.needs_mobile_optimized_browser:
+                print("[ERROR] Playwright 无法启动浏览器（ZeroTermux/Termux 环境）。请先执行 scripts/install_zerotermux.sh，或设置环境变量：")
+                print("        export MIHOYO_TOOLKIT_CHROMIUM_BIN=/path/to/chromium")
+                print("        参考 README_ZEROTERMUX.md 第 2 节（proot-distro 推荐方案）")
+            raise exc
+
+        context_kwargs: Dict[str, Any] = {
+            "user_agent": self.config.user_agent,
+            "no_viewport": True,
+        }
+        # Android/移动端 UA 下设置一个合理的移动端 viewport 作为 fallback（no_viewport=True 会覆盖，但给上下文默认）
+        if self.platform_info.needs_mobile_optimized_browser and "Mobile" in str(self.config.user_agent):
+            context_kwargs["viewport"] = {"width": 390, "height": 844}
+            context_kwargs["device_scale_factor"] = 3
+            context_kwargs["is_mobile"] = True
+            context_kwargs["has_touch"] = True
+
+        context = browser.new_context(**context_kwargs)
 
         if self.config.use_firefox_cookies and self.config.api_domain_filter:
             cookies = load_firefox_cookies(domain_filter=self.config.api_domain_filter)
