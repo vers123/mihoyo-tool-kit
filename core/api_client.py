@@ -113,17 +113,26 @@ class MiHoYoApiClient:
                 continue
             date_str = item.get(self.site_config.get("date_field", "dtStartTime"), "")
             url_path = self.site_config["detail_url_pattern"].format(iInfoId=info_id)
-            items.append(
-                {
-                    "iInfoId": info_id,
-                    "sTitle": title,
-                    "date": str(date_str),
-                    "sCategoryName": item.get("sCategoryName", ""),
-                    "sIntro": item.get("sIntro", ""),
-                    "poster_url": self._extract_poster_url(item),
-                    "url": self._make_full_url(url_path),
-                }
-            )
+            # O11: 用 Pydantic NewsItem 验证字段后 model_dump 返回 dict，
+            # 对外接口不变（storage/excel 仍接收 dict），但增加类型安全
+            from core.models import NewsItem
+
+            try:
+                news = NewsItem.model_validate(
+                    {
+                        "iInfoId": info_id,
+                        "sTitle": title,
+                        "date": str(date_str),
+                        "sCategoryName": item.get("sCategoryName", ""),
+                        "sIntro": item.get("sIntro", ""),
+                        "poster_url": self._extract_poster_url(item),
+                        "url": self._make_full_url(url_path),
+                    }
+                )
+                items.append(news.model_dump())
+            except Exception:
+                # Pydantic 验证失败则跳过该条
+                continue
         return items
 
     def _extract_poster_url(self, item: dict) -> str:
