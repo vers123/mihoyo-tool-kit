@@ -234,6 +234,13 @@ class MiHoYoToolKit:
                 "group": "系统工具",
                 "handler": self._run_migration
             },
+            # === 数据导出 ===
+            "33": {
+                "label": "导出新闻到 Excel",
+                "description": "从 SQLite 导出三游戏新闻到 .xlsx（每游戏一 sheet）",
+                "group": "数据导出",
+                "handler": self._export_news_excel
+            },
         }
     
     def _clear_screen(self):
@@ -821,7 +828,35 @@ class MiHoYoToolKit:
                     print(f"   - {err}")
         else:
             print("[INFO] 已取消迁移")
-    
+
+    def _export_news_excel(self):
+        """导出三游戏新闻到 Excel（从 SQLite 读取，每游戏一 sheet）"""
+        from extractors import run_export_excel
+
+        print("\n[EXPORT] 导出新闻到 Excel")
+        print("=" * 70)
+        print("从 SQLite 读取三游戏新闻，写入 .xlsx（每游戏一 sheet）")
+        print()
+
+        try:
+            path = run_export_excel()
+        except Exception as e:
+            print(f"\n[ERROR] 导出失败: {e}")
+            logger.error(f"Excel 导出失败: {e}", exc_info=True)
+            return
+
+        # 展示各游戏条数
+        try:
+            from core.storage import NewsStorage
+
+            with NewsStorage() as store:
+                counts = store.count_all()
+            print("\n各游戏条数：")
+            for game, n in counts.items():
+                print(f"   {game}: {n} 条")
+        except Exception:
+            pass
+
     def run(self):
         """运行主程序"""
         logger.info("米游社工具箱启动")

@@ -2,6 +2,7 @@ from .tutorial import TutorialExtractor, run as run_extract_tutorial
 from .images import ImageExtractor, run as run_extract_images
 from .time import PostExtractor, run as run_extract_time
 from .weibo import WeiboExtractor, run as run_extract_weibo
+from .excel_writer import export_to_excel, run as run_export_excel
 
 # 新闻提取模块（新架构：子目录 + 基类 + 各游戏子类）
 from .news import (
@@ -38,4 +39,6 @@ __all__ = [
     "run_extract_images",
     "run_extract_time",
     "run_extract_weibo",
+    "run_export_excel",
+    "export_to_excel",
 ]

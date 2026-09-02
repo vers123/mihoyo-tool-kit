@@ -117,6 +117,26 @@ class NewsStorage:
         """返回各游戏条数 {game: count}"""
         return {game: self.count(game) for game in GAME_TABLES}
 
+    def get_all_items(self, game: str) -> List[dict]:
+        """返回该游戏全部新闻（按日期倒序），供 Excel 导出等读取"""
+        table = self._table(game)
+        rows = self._conn.execute(
+            f"SELECT iInfoId, sTitle, date, sCategoryName, sIntro, poster_url, url "
+            f"FROM {table} ORDER BY date DESC"
+        ).fetchall()
+        return [
+            {
+                "iInfoId": r["iInfoId"],
+                "sTitle": r["sTitle"],
+                "date": r["date"],
+                "sCategoryName": r["sCategoryName"],
+                "sIntro": r["sIntro"],
+                "poster_url": r["poster_url"],
+                "url": r["url"],
+            }
+            for r in rows
+        ]
+
     def close(self) -> None:
         if self._conn:
             self._conn.close()
