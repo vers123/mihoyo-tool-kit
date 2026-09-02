@@ -241,6 +241,13 @@ class MiHoYoToolKit:
                 "group": "数据导出",
                 "handler": self._export_news_excel
             },
+            # === 数据导出（D2） ===
+            "34": {
+                "label": "导出 RSS/JSON Feed",
+                "description": "从 SQLite 生成 RSS/JSON feed 供外部订阅",
+                "group": "数据导出",
+                "handler": self._export_feed
+            },
         }
     
     def _clear_screen(self):
@@ -856,6 +863,24 @@ class MiHoYoToolKit:
                 print(f"   {game}: {n} 条")
         except Exception:
             pass
+
+    def _export_feed(self):
+        """导出 RSS/JSON Feed（从 SQLite 读取，供外部订阅）"""
+        from core.feed import generate_json_feed, generate_rss_feed
+
+        print("\n[FEED] 导出 RSS/JSON Feed")
+        print("=" * 70)
+        print("1) RSS 2.0  -> output/news_feed.xml")
+        print("2) JSON Feed -> output/news_feed.json")
+        choice = input("\n选择格式 (1/2，默认 1)：").strip() or "1"
+        try:
+            if choice == "2":
+                generate_json_feed()
+            else:
+                generate_rss_feed()
+        except Exception as e:
+            print(f"\n[ERROR] 导出失败: {e}")
+            logger.error(f"Feed 导出失败: {e}", exc_info=True)
 
     def run(self):
         """运行主程序"""
