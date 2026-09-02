@@ -420,18 +420,43 @@ class GameNewsBaseScraper(BaseScraper):
     def _fetch_via_api_client(self) -> list:
         """使用 MiHoYoApiClient 直接请求 API（不启动浏览器）
 
-        P 档主路径（O1+O2）：httpx 连接池 + tenacity 重试，
+        P 档主路径（O1+O2）：httpx 连接池 + tenacity 重试；
+        E2 集成：existing_urls 合并 SQLite 已存 URL（增量去重），
+        抓取结果 upsert 入 SQLite（仅记录新抓取，不迁移 .txt）。
         失败返回空列表，由上层回退到浏览器路径。
         """
         try:
             from core.api_client import MiHoYoApiClient
+            from core.storage import NewsStorage
+
+            # 增量去重：.txt 历史 URL ∪ SQLite 已存 URL
+            existing = set(self.config.existing_urls or [])
+            try:
+                with NewsStorage() as store:
+                    existing |= store.get_existing_urls(self.game_key)
+            except Exception as e:
+                print(f"[WARN] 读取 SQLite 去重集合失败，仅用 .txt: {e}")
 
             client = MiHoYoApiClient(
                 self.game_key,
                 incremental=self.config.incremental_mode,
-                existing_urls=self.config.existing_urls,
+                existing_urls=existing,
             )
-            return client.fetch_all()
+            items = client.fetch_all()
+
+            # 抓取结果写入 SQLite（不迁移 .txt，仅记录本次新抓取）
+            if items:
+                try:
+                    with NewsStorage() as store:
+                        new_count = store.upsert_items(self.game_key, items)
+                    print(
+                        f"[INFO] SQLite 写入：新增 {new_count} 条"
+                        f"（本次抓取 {len(items)} 条）"
+                    )
+                except Exception as e:
+                    print(f"[WARN] SQLite 写入失败: {e}")
+
+            return items
         except Exception as e:
             print(f"[WARN] API 客户端异常: {e}")
             return []
