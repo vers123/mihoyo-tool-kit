@@ -6,29 +6,51 @@ from typing import List, Dict, Optional
 from pathlib import Path
 
 
+def _firefox_profile_dirs() -> List[str]:
+    """返回当前平台可能的 Firefox Profiles 目录（跨平台）"""
+    import platform
+
+    home = os.path.expanduser("~")
+    system = platform.system()
+    dirs: List[str] = []
+    if system == "Windows":
+        appdata = os.environ.get("APPDATA", "")
+        if appdata:
+            dirs.append(os.path.join(appdata, "Mozilla", "Firefox", "Profiles"))
+    elif system == "Darwin":  # macOS
+        dirs.append(
+            os.path.join(home, "Library", "Application Support", "Firefox", "Profiles")
+        )
+    else:  # Linux 及其他 Unix
+        dirs.append(os.path.join(home, ".mozilla", "firefox"))
+    return dirs
+
+
 def find_firefox_profile() -> Optional[str]:
-    """查找 Firefox 默认配置文件路径"""
-    appdata = os.environ.get("APPDATA", "")
-    if not appdata:
-        return None
+    """查找 Firefox 默认配置文件路径（跨平台 Win/macOS/Linux）
 
-    profiles_dir = os.path.join(appdata, "Mozilla", "Firefox", "Profiles")
-    if not os.path.exists(profiles_dir):
-        return None
+    优先匹配 default-release / default 命名的 profile，
+    否则回退到任意含 cookies.sqlite 的 profile。
+    """
+    for profiles_dir in _firefox_profile_dirs():
+        if not profiles_dir or not os.path.exists(profiles_dir):
+            continue
 
-    for entry in os.listdir(profiles_dir):
-        entry_path = os.path.join(profiles_dir, entry)
-        if os.path.isdir(entry_path) and ("default-release" in entry or "default" in entry):
-            cookies_path = os.path.join(entry_path, "cookies.sqlite")
-            if os.path.exists(cookies_path):
-                return entry_path
+        # 优先 default-release / default
+        for entry in os.listdir(profiles_dir):
+            entry_path = os.path.join(profiles_dir, entry)
+            if os.path.isdir(entry_path) and (
+                "default-release" in entry or "default" in entry
+            ):
+                if os.path.exists(os.path.join(entry_path, "cookies.sqlite")):
+                    return entry_path
 
-    for entry in os.listdir(profiles_dir):
-        entry_path = os.path.join(profiles_dir, entry)
-        if os.path.isdir(entry_path):
-            cookies_path = os.path.join(entry_path, "cookies.sqlite")
-            if os.path.exists(cookies_path):
-                return entry_path
+        # 回退到任意含 cookies.sqlite 的 profile
+        for entry in os.listdir(profiles_dir):
+            entry_path = os.path.join(profiles_dir, entry)
+            if os.path.isdir(entry_path):
+                if os.path.exists(os.path.join(entry_path, "cookies.sqlite")):
+                    return entry_path
 
     return None
 

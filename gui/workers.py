@@ -1,8 +1,41 @@
 """异步任务 Worker 模块"""
 
 import io
+import sys
 from contextlib import redirect_stdout
 from PySide6.QtCore import QThread, Signal
+
+
+class _StreamLogEmitter(io.TextIOBase):
+    """stdout 重定向流：把输出按行实时通过 Qt 信号转发到 GUI
+
+    替代原先"任务结束后一次性 emit"的做法，抓取过程中逐行刷新界面，
+    避免长时间无输出让用户误以为卡死。
+    """
+
+    def __init__(self, emit):
+        super().__init__()
+        self._emit = emit
+        self._buf = ""
+
+    def writable(self) -> bool:
+        return True
+
+    def write(self, text: str) -> int:
+        if not text:
+            return 0
+        self._buf += text
+        # 遇到换行就 emit 一整行，保证界面逐行滚动
+        while "\n" in self._buf:
+            line, self._buf = self._buf.split("\n", 1)
+            if line.strip():
+                self._emit(line)
+        return len(text)
+
+    def flush(self):
+        if self._buf.strip():
+            self._emit(self._buf)
+            self._buf = ""
 
 
 class ScraperWorker(QThread):
@@ -26,14 +59,12 @@ class ScraperWorker(QThread):
         return self._interrupted
 
     def run(self):
-        log_buffer = io.StringIO()
+        # 用自定义流替代 StringIO，print 输出逐行实时 emit 到 GUI
+        stream = _StreamLogEmitter(self.log_message.emit)
         try:
-            with redirect_stdout(log_buffer):
+            with redirect_stdout(stream):
                 self.func(*self.args, **self.kwargs)
-
-            for line in log_buffer.getvalue().split('\n'):
-                if line.strip():
-                    self.log_message.emit(line)
+            stream.flush()
 
             if self._interrupted:
                 self.finished_ok.emit(False, "用户中断")

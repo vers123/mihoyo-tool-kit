@@ -417,11 +417,45 @@ class GameNewsBaseScraper(BaseScraper):
 
             last_height = new_height
 
+    def _fetch_via_api_client(self) -> list:
+        """使用 MiHoYoApiClient 直接请求 API（不启动浏览器）
+
+        P 档主路径（O1+O2）：httpx 连接池 + tenacity 重试，
+        失败返回空列表，由上层回退到浏览器路径。
+        """
+        try:
+            from core.api_client import MiHoYoApiClient
+
+            client = MiHoYoApiClient(
+                self.game_key,
+                incremental=self.config.incremental_mode,
+                existing_urls=self.config.existing_urls,
+            )
+            return client.fetch_all()
+        except Exception as e:
+            print(f"[WARN] API 客户端异常: {e}")
+            return []
+
     def run(self) -> str:
-        """执行主抓取流程"""
+        """执行主抓取流程
+
+        优先走 API 客户端（不启浏览器）；失败才回退到 Playwright 浏览器路径
+        （API 拦截 + 滚动 + HAR + DOM）。
+        """
         game_label = self._get_game_label()
         print(f"\n【启动】抓取{game_label}新闻: {self.config.url}")
 
+        # 策略 0（首选）：API 客户端直连，不启动浏览器
+        print("[INFO] 策略0：尝试 API 客户端直连...")
+        api_items = self._fetch_via_api_client()
+        if api_items:
+            print(f"\n[OK] API 客户端抓取成功，共 {len(api_items)} 条新闻")
+            html_content = self._build_html_from_api_data(api_items)
+            self._save_html(html_content)
+            return html_content
+
+        # 策略 1+（回退）：浏览器路径（API 拦截 + 滚动 + HAR + DOM）
+        print("\n[WARN] API 客户端未获取到数据，回退到浏览器路径...")
         with sync_playwright() as p:
             browser, page = self._setup_browser(p)
             try:
