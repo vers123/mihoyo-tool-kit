@@ -896,17 +896,37 @@ def main():
 
     parser = argparse.ArgumentParser(description="米游社工具箱")
     parser.add_argument("--gui", action="store_true", help="启动 GUI 图形界面")
+    # O13: 非交互 CLI 参数（API 直连，无需 playwright/TTY，适合容器与定时任务）
+    parser.add_argument(
+        "--fetch",
+        choices=["genshin", "zzz", "starrail", "all"],
+        help="非交互抓取新闻（API 直连，不启动浏览器）",
+    )
+    parser.add_argument(
+        "--export-excel",
+        action="store_true",
+        help="从 SQLite 导出新闻到 Excel",
+    )
+    parser.add_argument(
+        "--count", action="store_true", help="显示 SQLite 各游戏条数"
+    )
     args = parser.parse_args()
 
     print("[START] 正在初始化米游社工具箱...")
 
-    # 检查依赖
+    # O13: 非交互 CLI 模式（不强制 playwright，执行后直接退出）
+    if args.fetch or args.export_excel or args.count:
+        _run_cli(args)
+        return
+
+    # 交互/GUI 模式：浏览器兜底需要 playwright
     try:
         import playwright
         print("[OK] Playwright依赖检查通过")
     except ImportError:
         print("[ERROR] 缺少Playwright依赖，请运行: pip install playwright")
         print("然后运行: playwright install chromium")
+        print("[TIP] 如仅用 API 直连，可用 --fetch / --export-excel 非交互运行")
         return
 
     # 检查并执行数据迁移（自动）
@@ -921,6 +941,59 @@ def main():
     else:
         toolkit = MiHoYoToolKit()
         toolkit.run()
+
+
+def _run_cli(args):
+    """O13: 非交互 CLI 执行（API 直连，无需 playwright/TTY）
+
+    支持 --fetch / --export-excel / --count，适合 Docker 容器与定时任务。
+    抓取路径直接调 api_client + storage，不经 fetchers，不启动浏览器。
+    """
+    # 数据迁移
+    try:
+        check_and_migrate()
+    except Exception as e:
+        print(f"[WARN] 数据迁移检查失败: {e}")
+
+    # 抓取（API 直连 + SQLite 去重）
+    if args.fetch:
+        games = (
+            ["genshin", "zzz", "starrail"] if args.fetch == "all" else [args.fetch]
+        )
+        from core.api_client import MiHoYoApiClient
+        from core.storage import NewsStorage
+
+        for game in games:
+            print(f"\n[FETCH] 抓取 {game} 新闻（API 直连）...")
+            try:
+                with NewsStorage() as store:
+                    existing = store.get_existing_urls(game)
+                client = MiHoYoApiClient(
+                    game, incremental=True, existing_urls=existing
+                )
+                items = client.fetch_all()
+                with NewsStorage() as store:
+                    new = store.upsert_items(game, items)
+                print(f"  [OK] {game}: 抓取 {len(items)} 条，新增 {new} 条")
+            except Exception as e:
+                print(f"  [ERROR] {game} 抓取失败: {e}")
+
+    # 导出 Excel
+    if args.export_excel:
+        print("\n[EXPORT] 导出新闻到 Excel...")
+        from extractors import run_export_excel
+
+        run_export_excel()
+
+    # 显示条数
+    if args.count:
+        from core.storage import NewsStorage
+
+        print("\n各游戏条数：")
+        with NewsStorage() as store:
+            counts = store.count_all()
+        for g, n in counts.items():
+            print(f"  {g}: {n} 条")
 
 
 if __name__ == "__main__":
