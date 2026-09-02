@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+
+# Python 缓存
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+
+# 本地数据与输出（容器内用卷挂载，不打包进镜像）
+data/
+output/
+logs/
+*.db
+*.xlsx
+
+# 测试与文档（运行时不需要）
+tests/
+ai-docs/
+*.md
+
+# IDE 与系统文件
+.vscode
+.idea
+.DS_Store
+
+# 虚拟环境
+venv/
+.venv/
