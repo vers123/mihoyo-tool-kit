@@ -326,7 +326,10 @@ class WeiboScraper(BaseScraper):
     def _process_page(self, page: Page) -> str:
         """处理页面：API抓取 → 失败则HAR回退"""
         page.goto(self.config.url, timeout=self.config.timeout)
-        page.wait_for_load_state("networkidle")
+        try:
+            page.wait_for_load_state("networkidle")
+        except Exception:
+            pass
         time.sleep(self.config.wait_seconds)
 
         self._wait_for_login(page)

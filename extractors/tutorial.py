@@ -110,8 +110,8 @@ def run(tutorial_id: str = None):
     character_data = extractor.extract_characters()
 
     if not character_data:
-        print("[ERROR] 未找到角色数据或HTML文件不存在")
-        print("[INFO] 请先运行选项4抓取教程页面")
+        print("[ERROR] 未找到角色数据")
+        print(f"[HINT] 请先执行「抓取米游社教程页面」生成 {extractor.html_path}")
         return
 
     if extractor.save_character_data(character_data):

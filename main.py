@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "2.2.0"
+        self.version = "5.0.0"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -260,14 +260,14 @@ class MiHoYoToolKit:
                 "handler": self._run_migration
             },
             # === 数据导出 ===
-            "33": {
+            "37": {
                 "label": "导出新闻到 Excel",
-                "description": "从 SQLite 导出三游戏新闻到 .xlsx（每游戏一 sheet）",
+                "description": "从 SQLite 导出四站点新闻到 .xlsx（每站点一 sheet）",
                 "group": "数据导出",
                 "handler": self._export_news_excel
             },
             # === 数据导出（D2） ===
-            "34": {
+            "38": {
                 "label": "导出 RSS/JSON Feed",
                 "description": "从 SQLite 生成 RSS/JSON feed 供外部订阅",
                 "group": "数据导出",
@@ -901,12 +901,12 @@ class MiHoYoToolKit:
             print("[INFO] 已取消迁移")
 
     def _export_news_excel(self):
-        """导出三游戏新闻到 Excel（从 SQLite 读取，每游戏一 sheet）"""
+        """导出四站点新闻到 Excel（从 SQLite 读取，每站点一 sheet）"""
         from extractors import run_export_excel
 
         print("\n[EXPORT] 导出新闻到 Excel")
         print("=" * 70)
-        print("从 SQLite 读取三游戏新闻，写入 .xlsx（每游戏一 sheet）")
+        print("从 SQLite 读取四站点新闻，写入 .xlsx（每站点一 sheet）")
         print()
 
         try:
@@ -988,7 +988,7 @@ def main():
     # O13: 非交互 CLI 参数（API 直连，无需 playwright/TTY，适合容器与定时任务）
     parser.add_argument(
         "--fetch",
-        choices=["genshin", "zzz", "starrail", "all"],
+        choices=["genshin", "genshin_en", "zzz", "starrail", "all"],
         help="非交互抓取新闻（API 直连，不启动浏览器）",
     )
     parser.add_argument(
@@ -1047,7 +1047,7 @@ def _run_cli(args):
     # 抓取（API 直连 + SQLite 去重）
     if args.fetch:
         games = (
-            ["genshin", "zzz", "starrail"] if args.fetch == "all" else [args.fetch]
+            ["genshin", "genshin_en", "zzz", "starrail"] if args.fetch == "all" else [args.fetch]
         )
         from core.api_client import MiHoYoApiClient
         from core.storage import NewsStorage

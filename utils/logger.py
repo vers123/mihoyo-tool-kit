@@ -1,19 +1,14 @@
 import logging
 import sys
-import os
 import functools
-import time
 from pathlib import Path
 from typing import Optional
 
 
 class LoggerConfig:
-    def __init__(self, log_level: str = "INFO", log_file: str = "app.log", 
-                 max_bytes: int = 10*1024*1024, backup_count: int = 5):
+    def __init__(self, log_level: str = "INFO", log_file: str = "app.log"):
         self.log_level = getattr(logging, log_level.upper(), logging.INFO)
         self.log_file = log_file
-        self.max_bytes = max_bytes
-        self.backup_count = backup_count
 
 
 def setup_logger(name: str, config: Optional[LoggerConfig] = None) -> logging.Logger:
@@ -68,26 +63,6 @@ def log_function_call(func):
             return result
         except Exception as e:
             logger.error(f"函数 {func.__name__} 执行失败: {e}", exc_info=True)
-            raise
-
-    return wrapper
-
-
-def log_execution_time(func):
-    """记录函数执行时间的装饰器"""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        logger = get_module_logger(func.__module__)
-        start_time = time.time()
-        
-        try:
-            result = func(*args, **kwargs)
-            execution_time = time.time() - start_time
-            logger.info(f"函数 {func.__name__} 执行耗时: {execution_time:.2f}秒")
-            return result
-        except Exception as e:
-            execution_time = time.time() - start_time
-            logger.error(f"函数 {func.__name__} 执行失败，耗时: {execution_time:.2f}秒: {e}")
             raise
 
     return wrapper

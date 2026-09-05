@@ -553,9 +553,9 @@
     <h2>一、项目现状与已完成工作</h2>
 
     <h3 id="sec1-1">1.1 项目概述</h3>
-    <p>米游社工具箱（miHoYo ToolKit）是一个基于 <mark>Playwright</mark> 的米游社与微博数据抓取工具。项目采用模块化架构，将「抓取」与「提取」分离，支持增量更新和自动备份。当前版本 v2.2.0，仅支持命令行（CLI）交互。</p>
+    <p>米游社工具箱（miHoYo ToolKit）是一个基于 <mark>Playwright</mark> 的米游社与微博数据抓取工具。项目采用模块化架构，将「抓取」与「提取」分离，支持增量更新和自动备份。当前版本 v5.0.0，支持命令行（CLI）与 GUI 双模式交互。</p>
 
-    <p>项目已完成原神、绝区零、星穹铁道三款游戏的新闻抓取功能开发与验证。现在需要新增 <mark class="key">GUI 图形界面</mark>，使项目支持双模式启动。</p>
+    <p>项目已完成原神（中文/英文）、绝区零、星穹铁道四款站点的新闻抓取功能开发与验证。现在需要新增 <mark class="key">GUI 图形界面</mark>，使项目支持双模式启动。</p>
 
     <h3 id="sec1-2">1.2 已验证的抓取功能</h3>
 
@@ -585,6 +585,15 @@
           <td><span class="badge done">已验证</span></td>
         </tr>
         <tr>
+          <td><span class="badge genshin">原神(EN)</span></td>
+          <td><code>sg-public-api-static.hoyoverse.com</code></td>
+          <td>395</td>
+          <td>2163</td>
+          <td>433</td>
+          <td>2163</td>
+          <td><span class="badge done">已验证</span></td>
+        </tr>
+        <tr>
           <td><span class="badge zzz">绝区零</span></td>
           <td><code>api-takumi-static.mihoyo.com</code></td>
           <td>273</td>
@@ -608,12 +617,12 @@
 
     <div class="callout success">
       <strong>核心结论</strong>
-      三款游戏均使用 <code>content_v2_user</code> 统一 API 架构，响应结构、字段命名、分页方式完全一致。基类 <code>GameNewsBaseScraper</code> 高度通用，子类仅需配置不同 API 参数。
+      四款站点均使用 <code>content_v2_user</code> 统一 API 架构，响应结构、字段命名、分页方式完全一致。基类 <code>GameNewsBaseScraper</code> 高度通用，子类仅需配置不同 API 参数。
     </div>
 
     <h3 id="sec1-3">1.3 现有 CLI 菜单结构</h3>
 
-    <p>当前 <code>main.py</code> 提供 32 个菜单选项，按功能分为 7 组：</p>
+    <p>当前 <code>main.py</code> 提供 36 个菜单选项，按功能分为 8 组：</p>
 
     <div class="table-wrap">
     <table>
@@ -636,35 +645,40 @@
           <td>抓取 / 增量抓取 / 提取 / 增量提取</td>
         </tr>
         <tr>
-          <td>绝区零新闻</td>
+          <td>原神英文版新闻</td>
           <td>9-12</td>
           <td>抓取 / 增量抓取 / 提取 / 增量提取</td>
         </tr>
         <tr>
-          <td>星穹铁道新闻</td>
+          <td>绝区零新闻</td>
           <td>13-16</td>
           <td>抓取 / 增量抓取 / 提取 / 增量提取</td>
         </tr>
         <tr>
+          <td>星穹铁道新闻</td>
+          <td>17-20</td>
+          <td>抓取 / 增量抓取 / 提取 / 增量提取</td>
+        </tr>
+        <tr>
           <td>其他抓取</td>
-          <td>17-21</td>
+          <td>21-25</td>
           <td>抓取图鉴 / 抓取教程 / 提取角色 / 提取图片 / 自定义抓取</td>
         </tr>
         <tr>
           <td>微博</td>
-          <td>22-25</td>
+          <td>26-29</td>
           <td>抓取 / 增量抓取 / 提取 / 增量提取</td>
         </tr>
         <tr>
           <td>系统工具</td>
-          <td>26-32</td>
+          <td>30-36</td>
           <td>查看备份 / 恢复备份 / 查看配置 / 修改配置 / 重载配置 / 系统信息 / 数据迁移</td>
         </tr>
       </tbody>
     </table>
     </div>
 
-    <p>GUI 需要将这 32 个功能完整映射到图形界面，按功能组组织为标签页。</p>
+    <p>GUI 需要将这 36 个功能完整映射到图形界面，按功能组组织为标签页。</p>
 
   </section>
 
@@ -678,7 +692,7 @@
     <ul>
       <li><strong>双模式启动</strong>：支持 <code>python main.py</code>（CLI）和 <code>python main.py --gui</code>（GUI）两种启动方式</li>
       <li><strong>游戏主题化</strong>：利用 <code>resources/font/</code> 中的游戏字体，为不同游戏导航项应用对应主题字体和配色</li>
-      <li><strong>功能全覆盖</strong>：GUI 界面覆盖现有 CLI 的全部 32 个功能选项</li>
+      <li><strong>功能全覆盖</strong>：GUI 界面覆盖现有 CLI 的全部 36 个功能选项</li>
       <li><strong>非阻塞交互</strong>：抓取/提取等耗时任务在后台线程执行，界面不卡顿，实时显示日志输出</li>
       <li><strong>向后兼容</strong>：CLI 模式完全保留，不受 GUI 新增代码影响</li>
       <li><strong>解耦设计</strong>：GUI 代码作为独立 <code>gui/</code> 模块，不修改现有 fetchers/extractors 逻辑</li>
@@ -698,7 +712,7 @@
 
     <div class="callout">
       <strong>资源说明</strong>
-      <code>resources/font/</code> 包含三款游戏的专属字体共 10 款（原神 6 款、星穹铁道 2 款、绝区零 2 款），每款提供 ttf/otf/woff2 三种格式。GUI 使用 ttf 格式通过 <code>QFontDatabase</code> 加载。
+      <code>resources/font/</code> 包含四款站点的专属字体共 10 款（原神 6 款、星穹铁道 2 款、绝区零 2 款），每款提供 ttf/otf/woff2 三种格式。GUI 使用 ttf 格式通过 <code>QFontDatabase</code> 加载。
     </div>
 
   </section>
@@ -795,8 +809,9 @@
 <div class="ft-line indent-2"><span class="file new-file">workers.py</span> <span class="comment"># QThread 异步任务 Worker</span></div>
 <div class="ft-line indent-2"><span class="file new-file">widgets.py</span> <span class="comment"># 自定义组件 (LogViewer 等)</span></div>
 <div class="ft-line indent-2"><span class="dir new-file">pages/</span> <span class="comment"># 各功能页面 (QWidget)</span></div>
-<div class="ft-line indent-3"><span class="file new-file">news_page.py</span> <span class="comment"># 新闻页面基类 (3 游戏共用)</span></div>
+<div class="ft-line indent-3"><span class="file new-file">news_page.py</span> <span class="comment"># 新闻页面基类 (4 站点共用)</span></div>
 <div class="ft-line indent-3"><span class="file new-file">news_genshin.py</span> <span class="comment"># 原神新闻页面</span></div>
+<div class="ft-line indent-3"><span class="file new-file">news_genshin_en.py</span> <span class="comment"># 原神英文版新闻页面</span></div>
 <div class="ft-line indent-3"><span class="file new-file">news_zzz.py</span> <span class="comment"># 绝区零新闻页面</span></div>
 <div class="ft-line indent-3"><span class="file new-file">news_starrail.py</span> <span class="comment"># 星穹铁道新闻页面</span></div>
 <div class="ft-line indent-3"><span class="file new-file">user_posts.py</span> <span class="comment"># 米游社用户页面</span></div>
@@ -868,7 +883,7 @@
   <section id="sec5">
     <h2>五、界面布局方案</h2>
 
-    <p>主窗口采用<strong>左侧导航栏 + 右侧内容区</strong>布局（已确认）。左侧导航栏列出 7 个功能组，右侧内容区显示选中组的操作按钮。底部为<strong>全局日志面板</strong>（已确认），所有页面的日志输出统一显示在此区域。</p>
+    <p>主窗口采用<strong>左侧导航栏 + 右侧内容区</strong>布局（已确认）。左侧导航栏列出 8 个功能组，右侧内容区显示选中组的操作按钮。底部为<strong>全局日志面板</strong>（已确认），所有页面的日志输出统一显示在此区域。</p>
 
     <h3 id="sec5-1">5.1 主窗口线框图</h3>
 
@@ -877,11 +892,12 @@
         <span class="wf-dot" style="background:#ef4444"></span>
         <span class="wf-dot" style="background:#fbbf24"></span>
         <span class="wf-dot" style="background:#34d399"></span>
-        &nbsp;&nbsp;<strong style="color:#333;">米游社工具箱 v2.2.0</strong>
+        &nbsp;&nbsp;<strong style="color:#333;">米游社工具箱 v5.0.0</strong>
       </div>
       <div class="wf-content">
         <div class="wf-sidebar" style="border-color:#e0e0e0;">
           <div class="wf-sidebar-item" style="color:var(--genshin);">◆ 原神新闻</div>
+          <div class="wf-sidebar-item" style="color:var(--genshin);">◆ 原神新闻(EN)</div>
           <div class="wf-sidebar-item" style="color:var(--zzz);">◆ 绝区零新闻</div>
           <div class="wf-sidebar-item" style="color:var(--starrail);">◆ 星穹铁道新闻</div>
           <div class="wf-sidebar-item">◇ 米游社用户</div>
@@ -911,6 +927,7 @@
 [INFO] 操作系统: Windows 11 10.0.22631<br>
 [INFO] 新闻站点：<br>
 [INFO] &nbsp;&nbsp;[genshin] 原神: https://ys.mihoyo.com/main/news (共4637条)<br>
+[INFO] &nbsp;&nbsp;[genshin_en] 原神(EN): https://genshin.hoyoverse.com/en/news (共2163条)<br>
 [INFO] &nbsp;&nbsp;[zzz] 绝区零: https://zzz.mihoyo.com/news (共1554条)<br>
 [INFO] &nbsp;&nbsp;[starrail] 星穹铁道: https://sr.mihoyo.com/news (共792条)
         </div>
@@ -943,15 +960,22 @@
           <td><code>#D4A03C</code> 金色</td>
         </tr>
         <tr>
-          <td><span class="badge zzz">绝区零新闻</span></td>
+          <td><span class="badge genshin">原神新闻(EN)</span></td>
           <td>9-12</td>
+          <td>全量抓取 / 增量抓取 / 提取数据 / 增量提取</td>
+          <td>Teyvat-Black</td>
+          <td><code>#D4A03C</code> 金色</td>
+        </tr>
+        <tr>
+          <td><span class="badge zzz">绝区零新闻</span></td>
+          <td>13-16</td>
           <td>全量抓取 / 增量抓取 / 提取数据 / 增量提取</td>
           <td>ZZZ-System</td>
           <td><code>#FF6B35</code> 橙色</td>
         </tr>
         <tr>
           <td><span class="badge starrail">星穹铁道新闻</span></td>
-          <td>13-16</td>
+          <td>17-20</td>
           <td>全量抓取 / 增量抓取 / 提取数据 / 增量提取</td>
           <td>Star-Rail-Neue</td>
           <td><code>#4FC3F7</code> 青色</td>
@@ -965,21 +989,21 @@
         </tr>
         <tr>
           <td>其他抓取</td>
-          <td>17-21</td>
+          <td>21-25</td>
           <td>抓取图鉴 / 抓取教程 / 提取角色 / 提取图片 / 自定义抓取</td>
           <td>系统默认</td>
           <td>默认</td>
         </tr>
         <tr>
           <td>微博</td>
-          <td>22-25</td>
+          <td>26-29</td>
           <td>全量抓取 / 增量抓取 / 提取数据 / 增量提取</td>
           <td>系统默认</td>
           <td>默认</td>
         </tr>
         <tr>
           <td>系统工具</td>
-          <td>26-32</td>
+          <td>30-36</td>
           <td>查看备份 / 恢复备份 / 查看配置 / 修改配置 / 重载配置 / 系统信息 / 数据迁移</td>
           <td>系统默认</td>
           <td>默认</td>
@@ -994,7 +1018,7 @@
   <section id="sec6">
     <h2>六、字体资源整合</h2>
 
-    <p><code>resources/font/</code> 目录包含三款游戏的专属字体。GUI 通过 PySide6 的 <code>QFontDatabase.addApplicationFont()</code> 加载 ttf 格式字体，为不同游戏标签页应用对应主题字体。</p>
+    <p><code>resources/font/</code> 目录包含四款站点的专属字体。GUI 通过 PySide6 的 <code>QFontDatabase.addApplicationFont()</code> 加载 ttf 格式字体，为不同游戏标签页应用对应主题字体。</p>
 
     <h3 id="sec6-1">6.1 字体清单</h3>
 
@@ -1314,7 +1338,7 @@ class ScraperWorker(QThread):
       </li>
       <li>
         <h4>实现各功能页面</h4>
-        <p>编写 <code>gui/pages/</code> 下 7 个页面文件：新闻页面基类 + 3 个游戏子类、用户页面、其他抓取、微博、系统工具。每页包含按钮和进度条（日志区为全局底部面板）。</p>
+        <p>编写 <code>gui/pages/</code> 下 8 个页面文件：新闻页面基类 + 4 个站点子类、用户页面、其他抓取、微博、系统工具。每页包含按钮和进度条（日志区为全局底部面板）。</p>
       </li>
       <li>
         <h4>实现主窗口</h4>
@@ -1357,7 +1381,7 @@ class ScraperWorker(QThread):
           <td>1</td>
           <td><strong>界面布局</strong></td>
           <td><span class="badge done">已确认</span></td>
-          <td>采用<strong>左侧导航栏</strong>布局，7 个导航项对应 7 个功能组</td>
+          <td>采用<strong>左侧导航栏</strong>布局，8 个导航项对应 8 个功能组</td>
           <td>非顶部标签栏</td>
         </tr>
         <tr>
@@ -1448,7 +1472,7 @@ class ScraperWorker(QThread):
         <li>字体资源：<code>resources/font/</code> 中的 ttf 格式</li>
         <li>双模式启动：CLI + <code>--gui</code> 参数</li>
         <li>异步处理：QThread + Signal 机制</li>
-        <li>功能覆盖：CLI 全部 32 个选项</li>
+        <li>功能覆盖：CLI 全部 36 个选项</li>
         <li>架构解耦：<code>gui/</code> 独立模块，不修改现有业务代码</li>
       </ul>
     </div>
@@ -1491,7 +1515,7 @@ class ScraperWorker(QThread):
         </tr>
         <tr>
           <td>标签页功能</td>
-          <td>7 个标签页对应 7 个功能组，32 个功能按钮全部可用</td>
+          <td>8 个导航项对应 8 个功能组，36 个功能按钮全部可用</td>
           <td><span class="badge confirm">待实施</span></td>
         </tr>
         <tr>

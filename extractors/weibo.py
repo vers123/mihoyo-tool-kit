@@ -200,7 +200,8 @@ def run(incremental: bool = False):
     weibo_data = extractor.extract_weibo(incremental=incremental)
 
     if not weibo_data:
-        print("[ERROR] 未找到微博数据或HTML文件不存在")
+        print("[ERROR] 未找到微博数据")
+        print(f"[HINT] 请先执行「抓取微博用户主页」生成 {extractor.html_path}")
         return
 
     if extractor.save_weibo_data(weibo_data):

@@ -1,7 +1,6 @@
 """异步任务 Worker 模块"""
 
 import io
-import sys
 from contextlib import redirect_stdout
 from PySide6.QtCore import QThread, Signal
 

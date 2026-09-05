@@ -21,21 +21,24 @@ print('  - config_manager: OK')
 print('\n[2/7] 提取器模块导入:')
 from extractors.news.base import GameNewsBaseExtractor, NewsItem
 from extractors.news.genshin import GenshinNewsExtractor
+from extractors.news.genshin_en import GenshinENNewsExtractor
 from extractors.news.zzz import ZZZNewsExtractor
 from extractors.news.starrail import SRNewsExtractor
 print('  - GameNewsBaseExtractor: OK')
 print('  - GenshinNewsExtractor: OK')
+print('  - GenshinENNewsExtractor: OK')
 print('  - ZZZNewsExtractor: OK')
 print('  - SRNewsExtractor: OK')
 
 # 3. 配置验证
 print('\n[3/7] 配置验证:')
 all_sites = config_manager.get_all_news_sites()
-assert len(all_sites) == 3, f'期望3个站点，实际{len(all_sites)}个'
+assert len(all_sites) == 4, f'期望4个站点，实际{len(all_sites)}个'
 print(f'  - 新闻站点数量: {len(all_sites)}')
 
 expected_sites = {
     'genshin': {'chan_id': '719', 'total': 4637},
+    'genshin_en': {'chan_id': '395', 'total': 2163},
     'zzz': {'chan_id': '273', 'total': 1554},
     'starrail': {'chan_id': '255', 'total': 792},
 }
@@ -51,7 +54,7 @@ for key, expected in expected_sites.items():
 
 # 4. 输出目录验证
 print('\n[4/7] 输出目录验证:')
-for game_key in ['genshin', 'zzz', 'starrail']:
+for game_key in ['genshin', 'genshin_en', 'zzz', 'starrail']:
     html_dir = config_manager.get_news_output_dir(game_key, 'html')
     data_dir = config_manager.get_news_output_dir(game_key, 'data')
     assert os.path.isdir(html_dir), f'{game_key} html 目录不存在'
@@ -93,9 +96,10 @@ test_html = '''
 </html>
 '''
 
-# 测试三个游戏的提取器
+# 测试四个站点的提取器
 for name, ExtClass in [
     ('原神', GenshinNewsExtractor),
+    ('原神(EN)', GenshinENNewsExtractor),
     ('绝区零', ZZZNewsExtractor),
     ('星穹铁道', SRNewsExtractor),
 ]:

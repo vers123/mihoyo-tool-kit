@@ -103,7 +103,20 @@ class UserScraper(BaseScraper):
         self._setup_api_interception(page)
 
         page.goto(self.config.url, timeout=self.config.timeout)
-        page.wait_for_load_state("networkidle")
+
+        if self._api_stop_requested and self._api_data:
+            print(f"\n[OK] 增量模式：已收集 {len(self._api_data)} 条新数据")
+            return self._build_html_from_api_data(self._api_data)
+
+        try:
+            page.wait_for_load_state("networkidle")
+        except Exception:
+            pass
+
+        if self._api_stop_requested and self._api_data:
+            print(f"\n[OK] 增量模式：已收集 {len(self._api_data)} 条新数据")
+            return self._build_html_from_api_data(self._api_data)
+
         time.sleep(self.config.wait_seconds)
 
         self._scroll_for_data(page)

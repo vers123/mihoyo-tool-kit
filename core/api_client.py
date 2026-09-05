@@ -43,7 +43,7 @@ class MiHoYoApiClient:
     """米游社 content_v2_user API 客户端
 
     Args:
-        game_key: 游戏标识（genshin / zzz / starrail）
+        game_key: 游戏标识（genshin / genshin_en / zzz / starrail）
         incremental: 是否增量模式（遇到已存在 URL 停止）
         existing_urls: 增量去重用的已存在 URL 集合
     """
@@ -80,6 +80,9 @@ class MiHoYoApiClient:
                 "api_lang_value", "zh-cn"
             ),
         }
+        app_id = self.site_config.get("api_app_id", "")
+        if app_id:
+            params["iAppId"] = app_id
         return f"{self.site_config['api_base_url']}?{urlencode(params)}"
 
     def _headers(self) -> Dict[str, str]:
@@ -246,7 +249,7 @@ class MiHoYoApiClient:
         return resp.json()
 
     # ------------------------------------------------------------------
-    # 异步接口（供 asyncio.gather 并发三游戏）
+    # 异步接口（供 asyncio.gather 并发多站点）
     # ------------------------------------------------------------------
     async def fetch_all_async(self) -> List[dict]:
         """异步抓取全部新闻（httpx.AsyncClient）"""
@@ -351,7 +354,7 @@ async def fetch_all_games_async(
 ) -> Dict[str, List[dict]]:
     """并发抓取多游戏新闻（asyncio.gather），返回 {game_key: items}
 
-    供未来调度器/无 GUI 场景使用，三游戏并行可显著缩短总耗时。
+    供未来调度器/无 GUI 场景使用，多站点并行可显著缩短总耗时。
     """
 
     async def _one(gk: str):

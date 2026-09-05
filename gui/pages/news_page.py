@@ -1,4 +1,4 @@
-"""新闻页面基类 - 三款游戏共用"""
+"""新闻页面基类 - 四款站点共用"""
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel

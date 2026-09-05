@@ -163,7 +163,8 @@ def run(incremental: bool = False):
     post_data = extractor.extract_posts(incremental=incremental)
 
     if not post_data:
-        print("[ERROR] 未找到帖子数据或HTML文件不存在")
+        print("[ERROR] 未找到帖子数据")
+        print(f"[HINT] 请先执行「抓取用户发帖主页」生成 {extractor.html_path}")
         return
 
     if extractor.save_post_data(post_data):

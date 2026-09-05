@@ -1,6 +1,6 @@
 """新闻 Excel 导出（D4）
 
-从 SQLite 读取三游戏新闻，写入 .xlsx，每个游戏一个 sheet。
+从 SQLite 读取四站点新闻，写入 .xlsx，每个站点一个 sheet。
 表头蓝底白字，冻结首行，按日期倒序。已存在文件则覆盖对应游戏 sheet
 （保留其他游戏数据，便于增量再导出）。
 """
@@ -30,7 +30,7 @@ _COLUMNS = [
     ("链接", "url", 50),
 ]
 
-_SHEET_NAMES = {"genshin": "原神", "zzz": "绝区零", "starrail": "星穹铁道"}
+_SHEET_NAMES = {"genshin": "原神", "genshin_en": "原神(EN)", "zzz": "绝区零", "starrail": "星穹铁道"}
 
 _HEADER_FONT = Font(bold=True, color="FFFFFF")
 _HEADER_FILL = PatternFill("solid", fgColor="4472C4")
@@ -42,10 +42,10 @@ def export_to_excel(
     output_path: Optional[str] = None,
     db_path: Optional[str] = None,
 ) -> Path:
-    """从 SQLite 导出三游戏新闻到 Excel（每游戏一 sheet）
+    """从 SQLite 导出四站点新闻到 Excel（每站点一 sheet）
 
     Args:
-        games: 要导出的游戏列表，默认全部三游戏
+        games: 要导出的站点列表，默认全部四站点
         output_path: 输出 .xlsx 路径，默认 output/news_export.xlsx
         db_path: SQLite 路径，默认 data/news.db
 

@@ -1,6 +1,6 @@
 """
 新闻抓取公共基类
-基于 content_v2_user 统一 API 架构（原神/绝区零/星穹铁道通用）
+基于 content_v2_user 统一 API 架构（原神中/英文、绝区零、星穹铁道通用）
 
 抓取策略：API 直接循环请求 + 浏览器验证模式
 1. 启动浏览器访问页面，验证 API 可访问性
@@ -26,7 +26,7 @@ class GameNewsBaseScraper(BaseScraper):
     """游戏新闻抓取器基类 - 基于 content_v2_user 统一 API 架构
 
     子类需要覆盖的属性/方法：
-    - game_key: 游戏标识（genshin/zzz/starrail）
+    - game_key: 游戏标识（genshin/genshin_en/zzz/starrail）
     - site_config: 从 config 中获取的站点配置
     - dom_item_selector: DOM 回退时的列表项选择器
     - load_more_selector: "加载更多"按钮选择器（兜底用）
@@ -351,7 +351,10 @@ class GameNewsBaseScraper(BaseScraper):
         self._setup_api_interception(page)
 
         page.goto(self.config.url, timeout=self.config.timeout)
-        page.wait_for_load_state("networkidle")
+        try:
+            page.wait_for_load_state("networkidle")
+        except Exception:
+            pass
         time.sleep(self.config.wait_seconds)
 
         # 策略 1：API 直接循环请求（首选，最快最稳定）

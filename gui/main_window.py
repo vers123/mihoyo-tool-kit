@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
 
     NAV_ITEMS = [
         ("原神新闻", "genshin"),
-        ("原神新闻(EN)", "genshin"),
+        ("原神新闻(EN)", "genshin_en"),
         ("绝区零新闻", "zzz"),
         ("星穹铁道新闻", "starrail"),
         ("米游社用户", None),
@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         return QApplication.instance()
 
     def _setup_ui(self):
-        self.setWindowTitle("米游社工具箱 v2.2.0")
+        self.setWindowTitle("米游社工具箱 v5.0.0")
         self.resize(900, 650)
 
         central = QWidget()

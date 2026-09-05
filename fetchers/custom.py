@@ -26,7 +26,10 @@ class CustomScraper(BaseScraper):
             browser, page = self._setup_browser(p)
             try:
                 page.goto(self.config.url, timeout=self.config.timeout)
-                page.wait_for_load_state("networkidle")
+                try:
+                    page.wait_for_load_state("networkidle")
+                except Exception:
+                    pass
                 time.sleep(self.config.wait_seconds)
 
                 self._scroll_to_bottom(page)

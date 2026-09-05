@@ -68,7 +68,8 @@ def run(incremental: bool = False):
     news_data = extractor.extract_news(incremental=incremental)
 
     if not news_data:
-        print("[ERROR] 未找到新闻数据或HTML文件不存在")
+        print("[ERROR] 未找到新闻数据")
+        print(f"[HINT] 请先执行「抓取星穹铁道新闻页面」生成 {extractor.html_path}")
         return
 
     if extractor.save_news_data(news_data):

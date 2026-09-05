@@ -1,6 +1,6 @@
 """米游社新闻 SQLite 存储层（E2）
 
-按游戏分表（news_genshin / news_zzz / news_starrail），主键 iInfoId，
+按游戏分表（news_genshin / news_genshin_en / news_zzz / news_starrail），主键 iInfoId，
 支持 upsert 与去重查询。
 
 设计取舍（依据优化实施计划 E2 + 提问流程结论）：
@@ -25,6 +25,7 @@ logger = get_module_logger(__name__)
 # 支持的游戏及对应表名
 GAME_TABLES = {
     "genshin": "news_genshin",
+    "genshin_en": "news_genshin_en",
     "zzz": "news_zzz",
     "starrail": "news_starrail",
 }

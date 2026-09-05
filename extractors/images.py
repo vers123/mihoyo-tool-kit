@@ -80,7 +80,8 @@ def run():
     image_data = extractor.extract_image_urls()
 
     if not image_data:
-        print("[ERROR] 未找到图片数据或HTML文件不存在")
+        print("[ERROR] 未找到图片数据")
+        print(f"[HINT] 请先执行「抓取角色图鉴页面」生成 {extractor.html_path}")
         return
 
     if extractor.save_image_data(image_data):

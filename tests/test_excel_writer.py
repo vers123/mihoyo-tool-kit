@@ -61,11 +61,11 @@ class TestExcelWriter(unittest.TestCase):
         self.assertEqual(ws.cell(2, 2).value, "标题1")  # sTitle
 
     def test_export_empty_db(self):
-        """空库也生成 3 个空 sheet（仅表头）"""
+        """空库也生成 4 个空 sheet（仅表头）"""
         out = export_to_excel(output_path=self._out.name, db_path=self._db.name)
         wb = load_workbook(out)
-        self.assertEqual(len(wb.sheetnames), 3)
-        for name in ("原神", "绝区零", "星穹铁道"):
+        self.assertEqual(len(wb.sheetnames), 4)
+        for name in ("原神", "原神(EN)", "绝区零", "星穹铁道"):
             self.assertEqual(wb[name].max_row, 1)  # 仅表头
 
     def test_export_overwrites_existing_sheet(self):

@@ -1,6 +1,6 @@
 """新闻 RSS/JSON Feed 生成（D2）
 
-从 SQLite 读取三游戏新闻，生成 RSS 2.0 或 JSON Feed v1.2，供外部订阅。
+从 SQLite 读取四站点新闻，生成 RSS 2.0 或 JSON Feed v1.2，供外部订阅。
 - RSS：generate_rss_feed() -> output/news_feed.xml
 - JSON：generate_json_feed() -> output/news_feed.json
 """
@@ -18,7 +18,7 @@ logger = get_module_logger(__name__)
 _DEFAULT_RSS = Path("output") / "news_feed.xml"
 _DEFAULT_JSON = Path("output") / "news_feed.json"
 
-_GAME_LABELS = {"genshin": "原神", "zzz": "绝区零", "starrail": "星穹铁道"}
+_GAME_LABELS = {"genshin": "原神", "genshin_en": "原神(EN)", "zzz": "绝区零", "starrail": "星穹铁道"}
 
 
 def generate_rss_feed(
@@ -37,7 +37,7 @@ def generate_rss_feed(
         channel = ET.SubElement(rss, "channel")
         ET.SubElement(channel, "title").text = "米游社新闻"
         ET.SubElement(channel, "link").text = "https://www.miyoushe.com"
-        ET.SubElement(channel, "description").text = "原神/绝区零/星穹铁道新闻聚合"
+        ET.SubElement(channel, "description").text = "原神(中/英)/绝区零/星穹铁道新闻聚合"
         ET.SubElement(channel, "language").text = "zh-cn"
 
         total = 0
