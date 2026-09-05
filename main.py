@@ -85,150 +85,175 @@ class MiHoYoToolKit:
                 "group": "原神新闻",
                 "handler": self._incremental_extract_genshin_news
             },
-            # === 绝区零新闻 ===
+            # === 原神英文版新闻 ===
             "9": {
+                "label": "抓取原神英文版新闻",
+                "description": "从 genshin.hoyoverse.com 抓取英文版新闻",
+                "group": "原神英文版新闻",
+                "handler": self._fetch_genshin_en_news
+            },
+            "10": {
+                "label": "增量抓取原神英文版新闻",
+                "description": "增量更新原神英文版新闻，自动备份旧数据",
+                "group": "原神英文版新闻",
+                "handler": self._incremental_fetch_genshin_en_news
+            },
+            "11": {
+                "label": "提取原神英文版新闻数据",
+                "description": "从新闻页面提取标题、日期、链接等",
+                "group": "原神英文版新闻",
+                "handler": self._extract_genshin_en_news
+            },
+            "12": {
+                "label": "增量提取原神英文版新闻",
+                "description": "增量提取并合并新旧数据",
+                "group": "原神英文版新闻",
+                "handler": self._incremental_extract_genshin_en_news
+            },
+            # === 绝区零新闻 ===
+            "13": {
                 "label": "抓取绝区零新闻页面",
                 "description": "从绝区零官网抓取新闻页面",
                 "group": "绝区零新闻",
                 "handler": self._fetch_zzz_news
             },
-            "10": {
+            "14": {
                 "label": "增量抓取绝区零新闻",
                 "description": "增量更新绝区零新闻，自动备份旧数据",
                 "group": "绝区零新闻",
                 "handler": self._incremental_fetch_zzz_news
             },
-            "11": {
+            "15": {
                 "label": "提取绝区零新闻数据",
                 "description": "从新闻页面提取标题、日期、链接等",
                 "group": "绝区零新闻",
                 "handler": self._extract_zzz_news
             },
-            "12": {
+            "16": {
                 "label": "增量提取绝区零新闻",
                 "description": "增量提取并合并新旧数据",
                 "group": "绝区零新闻",
                 "handler": self._incremental_extract_zzz_news
             },
             # === 星穹铁道新闻 ===
-            "13": {
+            "17": {
                 "label": "抓取星穹铁道新闻页面",
                 "description": "从星穹铁道官网抓取新闻页面",
                 "group": "星穹铁道新闻",
                 "handler": self._fetch_starrail_news
             },
-            "14": {
+            "18": {
                 "label": "增量抓取星穹铁道新闻",
                 "description": "增量更新星穹铁道新闻，自动备份旧数据",
                 "group": "星穹铁道新闻",
                 "handler": self._incremental_fetch_starrail_news
             },
-            "15": {
+            "19": {
                 "label": "提取星穹铁道新闻数据",
                 "description": "从新闻页面提取标题、日期、链接等",
                 "group": "星穹铁道新闻",
                 "handler": self._extract_starrail_news
             },
-            "16": {
+            "20": {
                 "label": "增量提取星穹铁道新闻",
                 "description": "增量提取并合并新旧数据",
                 "group": "星穹铁道新闻",
                 "handler": self._incremental_extract_starrail_news
             },
             # === 其他抓取 ===
-            "17": {
+            "21": {
                 "label": "抓取角色图鉴页面",
                 "description": "从米游社百科抓取角色图鉴信息",
                 "group": "其他抓取",
                 "handler": self._fetch_character_baike
             },
-            "18": {
+            "22": {
                 "label": "抓取米游社教程页面",
                 "description": "从米游社抓取教程页面",
                 "group": "其他抓取",
                 "handler": self._fetch_tutorial_page
             },
-            "19": {
+            "23": {
                 "label": "提取教程角色数据",
                 "description": "从教程页面提取角色编号和名称",
                 "group": "其他抓取",
                 "handler": self._extract_tutorial_data
             },
-            "20": {
+            "24": {
                 "label": "提取图鉴图片链接",
                 "description": "从抓取的图鉴页面提取角色图片链接",
                 "group": "其他抓取",
                 "handler": self._extract_image_urls
             },
-            "21": {
+            "25": {
                 "label": "抓取自定义网站",
                 "description": "抓取任意网站的HTML页面",
                 "group": "其他抓取",
                 "handler": self._fetch_custom_site
             },
             # === 微博 ===
-            "22": {
+            "26": {
                 "label": "抓取微博用户主页",
                 "description": "从微博抓取指定用户的发帖记录",
                 "group": "微博",
                 "handler": self._fetch_weibo_posts
             },
-            "23": {
+            "27": {
                 "label": "增量抓取微博用户",
                 "description": "增量更新微博用户发帖，自动备份旧数据",
                 "group": "微博",
                 "handler": self._incremental_fetch_weibo_posts
             },
-            "24": {
+            "28": {
                 "label": "提取微博数据",
                 "description": "从微博页面提取发帖时间和内容",
                 "group": "微博",
                 "handler": self._extract_weibo_data
             },
-            "25": {
+            "29": {
                 "label": "增量提取微博数据",
                 "description": "增量提取并合并新旧微博数据",
                 "group": "微博",
                 "handler": self._incremental_extract_weibo_data
             },
             # === 系统工具 ===
-            "26": {
+            "30": {
                 "label": "查看备份文件",
                 "description": "查看所有数据备份文件",
                 "group": "系统工具",
                 "handler": self._show_backups
             },
-            "27": {
+            "31": {
                 "label": "恢复备份数据",
                 "description": "从备份文件恢复数据",
                 "group": "系统工具",
                 "handler": self._restore_backup
             },
-            "28": {
+            "32": {
                 "label": "查看当前配置",
                 "description": "显示当前的配置信息",
                 "group": "系统工具",
                 "handler": self._show_config
             },
-            "29": {
+            "33": {
                 "label": "修改配置参数",
                 "description": "修改URL、超时时间等配置",
                 "group": "系统工具",
                 "handler": self._modify_config
             },
-            "30": {
+            "34": {
                 "label": "重新加载配置",
                 "description": "从配置文件重新加载配置",
                 "group": "系统工具",
                 "handler": self._reload_config
             },
-            "31": {
+            "35": {
                 "label": "系统信息",
                 "description": "显示系统环境和依赖信息",
                 "group": "系统工具",
                 "handler": self._show_system_info
             },
-            "32": {
+            "36": {
                 "label": "数据迁移工具",
                 "description": "迁移旧版本数据到新目录结构",
                 "group": "系统工具",
@@ -354,6 +379,42 @@ class MiHoYoToolKit:
         print("\n开始增量提取原神新闻数据...")
         print("[INFO] 增量模式: 自动备份旧数据，合并新旧数据")
         run_extract_news_genshin(incremental=True)
+
+    # === 原神英文版新闻 ===
+
+    @log_function_call
+    @handle_errors
+    def _fetch_genshin_en_news(self):
+        """抓取原神英文版新闻页面"""
+        from fetchers import run_news_genshin_en
+        print("\n开始抓取原神英文版新闻页面...")
+        run_news_genshin_en(incremental=False)
+
+    @log_function_call
+    @handle_errors
+    def _incremental_fetch_genshin_en_news(self):
+        """增量抓取原神英文版新闻"""
+        from fetchers import run_news_genshin_en
+        print("\n开始增量抓取原神英文版新闻...")
+        print("[INFO] 增量模式: 自动备份旧数据，遇到已存在数据停止抓取")
+        run_news_genshin_en(incremental=True)
+
+    @log_function_call
+    @handle_errors
+    def _extract_genshin_en_news(self):
+        """提取原神英文版新闻数据"""
+        from extractors import run_extract_news_genshin_en
+        print("\n开始提取原神英文版新闻数据...")
+        run_extract_news_genshin_en(incremental=False)
+
+    @log_function_call
+    @handle_errors
+    def _incremental_extract_genshin_en_news(self):
+        """增量提取原神英文版新闻"""
+        from extractors import run_extract_news_genshin_en
+        print("\n开始增量提取原神英文版新闻数据...")
+        print("[INFO] 增量模式: 自动备份旧数据，合并新旧数据")
+        run_extract_news_genshin_en(incremental=True)
 
     # === 绝区零新闻 ===
 
@@ -553,7 +614,7 @@ class MiHoYoToolKit:
         print()
         print("   新闻站点：")
         for game_key, site in config_manager.get_all_news_sites().items():
-            game_labels = {"genshin": "原神", "zzz": "绝区零", "starrail": "星穹铁道"}
+            game_labels = {"genshin": "原神", "genshin_en": "原神(EN)", "zzz": "绝区零", "starrail": "星穹铁道"}
             label = game_labels.get(game_key, game_key)
             print(f"     [{game_key}] {label}: {site['url']} (共{site.get('total', '?')}条)")
 
@@ -576,7 +637,7 @@ class MiHoYoToolKit:
             print("  无备份文件")
 
         # 显示各游戏新闻数据备份
-        game_labels = {"genshin": "原神", "zzz": "绝区零", "starrail": "星穹铁道"}
+        game_labels = {"genshin": "原神", "genshin_en": "原神(EN)", "zzz": "绝区零", "starrail": "星穹铁道"}
         for game_key, label in game_labels.items():
             data_filename = config_manager.get(f"news_sites.{game_key}.data_filename", f"news_{game_key}.txt")
             print(f"\n{label}新闻数据备份 ({data_filename})：")
@@ -611,9 +672,10 @@ class MiHoYoToolKit:
         print("\n[RESTORE] 恢复备份数据：")
         print(" 1. 恢复帖子数据备份")
         print(" 2. 恢复原神新闻数据备份")
-        print(" 3. 恢复绝区零新闻数据备份")
-        print(" 4. 恢复星穹铁道新闻数据备份")
-        print(" 5. 恢复微博数据备份")
+        print(" 3. 恢复原神英文版新闻数据备份")
+        print(" 4. 恢复绝区零新闻数据备份")
+        print(" 5. 恢复星穹铁道新闻数据备份")
+        print(" 6. 恢复微博数据备份")
         print(" 0. 返回")
 
         choice = input("\n请选择操作：").strip()
@@ -623,10 +685,12 @@ class MiHoYoToolKit:
         elif choice == "2":
             self._restore_news_backup("genshin", "原神")
         elif choice == "3":
-            self._restore_news_backup("zzz", "绝区零")
+            self._restore_news_backup("genshin_en", "原神(EN)")
         elif choice == "4":
-            self._restore_news_backup("starrail", "星穹铁道")
+            self._restore_news_backup("zzz", "绝区零")
         elif choice == "5":
+            self._restore_news_backup("starrail", "星穹铁道")
+        elif choice == "6":
             self._restore_weibo_backup()
         elif choice == "0":
             return

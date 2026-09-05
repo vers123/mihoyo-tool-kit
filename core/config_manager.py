@@ -92,7 +92,30 @@ class ConfigManager:
                     "fields": ["iInfoId", "sTitle", "dtStartTime", "sCategoryName", "sIntro", "poster_url", "url"],
                     "date_field": "dtStartTime",
                     "poster_ext_key": "720_1",
+                    "dir_key": "genshin",
+                    "lang_subdir": "zh-cn",
                     "total": 4637
+                },
+                "genshin_en": {
+                    "url": "https://genshin.hoyoverse.com/en/news",
+                    "html_filename": "news_genshin_en.html",
+                    "data_filename": "news_genshin_en.txt",
+                    "scraper_name": "news_genshin_en",
+                    "detail_url_pattern": "/en/news/detail/{iInfoId}",
+                    "api_base_url": "https://sg-public-api-static.hoyoverse.com/content_v2_user/app/a1b1f9d3315447cc/getContentList",
+                    "api_app_id": "32",
+                    "api_chan_id": "395",
+                    "api_page_param": "iPage",
+                    "api_page_size_param": "iPageSize",
+                    "api_page_size": 5,
+                    "api_lang_param": "sLangKey",
+                    "api_lang_value": "en-us",
+                    "fields": ["iInfoId", "sTitle", "dtStartTime", "sCategoryName", "sIntro", "poster_url", "url"],
+                    "date_field": "dtStartTime",
+                    "poster_ext_key": "banner",
+                    "dir_key": "genshin",
+                    "lang_subdir": "en-us",
+                    "total": 2163
                 },
                 "zzz": {
                     "url": "https://zzz.mihoyo.com/news",
@@ -236,15 +259,27 @@ class ConfigManager:
     def get_news_output_dir(self, game_key: str, dir_type: str) -> str:
         """获取新闻模块按游戏分子目录的输出路径
 
+        支持 dir_key + lang_subdir 两级子目录，用于同一游戏多语言共存。
+        例如 genshin_en 配置 dir_key=genshin, lang_subdir=en-us，
+        则输出路径为 data/html/genshin/en-us/
+
         Args:
-            game_key: 游戏标识（genshin / zzz / starrail）
+            game_key: 游戏标识（genshin / genshin_en / zzz / starrail）
             dir_type: 目录类型（html / data / backup）
 
         Returns:
-            完整的目录路径（如 data/html/genshin/）
+            完整的目录路径（如 data/html/genshin/zh-cn/）
         """
         base_dir = self.get_output_dir(dir_type)
-        game_dir = os.path.join(base_dir, game_key)
+        site_config = self.get_news_config(game_key)
+        if site_config:
+            dir_key = site_config.get("dir_key", game_key)
+            lang_subdir = site_config.get("lang_subdir", "")
+            game_dir = os.path.join(base_dir, dir_key)
+            if lang_subdir:
+                game_dir = os.path.join(game_dir, lang_subdir)
+        else:
+            game_dir = os.path.join(base_dir, game_key)
         os.makedirs(game_dir, exist_ok=True)
         return game_dir
 

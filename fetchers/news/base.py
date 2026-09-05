@@ -62,7 +62,7 @@ class GameNewsBaseScraper(BaseScraper):
             existing_urls=existing_urls,
             scraper_name=self.site_config["scraper_name"],
             api_url_keywords=["getContentList", "content_v2_user"],
-            api_domain_filter="mihoyo.com",
+            api_domain_filter=None,
             use_firefox_cookies=False,
         )
         super().__init__(scraper_config)
@@ -250,6 +250,7 @@ class GameNewsBaseScraper(BaseScraper):
         """获取游戏中文名标签（用于 HTML 标题）"""
         labels = {
             "genshin": "原神",
+            "genshin_en": "原神(EN)",
             "zzz": "绝区零",
             "starrail": "崩坏：星穹铁道",
         }
@@ -267,6 +268,7 @@ class GameNewsBaseScraper(BaseScraper):
         page_size = self.site_config["api_page_size"]
         lang_param = self.site_config.get("api_lang_param", "sLangKey")
         lang_value = self.site_config.get("api_lang_value", "zh-cn")
+        app_id = self.site_config.get("api_app_id", "")
 
         # 先请求第一页获取 iTotal
         import urllib.request
@@ -279,6 +281,8 @@ class GameNewsBaseScraper(BaseScraper):
                 "iChanId": chan_id,
                 lang_param: lang_value,
             }
+            if app_id:
+                params["iAppId"] = app_id
             return f"{api_base_url}?{urllib.parse.urlencode(params)}"
 
         all_items = []
@@ -375,7 +379,8 @@ class GameNewsBaseScraper(BaseScraper):
             print_har_instructions(
                 self.config.scraper_name,
                 self.config.url,
-                ["api-takumi-static.mihoyo.com", "act-api-takumi-static.mihoyo.com"]
+                ["api-takumi-static.mihoyo.com", "act-api-takumi-static.mihoyo.com",
+                 "sg-public-api-static.hoyoverse.com"]
             )
 
         # 策略 4：回退到 DOM 抓取

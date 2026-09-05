@@ -10,7 +10,7 @@ from PySide6.QtGui import QFont
 from gui.theme import load_game_fonts, apply_light_theme, get_title_font, GAME_THEME_COLORS
 from gui.widgets import LogViewer
 from gui.pages import (
-    GenshinNewsPage, ZZZNewsPage, StarRailNewsPage,
+    GenshinNewsPage, GenshinENNewsPage, ZZZNewsPage, StarRailNewsPage,
     UserPostsPage, OtherPage, WeiboPage, SystemPage
 )
 
@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
 
     NAV_ITEMS = [
         ("原神新闻", "genshin"),
+        ("原神新闻(EN)", "genshin"),
         ("绝区零新闻", "zzz"),
         ("星穹铁道新闻", "starrail"),
         ("米游社用户", None),
@@ -74,6 +75,7 @@ class MainWindow(QMainWindow):
         self.content_stack = QStackedWidget()
         self.pages = [
             GenshinNewsPage(),
+            GenshinENNewsPage(),
             ZZZNewsPage(),
             StarRailNewsPage(),
             UserPostsPage(),
