@@ -14,8 +14,9 @@ def launch_gui():
     使用 PySide6 平台默认原生风格，不应用自定义 QSS。
     字体默认使用系统字体；游戏字体已加载到 QFontDatabase 供设置页按需调用。
     """
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QMessageBox
     from PySide6.QtGui import QIcon
+    from PySide6.QtCore import Qt
 
     app = QApplication.instance()
     if app is None:
@@ -31,6 +32,16 @@ def launch_gui():
 
     # 加载游戏字体到数据库（不自动应用，预留设置页接口）
     fonts = load_game_fonts()
+
+    # 启动欢迎弹窗：提示用户更新 HAR 文件
+    from utils.har_loader import get_har_welcome_html
+    welcome_box = QMessageBox()
+    welcome_box.setWindowTitle("欢迎使用 米游社工具箱")
+    welcome_box.setTextFormat(Qt.RichText)
+    welcome_box.setText(get_har_welcome_html())
+    welcome_box.setStandardButtons(QMessageBox.Ok)
+    welcome_box.button(QMessageBox.Ok).setText("确定")
+    welcome_box.exec()
 
     window = MainWindow()
     window.fonts = fonts

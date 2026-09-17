@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green)](Version)
+[![Version](https://img.shields.io/badge/version-1.0.1-green)](Version)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -403,4 +403,4 @@ See [构建与打包](#构建与打包) section. Supports PyInstaller EXE (Windo
 
 ---
 
-**V1.0.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V1.0.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

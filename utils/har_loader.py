@@ -8,6 +8,109 @@ from typing import List, Optional, Dict
 # HAR文件存放根目录
 HAR_BASE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "har")
 
+# 需要 HAR 文件的网站列表（启动提示用）
+HAR_SITES = [
+    {
+        "name": "米游社用户发帖",
+        "scraper_name": "user",
+        "url": "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539",
+    },
+    {
+        "name": "原神新闻",
+        "scraper_name": "news_genshin",
+        "url": "https://ys.mihoyo.com/main/news",
+    },
+    {
+        "name": "原神英文版新闻",
+        "scraper_name": "news_genshin_en",
+        "url": "https://genshin.hoyoverse.com/en/news",
+    },
+    {
+        "name": "绝区零新闻",
+        "scraper_name": "news_zzz",
+        "url": "https://zzz.mihoyo.com/news",
+    },
+    {
+        "name": "星穹铁道新闻",
+        "scraper_name": "news_starrail",
+        "url": "https://sr.mihoyo.com/news",
+    },
+    {
+        "name": "微博",
+        "scraper_name": "weibo",
+        "url": "https://weibo.com/u/6593199887",
+    },
+]
+
+
+def ensure_har_dirs() -> None:
+    """确保所有网站的 HAR 目录存在"""
+    for site in HAR_SITES:
+        os.makedirs(get_har_dir(site["scraper_name"]), exist_ok=True)
+
+
+def get_har_welcome_text() -> str:
+    """生成 CLI 用的纯文本欢迎语和 HAR 更新步骤提示"""
+    ensure_har_dirs()
+    lines = []
+    lines.append("=" * 70)
+    lines.append("  欢迎使用 米游社工具箱 v1.0.1")
+    lines.append("=" * 70)
+    lines.append("")
+    lines.append("【重要提示】首次使用或接口失效时，请先按以下步骤更新 HAR 文件：")
+    lines.append("")
+    lines.append("Firefox 导出 HAR 通用步骤：")
+    lines.append("  1. 打开 Firefox 浏览器")
+    lines.append("  2. 按 F12 打开开发者工具")
+    lines.append("  3. 切换到「网络」(Network) 面板")
+    lines.append("  4. 勾选「持续日志」(Persist Logs)")
+    lines.append("  5. 访问目标页面并滚动加载内容")
+    lines.append("  6. 在网络面板空白处右键 → 「全部内容另存为 HAR」")
+    lines.append("  7. 将 HAR 文件保存到对应网站的目录中")
+    lines.append("")
+    lines.append("各网站 HAR 文件保存目录：")
+    for site in HAR_SITES:
+        har_dir = get_har_dir(site["scraper_name"])
+        lines.append(f"  [{site['name']}]")
+        lines.append(f"    页面: {site['url']}")
+        lines.append(f"    目录: {har_dir}")
+    lines.append("")
+    lines.append("  提示：HAR 文件用于自动识别 API 接口，无需手动分析。")
+    lines.append("  如 HAR 已存在且接口正常，可直接使用。")
+    lines.append("=" * 70)
+    return "\n".join(lines)
+
+
+def get_har_welcome_html() -> str:
+    """生成 GUI 用的 HTML 格式欢迎语和 HAR 更新步骤提示"""
+    ensure_har_dirs()
+    parts = []
+    parts.append("<h3>欢迎使用 米游社工具箱 v1.0.1</h3>")
+    parts.append("<p><b>【重要提示】</b>首次使用或接口失效时，请先按以下步骤更新 HAR 文件：</p>")
+    parts.append("<p><b>Firefox 导出 HAR 通用步骤：</b></p>")
+    parts.append("<ol>")
+    parts.append("<li>打开 Firefox 浏览器</li>")
+    parts.append("<li>按 F12 打开开发者工具</li>")
+    parts.append("<li>切换到「网络」(Network) 面板</li>")
+    parts.append("<li>勾选「持续日志」(Persist Logs)</li>")
+    parts.append("<li>访问目标页面并滚动加载内容</li>")
+    parts.append("<li>在网络面板空白处右键 → 「全部内容另存为 HAR」</li>")
+    parts.append("<li>将 HAR 文件保存到对应网站的目录中</li>")
+    parts.append("</ol>")
+    parts.append("<p><b>各网站 HAR 文件保存目录：</b></p>")
+    parts.append("<ul>")
+    for site in HAR_SITES:
+        har_dir = get_har_dir(site["scraper_name"])
+        parts.append(
+            f"<li><b>{site['name']}</b><br>"
+            f"页面: <code>{site['url']}</code><br>"
+            f"目录: <code>{har_dir}</code></li>"
+        )
+    parts.append("</ul>")
+    parts.append("<p>提示：HAR 文件用于自动识别 API 接口，无需手动分析。<br>"
+                 "如 HAR 已存在且接口正常，可直接使用。</p>")
+    return "".join(parts)
+
 
 def get_har_dir(scraper_name: str) -> str:
     """获取抓取器对应的HAR文件目录"""

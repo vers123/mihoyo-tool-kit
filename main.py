@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -1126,6 +1126,10 @@ def main():
         from gui import launch_gui
         launch_gui()
     else:
+        # CLI 交互模式：打印欢迎语和 HAR 更新提示
+        from utils.har_loader import get_har_welcome_text
+        print(get_har_welcome_text())
+        input("\n按回车键继续...")
         toolkit = MiHoYoToolKit()
         toolkit.run()
 
