@@ -19,13 +19,12 @@ class OtherPage(QWidget):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(10)
 
-        layout.addWidget(self._make_label("其他抓取", "pageTitle"))
-        layout.addWidget(self._make_label("角色图鉴、教程页面、图片提取、自定义抓取", "pageSubtitle"))
+        layout.addWidget(self._make_label("其他抓取"))
+        layout.addWidget(self._make_label("角色图鉴、教程页面、图片提取、自定义抓取"))
 
         btn_row1 = QHBoxLayout()
         btn_row1.setSpacing(8)
         self.btn_baike = QPushButton("抓取图鉴")
-        self.btn_baike.setObjectName("primaryBtn")
         self.btn_baike.clicked.connect(lambda: self._run_task("baike"))
         btn_row1.addWidget(self.btn_baike)
 
@@ -69,7 +68,6 @@ class OtherPage(QWidget):
         layout.addLayout(form)
 
         self.btn_stop = QPushButton("停止")
-        self.btn_stop.setObjectName("dangerBtn")
         self.btn_stop.setVisible(False)
         self.btn_stop.clicked.connect(self._stop_task)
         stop_layout = QHBoxLayout()
@@ -81,9 +79,8 @@ class OtherPage(QWidget):
         layout.addWidget(self.progress)
         layout.addStretch()
 
-    def _make_label(self, text, obj_name):
+    def _make_label(self, text):
         lbl = QLabel(text)
-        lbl.setObjectName(obj_name)
         return lbl
 
     def _run_task(self, task):

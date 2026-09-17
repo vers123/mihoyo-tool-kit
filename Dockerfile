@@ -1,15 +1,30 @@
-# 米游社工具箱 Docker 镜像（D1）
+# 米游社工具箱 Docker 镜像
 #
-# 定位：CLI 模式容器，走 API 直连 + SQLite + Excel，无需 playwright/PySide6 GUI。
-# 适合定时任务：docker run --rm -v $PWD/data:/app/data mihoyo-toolkit --fetch all --export-excel
+# 两种构建模式（通过 build-arg MODE 切换）：
+#   MODE=cli    （默认）CLI/API 模式，轻量，无需 playwright/PySide6
+#   MODE=full   完整模式，含 Playwright + PySide6（需 X11 转发才能用 GUI）
 #
-# 如需交互菜单或浏览器兜底，另装 playwright 并执行 `playwright install chromium`。
+# 构建 CLI 模式：
+#   docker build -t mihoyo-toolkit .
+#
+# 构建完整模式：
+#   docker build --build-arg MODE=full -t mihoyo-toolkit:full .
+#
+# 运行 CLI 模式：
+#   docker run --rm -v $PWD/data:/app/data mihoyo-toolkit --fetch all --export-excel
+#
+# 运行 GUI 模式（Linux，需 X11）：
+#   docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+#     -v $PWD/data:/app/data mihoyo-toolkit:full --gui
 
+ARG MODE=cli
 FROM python:3.11-slim
+
+ARG MODE=cli
 
 WORKDIR /app
 
-# 系统依赖：证书（HTTPS 请求）+ tzdata（时区，日志时间正确）
+# 系统依赖
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         tzdata \
@@ -18,21 +33,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV TZ=Asia/Shanghai \
     PYTHONUNBUFFERED=1
 
-# 先装依赖（利用层缓存）。CLI 模式仅需以下 4 个；
-# 完整交互/GUI 能力需额外 playwright + PySide6（见 requirements.txt）
-RUN pip install --no-cache-dir \
-        httpx>=0.27.0 \
-        tenacity>=8.2.0 \
-        pydantic>=2.0.0 \
-        openpyxl>=3.1.0
+# ---- CLI 模式依赖（默认）----
+RUN if [ "$MODE" = "cli" ]; then \
+        pip install --no-cache-dir \
+            httpx>=0.27.0 \
+            tenacity>=8.2.0 \
+            pydantic>=2.0.0 \
+            openpyxl>=3.1.0 \
+            tqdm>=4.65.0; \
+    fi
+
+# ---- 完整模式依赖（含 Playwright + PySide6）----
+RUN if [ "$MODE" = "full" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends \
+            libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
+            libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
+            libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
+            libx11-xcb1 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 \
+            libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
+            xauth xvfb \
+        && rm -rf /var/lib/apt/lists/* \
+        && pip install --no-cache-dir -r requirements.txt \
+        && playwright install chromium; \
+    fi
 
 # 复制项目代码
 COPY . .
 
-# 数据持久化：SQLite 库、Excel 输出、日志
-VOLUME ["/app/data", "/app/output", "/app/logs"]
+# 数据持久化
+VOLUME ["/app/data", "/app/output", "/app/logs", "/app/har"]
 
-# 默认入口：抓取全部游戏 + 导出 Excel + 显示条数
-# 可被 docker run 参数覆盖，如：docker run --rm <img> --count
+# 默认入口
 ENTRYPOINT ["python", "main.py"]
 CMD ["--fetch", "all", "--export-excel", "--count"]

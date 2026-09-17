@@ -3,6 +3,7 @@ import os
 import time
 from typing import Dict, Any, Set, Optional, List, Callable
 from dataclasses import dataclass, field
+from tqdm import tqdm
 from .config_manager import config_manager
 from utils.cookie_loader import load_firefox_cookies
 from utils.har_loader import find_har_file, load_api_pattern_from_har, print_har_instructions
@@ -161,36 +162,61 @@ class BaseScraper:
         return None
 
     def _scroll_to_bottom(self, page: Page) -> None:
-        """滚动页面到底部以加载更多内容，增量模式下检测已存在URL并提前停止"""
+        """滚动页面到底部以加载更多内容，增量模式下检测已存在URL并提前停止
+
+        不设上限，完全依赖终止条件确保抓全：
+        - 页面高度不变 且 API 数据无增长 → 已到末尾
+        - 增量模式遇到已存在数据 → 提前停止
+        使用 tqdm 显示实时滚动进度。
+        """
         last_height = page.evaluate("document.body.scrollHeight")
-        attempts = 0
+        height_unchanged = 0
+        data_unchanged = 0
+        max_attempts = 3
+        scroll_count = 0
         incremental_enabled = self.config.incremental_mode and self.config.existing_urls
         stop_on_existing = config_manager.get("incremental_settings.stop_on_existing", True)
 
         if incremental_enabled:
             print(f"[INFO] 增量模式已启用，已存在 {len(self.config.existing_urls)} 条数据")
 
+        pbar = tqdm(desc=f"滚动抓取({self.config.scraper_name})", unit="次")
+
         while True:
+            prev_data_count = len(self._api_data)
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(self.config.scroll_delay)
             new_height = page.evaluate("document.body.scrollHeight")
+            scroll_count += 1
+            pbar.update(1)
+            pbar.set_postfix(条数=len(self._api_data))
 
-            # 增量模式：检测当前页面URL是否已存在
+            # 增量模式：检测当前页面是否已存在
             if incremental_enabled:
                 found_existing = self._check_existing_urls(page)
                 if found_existing and stop_on_existing:
-                    print("[INFO] 发现已存在数据，增量模式停止滚动")
                     break
 
+            # 检测1：页面高度不变
             if new_height == last_height:
-                attempts += 1
-                if attempts >= 3:
-                    print("[INFO] 页面高度不再变化，停止滚动")
-                    break
+                height_unchanged += 1
             else:
-                attempts = 0
-
+                height_unchanged = 0
             last_height = new_height
+
+            # 检测2：API 数据无增长（仅当启用了 API 拦截时）
+            if self._api_data or prev_data_count > 0:
+                if len(self._api_data) == prev_data_count:
+                    data_unchanged += 1
+                else:
+                    data_unchanged = 0
+
+            # 页面高度不变达到阈值时终止
+            if height_unchanged >= max_attempts:
+                break
+
+        pbar.close()
+        print(f"[INFO] 滚动完成，共 {scroll_count} 次滚动")
 
     def _check_existing_urls(self, page: Page) -> bool:
         """检查当前页面是否包含已存在的URL"""

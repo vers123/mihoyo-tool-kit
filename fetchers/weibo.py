@@ -2,6 +2,7 @@ import re
 import time
 import html
 import json
+from tqdm import tqdm
 from playwright.sync_api import sync_playwright, Page, Browser
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
@@ -89,8 +90,8 @@ class WeiboScraper(BaseScraper):
 
         all_posts = {}
         current_page = 1
-        max_pages = 500
-        last_report_count = 0
+        since_id = ""
+        pbar = None  # tqdm 进度条，第一页获取总数后初始化
 
         print(f"[INFO] 开始通过API抓取微博 (uid={uid})...")
 
@@ -112,9 +113,13 @@ class WeiboScraper(BaseScraper):
         except Exception as e:
             print(f"[WARN] 获取 XSRF-TOKEN 失败: {e}")
 
-        while current_page <= max_pages:
+        while True:
             try:
+                # 微博 API 使用 since_id 游标分页，而非单纯 page 参数
+                # 第一页不带 since_id，后续页携带上一页返回的 since_id
                 api_url = f"https://weibo.com/ajax/statuses/mymblog?uid={uid}&page={current_page}&feature=0"
+                if since_id:
+                    api_url += f"&since_id={since_id}"
                 headers = {
                     "Accept": "application/json, text/plain, */*",
                     "Referer": referer_url,
@@ -141,6 +146,14 @@ class WeiboScraper(BaseScraper):
                         if "data" in result and isinstance(result["data"], dict):
                             data_keys = list(result["data"].keys())
                             print(f"[DEBUG] data字段: {data_keys}")
+                            sample_posts = result["data"].get("list", [])
+                            if sample_posts:
+                                sp = sample_posts[0]
+                                print(
+                                    f"[DEBUG] 首条帖子字段: mblogid={sp.get('mblogid')!r} "
+                                    f"bid={sp.get('bid')!r} mid={sp.get('mid')!r} "
+                                    f"idstr={sp.get('idstr')!r}"
+                                )
                     else:
                         print(f"[DEBUG] API响应类型: {type(result).__name__}")
                         print(f"[DEBUG] 响应前200字符: {str(result)[:200]}")
@@ -154,8 +167,23 @@ class WeiboScraper(BaseScraper):
                         print("[DEBUG] 第一页就无数据，可能原因: Cookie过期/XSRF-TOKEN缺失/API结构变化")
                     break
 
+                # 提取下一页游标
+                new_since_id = data.get("since_id", "")
+                total = data.get("total", 0)
+
+                # 第一页获取总数后初始化 tqdm 进度条
+                if pbar is None and total > 0:
+                    pbar = tqdm(total=total, desc="微博抓取", unit="条")
+
                 for post in post_list:
-                    bid = post.get("bid", "")
+                    # 微博 API 已将 bid 重命名为 mblogid；兼容旧字段 bid、mid、idstr
+                    bid = (
+                        post.get("mblogid")
+                        or post.get("bid")
+                        or post.get("mid")
+                        or post.get("idstr")
+                        or ""
+                    )
                     if not bid:
                         continue
 
@@ -180,10 +208,23 @@ class WeiboScraper(BaseScraper):
                             print(f"[INFO] 发现已存在数据，增量模式停止 (已收集 {len(all_posts)} 条)")
                             return list(all_posts.values())
 
-                total = data.get("total", 0)
-                if len(all_posts) - last_report_count >= 100:
-                    print(f"[INFO] 已收集 {len(all_posts)} 条微博 (第 {current_page} 页, 总计约 {total} 条)")
-                    last_report_count = len(all_posts)
+                if pbar:
+                    pbar.update(len(post_list))
+
+                # 防护：若已翻过多页但收集数始终为 0，说明字段解析失败，提前终止
+                # 避免无意义地翻到 max_pages
+                if current_page >= 3 and len(all_posts) == 0:
+                    print(
+                        f"[WARN] 第 {current_page} 页仍未解析到任何帖子，"
+                        f"可能 API 字段已变化，终止抓取"
+                    )
+                    break
+
+                # since_id 游标未变化或为空，说明已到末尾，没有更早的数据
+                if not new_since_id or new_since_id == since_id:
+                    print(f"[INFO] since_id 已耗尽，抓取完成 (共 {len(all_posts)} 条)")
+                    break
+                since_id = new_since_id
 
                 current_page += 1
                 time.sleep(scroll_delay)
@@ -192,6 +233,8 @@ class WeiboScraper(BaseScraper):
                 print(f"[ERROR] API请求异常 (page={current_page}): {e}")
                 break
 
+        if pbar:
+            pbar.close()
         print(f"[INFO] API抓取完成，共收集 {len(all_posts)} 条微博")
         return list(all_posts.values())
 

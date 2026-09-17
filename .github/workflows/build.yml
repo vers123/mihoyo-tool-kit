@@ -1,0 +1,106 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  release:
+    types: [published]
+
+jobs:
+  # ============================================================
+  #  测试
+  # ============================================================
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          python -m unittest discover -s tests -v
+
+  # ============================================================
+  #  Windows EXE 构建（仅在 release 时）
+  # ============================================================
+  build-windows:
+    needs: test
+    if: github.event_name == 'release'
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install Playwright browser
+        run: |
+          $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\browser"
+          python -m playwright install chromium
+
+      - name: Build EXE (onedir)
+        run: |
+          $env:PYI_MODE = "onedir"
+          $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\browser"
+          python -m PyInstaller app.spec --noconfirm --clean
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-windows
+          path: dist/
+          retention-days: 30
+
+  # ============================================================
+  #  Docker 构建（仅在 release 时）
+  # ============================================================
+  build-docker:
+    needs: test
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (CLI mode)
+        run: |
+          docker build -t mihoyo-toolkit:latest -t mihoyo-toolkit:${{ github.ref_name }} .
+
+      - name: Build Docker image (full mode)
+        run: |
+          docker build --build-arg MODE=full -t mihoyo-toolkit:full .
+
+      - name: Save Docker image
+        run: |
+          docker save mihoyo-toolkit:latest | gzip > mihoyo-toolkit-docker.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-docker
+          path: mihoyo-toolkit-docker.tar.gz
+          retention-days: 30

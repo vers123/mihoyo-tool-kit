@@ -15,6 +15,7 @@ import json
 import html
 import math
 from datetime import datetime
+from tqdm import tqdm
 from playwright.sync_api import sync_playwright, Page, Browser
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
@@ -288,11 +289,12 @@ class GameNewsBaseScraper(BaseScraper):
         all_items = []
         total = 0
         current_page = 1
-        max_pages = 1000  # 安全上限
+        max_pages = None  # 第一页后更新为精确值（仅用于进度显示）
+        pbar = None  # tqdm 进度条
 
         print(f"[INFO] 开始 API 直接抓取（频道 {chan_id}，每页 {page_size} 条）")
 
-        while current_page <= max_pages:
+        while True:
             try:
                 url = build_url(current_page)
                 req = urllib.request.Request(url, headers={
@@ -307,19 +309,23 @@ class GameNewsBaseScraper(BaseScraper):
                 items = self._extract_items_from_api(data)
 
                 if not items:
-                    print(f"[INFO] 第 {current_page} 页无数据，抓取结束")
                     break
 
-                # 从第一页获取总数
+                # 从第一页获取总数，初始化 tqdm 进度条
                 if current_page == 1:
                     total = data.get("data", {}).get("iTotal", 0)
-                    total_pages = math.ceil(total / page_size) if total else 0
-                    if total_pages > 0:
-                        max_pages = min(max_pages, total_pages)
-                    print(f"[INFO] 新闻总数: {total} 条，共 {max_pages} 页")
+                    max_pages = math.ceil(total / page_size) if total else None
+                    if total > 0:
+                        pbar = tqdm(total=total, desc=f"{self.game_label}新闻", unit="条")
+                        print(f"[INFO] 新闻总数: {total} 条，约 {max_pages} 页")
 
                 all_items.extend(items)
-                print(f"[INFO] 第 {current_page}/{max_pages} 页: +{len(items)} 条（累计 {len(all_items)} 条）")
+                if pbar:
+                    pbar.update(len(items))
+                elif max_pages:
+                    print(f"[INFO] 第 {current_page}/{max_pages} 页: +{len(items)} 条（累计 {len(all_items)} 条）")
+                else:
+                    print(f"[INFO] 第 {current_page} 页: +{len(items)} 条（累计 {len(all_items)} 条）")
 
                 # 增量模式：检查是否遇到已存在数据
                 if (self.config.incremental_mode and self.config.existing_urls
@@ -335,7 +341,6 @@ class GameNewsBaseScraper(BaseScraper):
 
                 # 如果当前页条数少于 page_size，说明是最后一页
                 if len(items) < page_size:
-                    print("[INFO] 已到达最后一页")
                     break
 
                 current_page += 1
@@ -344,6 +349,9 @@ class GameNewsBaseScraper(BaseScraper):
                 print(f"[WARN] 第 {current_page} 页请求失败: {e}")
                 break
 
+        if pbar:
+            pbar.close()
+        print(f"[INFO] API 直接抓取完成，共 {len(all_items)} 条")
         return all_items
 
     def _process_page(self, page: Page) -> str:

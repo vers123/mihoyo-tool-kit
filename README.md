@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/versionV5.0.0-green)](Version)
+[![Version](https://img.shields.io/badge/version-1.0.0-green)](Version)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -20,13 +20,16 @@
 
 ## ✨ 核心特性
 
-- **四站点新闻抓取** — 原神中文（4637条）、原神英文（2163条）、绝区零（1554条）、星穹铁道（792条），统一 API 架构
+- **四站点新闻抓取** — 原神中文、原神英文、绝区零、星穹铁道，统一 API 架构
+- **微博用户抓取** — 支持完整分页（`since_id` 游标），可抓到最早微博
 - **双模式启动** — 命令行菜单（CLI）和 PySide6 图形界面（GUI）两种启动方式
-- **游戏字体主题化** — GUI 使用各游戏专属字体（Teyvat-Black / ZZZ-System / Star-Rail-Neue）
+- **TXT 过滤** — 按关键词匹配提取行，支持精准/模糊匹配、预览、按时间重编号
+- **原生 GUI 风格** — PySide6 平台原生样式，应用图标 + 游戏字体主题化
 - **API 拦截抓取** — 自动拦截浏览器 API 响应，绕过虚拟滚动，数据完整无遗漏
 - **Firefox 免登录** — 读取 Firefox Cookie 自动注入，无需每次手动登录
 - **HAR 智能回退** — API 检测失败时，自动指引提供 HAR 文件辅助分析
 - **增量更新** — 检测已存在数据自动停止，支持合并与自动备份
+- **构建打包** — PyInstaller EXE / Docker 双模式 / GitHub Actions CI
 - **模块化架构** — 抓取器 / 提取器分离，配置驱动，易于扩展
 
 ---
@@ -37,8 +40,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/vers123/miHoYo_ToolKit.git
-cd miHoYo_ToolKit
+git clone https://github.com/vers123/mihoyo-tool-kit.git
+cd mihoyo-tool-kit
 
 # 2. 创建并激活虚拟环境
 python -m venv .venv
@@ -122,7 +125,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出。GUI 模�
 | 28 | 提取微博数据 | 从微博页面提取发帖时间和内容 |
 | 29 | 增量提取微博数据 | 增量提取并合并新旧微博数据 |
 
-#### 系统工具（CLI 30-36）
+#### 系统工具（CLI 30-36, 40）
 
 | 序号 | 功能 | 说明 |
 | :---: | ------ | ------ |
@@ -133,14 +136,16 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出。GUI 模�
 | 34 | 重新加载配置 | 从配置文件重新加载配置 |
 | 35 | 系统信息 | 显示系统环境和依赖信息 |
 | 36 | 数据迁移工具 | 迁移旧版本数据到新目录结构 |
+| 40 | 清理缓存文件 | 清理 __pycache__、日志、构建临时文件（需二次确认） |
 | 0 | 退出程序 | 退出米游社工具箱 |
 
-#### 数据导出（CLI 37-38）
+#### 数据导出（CLI 37-39）
 
 | 序号 | 功能 | 说明 |
 | :---: | ------ | ------ |
 | 37 | 导出新闻到 Excel | 从 SQLite 导出四站点新闻到 .xlsx（每站点一 sheet） |
 | 38 | 导出 RSS/JSON Feed | 从 SQLite 生成 RSS/JSON feed 供外部订阅 |
+| 39 | 过滤 TXT 文件 | 按关键词匹配提取行，按时间降序重新编号（支持精准/模糊匹配） |
 
 ### GUI 界面
 
@@ -241,6 +246,7 @@ miHoYo_ToolKit/
 │   └── custom.py              # 自定义网站
 ├── extractors/                # 提取模块
 │   ├── time.py                # 发帖时间
+│   ├── txt_filter.py          # TXT 文件过滤（精准/模糊匹配、预览、重编号）
 │   ├── news/                  # 新闻提取（基类 + 四站点子类）
 │   │   ├── base.py            # 新闻提取基类（7字段格式）
 │   │   ├── genshin.py         # 原神新闻提取（中文）
@@ -254,7 +260,8 @@ miHoYo_ToolKit/
 ├── gui/                       # GUI 图形界面模块
 │   ├── __init__.py            # launch_gui() 启动入口
 │   ├── main_window.py         # 主窗口（左导航栏 + 内容区 + 底部日志面板）
-│   ├── theme.py               # 浅色 QSS 主题 + 游戏字体加载
+│   ├── paths.py               # 图标路径工具
+│   ├── fonts.py               # 游戏字体加载
 │   ├── workers.py             # QThread 异步任务 Worker
 │   ├── widgets.py             # LogViewer 日志组件 + ProgressWidget 进度组件
 │   └── pages/                 # 各功能页面
@@ -266,11 +273,17 @@ miHoYo_ToolKit/
 │       ├── user_posts.py      # 米游社用户页面
 │       ├── other.py           # 其他抓取页面
 │       ├── weibo.py           # 微博页面
+│       ├── filter.py          # TXT 过滤页面
+│       ├── preview_dialog.py  # 过滤预览对话框
 │       └── system.py          # 系统工具页面
-├── resources/font/            # 游戏字体资源
-│   ├── Genshin Impact/        # 原神 6 款字体
-│   ├── ZenlessZoneZero/       # 绝区零 2 款字体
-│   └── Star Rail/             # 星穹铁道 2 款字体
+├── resources/
+│   ├── font/                  # 游戏字体资源
+│   │   ├── Genshin Impact/    # 原神 6 款字体
+│   │   ├── ZenlessZoneZero/   # 绝区零 2 款字体
+│   │   └── Star Rail/         # 星穹铁道 2 款字体
+│   └── icon/                  # 应用图标
+│       ├── app.png            # 图标源文件
+│       └── app.ico            # 多尺寸 ICO（16/32/48/64/128/256）
 ├── utils/                     # 工具模块
 │   ├── cookie_loader.py       # Firefox Cookie 读取
 │   ├── har_loader.py          # HAR 文件解析
@@ -283,10 +296,48 @@ miHoYo_ToolKit/
 └── logs/                      # 日志（自动创建）
 ```
 
+### 构建与打包
+
+#### Windows EXE
+
+使用 PyInstaller 打包为可执行文件，无需 Python 环境即可运行。
+
+```powershell
+# 安装依赖并打包
+.\build.ps1 deps
+.\build.ps1 exe-onedir      # 文件夹模式（推荐，启动快）
+.\build.ps1 exe-onefile     # 单文件模式
+```
+
+打包产物位于 `dist/` 目录，已包含应用图标和版本信息。
+
+#### Docker
+
+```bash
+# CLI 模式（轻量，仅 API/CLI）
+docker build -t mihoyo-toolkit .
+docker run --rm -v $PWD/data:/app/data mihoyo-toolkit --fetch all --export-excel
+
+# 完整模式（含 Playwright + PySide6 + GUI）
+docker build --build-arg MODE=full -t mihoyo-toolkit:full .
+```
+
+#### 构建脚本命令
+
+| 命令 | 说明 |
+| ------ | ------ |
+| `build.ps1 deps` | 安装依赖（含 PyInstaller） |
+| `build.ps1 test` | 运行单元测试 |
+| `build.ps1 exe-onefile` | 打包单文件 EXE |
+| `build.ps1 exe-onedir` | 打包文件夹模式 |
+| `build.ps1 docker` | 构建 Docker 镜像 |
+| `build.ps1 clean` | 清理缓存文件（需输入 YES 确认） |
+| `build.ps1 all` | deps + test + exe-onefile |
+
 ### 测试
 
 ```bash
-python -m unittest tests.test_news -v
+python -m unittest discover -s tests -v
 ```
 
 ---
@@ -297,8 +348,8 @@ python -m unittest tests.test_news -v
 
 ```bash
 # 1. Clone
-git clone https://github.com/vers123/miHoYo_ToolKit.git
-cd miHoYo_ToolKit
+git clone https://github.com/vers123/mihoyo-tool-kit.git
+cd mihoyo-tool-kit
 
 # 2. Create & activate venv
 python -m venv .venv
@@ -316,7 +367,7 @@ python main.py --gui           # GUI mode
 
 ### Features
 
-The toolkit supports 38 functions across 9 groups: miyoushe user posts, Genshin (CN/EN)/ZZZ/Star Rail news fetching & extraction, other scraping (baike/tutorial/custom), Weibo, system tools, and data export (Excel/RSS).
+The toolkit supports 40 functions across 9 groups: miyoushe user posts, Genshin (CN/EN)/ZZZ/Star Rail news fetching & extraction, other scraping (baike/tutorial/custom), Weibo, system tools, TXT filtering, and data export (Excel/RSS).
 
 **News scraping coverage:**
 - **Genshin Impact (CN)** — 4,637 articles via `act-api-takumi-static.mihoyo.com` (iChanId: 719)
@@ -328,7 +379,7 @@ All four sites use the unified `content_v2_user` API architecture.
 
 ### GUI Mode
 
-Launch the PySide6-based GUI with `python main.py --gui`. Features include left sidebar navigation, game-specific fonts (Teyvat-Black / ZZZ-System / Star-Rail-Neue), light theme with game accent colors, global bottom log panel, async task execution via QThread, and task cancellation support.
+Launch the PySide6-based GUI with `python main.py --gui`. Features include left sidebar navigation, native platform style, application icon, game-specific fonts (Teyvat-Black / ZZZ-System / Star-Rail-Neue), global bottom log panel, async task execution via QThread, and task cancellation support.
 
 > Game fonts are from [HoYo-Glyphs](https://github.com/SpeedyOrc-C/HoYo-Glyphs). For non-commercial use only. Font files are unmodified. See `resources/font/LICENSE` for full license.
 
@@ -343,9 +394,13 @@ Same as the Chinese section above — see [项目结构](#项目结构).
 ### Testing
 
 ```bash
-python -m unittest tests.test_news -v
+python -m unittest discover -s tests -v
 ```
+
+### Build & Packaging
+
+See [构建与打包](#构建与打包) section. Supports PyInstaller EXE (Windows), Docker (cli/full modes), and GitHub Actions CI/CD.
 
 ---
 
-**V5.0.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan
+**V1.0.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

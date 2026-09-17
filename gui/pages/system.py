@@ -24,8 +24,8 @@ class SystemPage(QWidget):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(10)
 
-        layout.addWidget(self._make_label("系统工具", "pageTitle"))
-        layout.addWidget(self._make_label("备份管理、配置编辑、系统信息、数据迁移", "pageSubtitle"))
+        layout.addWidget(self._make_label("系统工具"))
+        layout.addWidget(self._make_label("备份管理、配置编辑、系统信息、数据迁移"))
 
         btn_row1 = QHBoxLayout()
         btn_row1.setSpacing(8)
@@ -63,7 +63,6 @@ class SystemPage(QWidget):
         layout.addLayout(btn_row2)
 
         self.btn_stop = QPushButton("停止")
-        self.btn_stop.setObjectName("dangerBtn")
         self.btn_stop.setVisible(False)
         self.btn_stop.clicked.connect(self._stop_task)
         stop_layout = QHBoxLayout()
@@ -89,9 +88,8 @@ class SystemPage(QWidget):
 
         layout.addStretch()
 
-    def _make_label(self, text, obj_name):
+    def _make_label(self, text):
         lbl = QLabel(text)
-        lbl.setObjectName(obj_name)
         return lbl
 
     def _list_backups(self):

@@ -7,6 +7,8 @@ from .user_posts import UserPostsPage
 from .other import OtherPage
 from .weibo import WeiboPage
 from .system import SystemPage
+from .filter import FilterPage
+from .preview_dialog import PreviewDialog
 
 __all__ = [
     "NewsPage",
@@ -18,4 +20,6 @@ __all__ = [
     "OtherPage",
     "WeiboPage",
     "SystemPage",
+    "FilterPage",
+    "PreviewDialog",
 ]

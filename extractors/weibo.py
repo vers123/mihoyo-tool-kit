@@ -21,6 +21,13 @@ class WeiboData:
 
 
 class WeiboExtractor:
+    # 英文月份缩写 → 数字（不依赖 locale）
+    _MONTH_MAP = {
+        "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04",
+        "May": "05", "Jun": "06", "Jul": "07", "Aug": "08",
+        "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12",
+    }
+
     def __init__(self):
         self.base_dir = os.path.dirname(__file__)
         self.html_path = os.path.join(
@@ -169,6 +176,17 @@ class WeiboExtractor:
         elif re.match(r'\d{2}-\d{2}', time_str):
             return f"{current_year}-{time_str}"
         else:
+            # 兼容微博英文格式: "Tue Dec 31 12:04:22 +0800 2019"
+            # 手动解析英文月份，避免 locale 依赖
+            m = re.match(
+                r'\w{3}\s+(\w{3})\s+(\d{1,2})\s+(\d{2}):(\d{2}):(\d{2})\s+[+-]\d{4}\s+(\d{4})',
+                time_str
+            )
+            if m:
+                mon = self._MONTH_MAP.get(m.group(1))
+                if mon:
+                    day = m.group(2).zfill(2)
+                    return f"{m.group(6)}-{mon}-{day} {m.group(3)}:{m.group(4)}:{m.group(5)}"
             return time_str
 
     def save_weibo_data(self, weibo_data: List[WeiboData]) -> bool:
