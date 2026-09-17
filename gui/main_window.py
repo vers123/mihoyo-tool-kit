@@ -1,17 +1,23 @@
-"""GUI 主窗口 - 左侧导航栏 + 右侧内容区 + 底部全局日志面板"""
+"""GUI 主窗口 - 左侧导航栏 + 右侧内容区 + 底部全局日志面板
+
+使用 PySide6 平台默认原生风格，不应用自定义 QSS。
+字体默认使用系统字体；游戏字体由 gui.fonts.load_game_fonts 加载到数据库，
+预留供未来设置页按需调用（不自动应用到导航栏）。
+"""
 
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QListWidget, QListWidgetItem, QStackedWidget, QLabel
 )
 from PySide6.QtCore import Qt, QSize
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QIcon
 
-from gui.theme import load_game_fonts, apply_light_theme, get_title_font, GAME_THEME_COLORS
+from gui.paths import get_app_icon_path
+
 from gui.widgets import LogViewer
 from gui.pages import (
     GenshinNewsPage, GenshinENNewsPage, ZZZNewsPage, StarRailNewsPage,
-    UserPostsPage, OtherPage, WeiboPage, SystemPage
+    UserPostsPage, OtherPage, WeiboPage, SystemPage, FilterPage
 )
 
 
@@ -26,25 +32,29 @@ class MainWindow(QMainWindow):
         ("米游社用户", None),
         ("其他抓取", None),
         ("微博", None),
+        ("TXT 过滤", None),
         ("系统工具", None),
     ]
 
     def __init__(self):
         super().__init__()
-        self.fonts = load_game_fonts()
+        # 字体字典由 launch_gui 注入；直接实例化时为空，使用系统默认字体
+        self.fonts = {}
         self._setup_ui()
-        from PySide6.QtWidgets import QApplication
-        app = QApplication.instance()
-        if app:
-            apply_light_theme(app, self.fonts)
 
     def app(self):
         from PySide6.QtWidgets import QApplication
         return QApplication.instance()
 
     def _setup_ui(self):
-        self.setWindowTitle("米游社工具箱 v5.0.0")
+        self.setWindowTitle("米游社工具箱 v1.0.0")
         self.resize(900, 650)
+
+        # 设置窗口图标
+        import os
+        icon_path = get_app_icon_path()
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -65,11 +75,8 @@ class MainWindow(QMainWindow):
         self.nav_list.setCurrentRow(0)
         self.nav_list.currentRowChanged.connect(self._on_nav_changed)
 
-        for label, game_key in self.NAV_ITEMS:
+        for label, _game_key in self.NAV_ITEMS:
             item = QListWidgetItem(label)
-            if game_key and game_key in self.fonts:
-                font = get_title_font(game_key, self.fonts, 14)
-                item.setFont(font)
             self.nav_list.addItem(item)
 
         self.content_stack = QStackedWidget()
@@ -81,6 +88,7 @@ class MainWindow(QMainWindow):
             UserPostsPage(),
             OtherPage(),
             WeiboPage(),
+            FilterPage(),
             SystemPage(),
         ]
         for page in self.pages:
@@ -96,7 +104,6 @@ class MainWindow(QMainWindow):
         log_layout.setSpacing(4)
 
         log_label = QLabel("日志输出")
-        log_label.setStyleSheet("font-size: 12px; color: #6b7280; font-weight: bold; padding: 2px 0;")
         log_layout.addWidget(log_label)
 
         self.log_viewer = LogViewer()
@@ -115,6 +122,5 @@ class MainWindow(QMainWindow):
     def _on_nav_changed(self, row):
         if 0 <= row < len(self.pages):
             self.content_stack.setCurrentIndex(row)
-            label, game_key = self.NAV_ITEMS[row]
-            color = GAME_THEME_COLORS.get(game_key, "#6b7280") if game_key else "#6b7280"
+            label, _game_key = self.NAV_ITEMS[row]
             self.statusBar().showMessage(f"当前: {label}")

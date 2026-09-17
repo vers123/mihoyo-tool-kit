@@ -25,18 +25,15 @@ class NewsPage(QWidget):
         layout.setSpacing(10)
 
         title = QLabel(f"{self.game_name}新闻")
-        title.setObjectName("pageTitle")
         layout.addWidget(title)
 
         subtitle = QLabel("抓取新闻页面 HTML，提取结构化数据")
-        subtitle.setObjectName("pageSubtitle")
         layout.addWidget(subtitle)
 
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(8)
 
         self.btn_fetch = QPushButton("全量抓取")
-        self.btn_fetch.setObjectName("primaryBtn")
         self.btn_fetch.clicked.connect(lambda: self._run_task("fetch", incremental=False))
 
         self.btn_incremental = QPushButton("增量抓取")
@@ -49,7 +46,6 @@ class NewsPage(QWidget):
         self.btn_incremental_extract.clicked.connect(lambda: self._run_task("extract", incremental=True))
 
         self.btn_stop = QPushButton("停止")
-        self.btn_stop.setObjectName("dangerBtn")
         self.btn_stop.setVisible(False)
         self.btn_stop.clicked.connect(self._stop_task)
 

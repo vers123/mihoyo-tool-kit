@@ -28,8 +28,11 @@ desktop.ini
 # Build & Distribution
 build/
 dist/
-*.spec
 *.egg
+!app.spec
+
+# Playwright browsers (large, install at build time)
+browser/
 
 # Test
 .test/
@@ -52,6 +55,9 @@ debug.log
 
 # Trae Work
 .trae-html-share-packages/
+
+# Legacy AI docs (superseded by doc/ai/)
+ai-docs/
 
 # Config (uncomment if contains sensitive data like cookies / tokens)
 # config.json

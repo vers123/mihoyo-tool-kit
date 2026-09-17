@@ -12,10 +12,6 @@ class LogViewer(QPlainTextEdit):
         super().__init__(parent)
         self.setReadOnly(True)
         self.setMaximumBlockCount(5000)
-        self._setup_styles()
-
-    def _setup_styles(self):
-        self.setObjectName("logViewer")
 
     def append_log(self, message: str):
         """添加一条日志"""
@@ -57,7 +53,6 @@ class ProgressWidget(QWidget):
         self.progress_bar.setRange(0, 100)
 
         self.label = QLabel("就绪")
-        self.label.setStyleSheet("color: #6b7280; font-size: 13px;")
 
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.label)

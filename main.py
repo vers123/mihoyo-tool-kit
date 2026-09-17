@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "5.0.0"
+        self.version = "1.0.0"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -259,6 +259,12 @@ class MiHoYoToolKit:
                 "group": "系统工具",
                 "handler": self._run_migration
             },
+            "40": {
+                "label": "清理缓存文件",
+                "description": "清理 __pycache__、日志、构建临时文件等（需二次确认）",
+                "group": "系统工具",
+                "handler": self._clean_cache
+            },
             # === 数据导出 ===
             "37": {
                 "label": "导出新闻到 Excel",
@@ -272,6 +278,13 @@ class MiHoYoToolKit:
                 "description": "从 SQLite 生成 RSS/JSON feed 供外部订阅",
                 "group": "数据导出",
                 "handler": self._export_feed
+            },
+            # === 数据导出（D3：TXT 过滤） ===
+            "39": {
+                "label": "过滤 TXT 文件",
+                "description": "按关键词匹配提取行，按时间降序重新编号",
+                "group": "数据导出",
+                "handler": self._filter_txt
             },
         }
     
@@ -900,6 +913,83 @@ class MiHoYoToolKit:
         else:
             print("[INFO] 已取消迁移")
 
+    def _clean_cache(self):
+        """清理缓存文件（__pycache__、日志、构建临时文件等）"""
+        import shutil
+
+        project_root = os.path.dirname(os.path.abspath(__file__))
+
+        print("\n[CLEAN] 清理缓存文件")
+        print("=" * 70)
+        print("将清理以下内容：")
+        print("  1. __pycache__ 目录和 *.pyc 文件")
+        print("  2. logs/ 目录下的日志文件")
+        print("  3. build/、dist/ 构建临时目录")
+        print("  4. .pytest_cache 测试缓存")
+        print()
+
+        confirm = input("请确认以上目录中没有重要文件，输入 YES 继续: ").strip()
+        if confirm != "YES":
+            print("[INFO] 已取消清理")
+            return
+
+        print()
+        deleted_count = 0
+
+        # 1. __pycache__ 目录
+        for root, dirs, files in os.walk(project_root):
+            # 跳过 .venv、.git、browser、data 等目录
+            skip = {".venv", ".git", "browser", "data", "logs", "har"}
+            parts = root.split(os.sep)
+            if any(s in parts for s in skip):
+                continue
+            if "__pycache__" in dirs:
+                cache_path = os.path.join(root, "__pycache__")
+                print(f"  删除目录: {os.path.relpath(cache_path, project_root)}")
+                shutil.rmtree(cache_path, ignore_errors=True)
+                deleted_count += 1
+                dirs.remove("__pycache__")
+
+        # 2. *.pyc 文件
+        for root, dirs, files in os.walk(project_root):
+            skip = {".venv", ".git", "browser", "data", "logs", "har"}
+            parts = root.split(os.sep)
+            if any(s in parts for s in skip):
+                continue
+            for f in files:
+                if f.endswith(".pyc"):
+                    pyc_path = os.path.join(root, f)
+                    print(f"  删除文件: {os.path.relpath(pyc_path, project_root)}")
+                    os.remove(pyc_path)
+                    deleted_count += 1
+
+        # 3. logs 目录下的日志文件（保留目录）
+        logs_dir = os.path.join(project_root, "logs")
+        if os.path.isdir(logs_dir):
+            for f in os.listdir(logs_dir):
+                if f.endswith(".log"):
+                    log_path = os.path.join(logs_dir, f)
+                    print(f"  删除日志: logs/{f}")
+                    os.remove(log_path)
+                    deleted_count += 1
+
+        # 4. build/、dist/ 构建临时目录
+        for d in ["build", "dist"]:
+            dir_path = os.path.join(project_root, d)
+            if os.path.isdir(dir_path):
+                print(f"  删除目录: {d}/")
+                shutil.rmtree(dir_path, ignore_errors=True)
+                deleted_count += 1
+
+        # 5. .pytest_cache
+        pytest_cache = os.path.join(project_root, ".pytest_cache")
+        if os.path.isdir(pytest_cache):
+            print(f"  删除目录: .pytest_cache/")
+            shutil.rmtree(pytest_cache, ignore_errors=True)
+            deleted_count += 1
+
+        print(f"\n[OK] 清理完成，共清理 {deleted_count} 项")
+
     def _export_news_excel(self):
         """导出四站点新闻到 Excel（从 SQLite 读取，每站点一 sheet）"""
         from extractors import run_export_excel
@@ -945,6 +1035,14 @@ class MiHoYoToolKit:
         except Exception as e:
             print(f"\n[ERROR] 导出失败: {e}")
             logger.error(f"Feed 导出失败: {e}", exc_info=True)
+
+    def _filter_txt(self):
+        """D3: 过滤 TXT 文件（按关键词匹配，按时间降序重编号）"""
+        from extractors import run_filter
+        print("\n[FILTER] TXT 文件过滤工具")
+        print("=" * 70)
+        print("按关键词匹配 txt 行，按时间降序重新编号（时间越新序号越小）")
+        run_filter()
 
     def run(self):
         """运行主程序"""

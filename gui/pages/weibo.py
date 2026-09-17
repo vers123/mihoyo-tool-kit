@@ -17,14 +17,13 @@ class WeiboPage(QWidget):
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(10)
 
-        layout.addWidget(self._make_label("微博", "pageTitle"))
-        layout.addWidget(self._make_label("抓取微博用户主页，提取数据", "pageSubtitle"))
+        layout.addWidget(self._make_label("微博"))
+        layout.addWidget(self._make_label("抓取微博用户主页，提取数据"))
 
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(8)
 
         self.btn_fetch = QPushButton("全量抓取")
-        self.btn_fetch.setObjectName("primaryBtn")
         self.btn_fetch.clicked.connect(lambda: self._run_task("fetch", False))
 
         self.btn_incremental = QPushButton("增量抓取")
@@ -37,7 +36,6 @@ class WeiboPage(QWidget):
         self.btn_incremental_extract.clicked.connect(lambda: self._run_task("extract", True))
 
         self.btn_stop = QPushButton("停止")
-        self.btn_stop.setObjectName("dangerBtn")
         self.btn_stop.setVisible(False)
         self.btn_stop.clicked.connect(self._stop_task)
 
@@ -51,9 +49,8 @@ class WeiboPage(QWidget):
         layout.addWidget(self.progress)
         layout.addStretch()
 
-    def _make_label(self, text, obj_name):
+    def _make_label(self, text):
         lbl = QLabel(text)
-        lbl.setObjectName(obj_name)
         return lbl
 
     def _get_func(self, action, incremental):

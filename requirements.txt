@@ -10,3 +10,9 @@ pydantic>=2.0.0
 
 # Excel 输出（D 档 O18）
 openpyxl>=3.1.0
+
+# 进度条
+tqdm>=4.65.0
+
+# 图标处理（PNG → ICO 转换）
+Pillow>=10.0.0

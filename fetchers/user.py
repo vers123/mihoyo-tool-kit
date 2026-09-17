@@ -2,6 +2,7 @@ import re
 import time
 import html
 from datetime import datetime
+from tqdm import tqdm
 from playwright.sync_api import sync_playwright, Page, Browser
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
@@ -142,29 +143,56 @@ class UserScraper(BaseScraper):
         return page.content()
 
     def _scroll_for_data(self, page: Page) -> None:
-        """滚动页面触发API请求"""
+        """滚动页面触发API请求
+
+        不设上限，完全依赖终止条件确保抓全：
+        - 页面高度不变 且 API 数据无增长 → 已到末尾
+        - 增量模式遇到已存在数据 → 提前停止
+        使用 tqdm 显示实时滚动进度。
+        """
         scroll_delay = self.config.scroll_delay
         last_height = page.evaluate("document.body.scrollHeight")
-        attempts = 0
+        height_unchanged = 0
+        data_unchanged = 0
         max_attempts = 5
 
+        # tqdm 无总数模式（滚动抓取不知道总条数）
+        pbar = tqdm(desc="用户发帖抓取", unit="次")
+
+        scroll_count = 0
         while not self._api_stop_requested:
+            prev_data_count = len(self._api_data)
             page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(scroll_delay)
             new_height = page.evaluate("document.body.scrollHeight")
+            scroll_count += 1
+            pbar.update(1)
+
+            # 更新进度条后缀显示已抓取条数
+            pbar.set_postfix(条数=len(self._api_data))
 
             if self._api_stop_requested:
                 break
 
+            # 检测1：页面高度不变
             if new_height == last_height:
-                attempts += 1
-                if attempts >= max_attempts:
-                    print("[INFO] 页面高度不再变化，停止滚动")
-                    break
+                height_unchanged += 1
             else:
-                attempts = 0
-
+                height_unchanged = 0
             last_height = new_height
+
+            # 检测2：API 数据无增长（即使页面高度变了，也可能是重复内容）
+            if len(self._api_data) == prev_data_count:
+                data_unchanged += 1
+            else:
+                data_unchanged = 0
+
+            # 两个条件同时满足 max_attempts 次时终止
+            if height_unchanged >= max_attempts and data_unchanged >= max_attempts:
+                break
+
+        pbar.close()
+        print(f"[INFO] 滚动完成，共 {scroll_count} 次滚动，{len(self._api_data)} 条帖子")
 
 
 @handle_errors
