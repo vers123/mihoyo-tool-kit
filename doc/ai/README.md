@@ -3,7 +3,7 @@
 > **Audience**: AI coding assistants and automated code agents (Trae, Cursor, Copilot, Claude Code, etc.).
 > **Purpose**: Give an AI agent everything it needs to **read, navigate, modify, debug, and refactor** this codebase safely, without first requiring a human-guided tour.
 > **Status**: Source of truth for machine consumption. The human-facing [README.md](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/README.md) is a subset of this information; when they conflict, the code wins, then this document, then the human README.
-> **Project version**: 1.0.0 · **Last updated**: 2026-09-18
+> **Project version**: 1.0.1 · **Last updated**: 2026-09-18
 
 ---
 
@@ -12,7 +12,7 @@
 | Field | Value |
 | --- | --- |
 | Project name | miHoYo ToolKit / 米游社工具箱 |
-| Version | 1.0.0 |
+| Version | 1.0.1 |
 | Language | Python 3.8+ |
 | Core deps | Playwright ≥1.40 · PySide6 ≥6.5 · httpx ≥0.27 · tenacity ≥8.2 · pydantic ≥2.0 · openpyxl ≥3.1 · tqdm ≥4.65 · Pillow ≥10.0 |
 | Entry point | [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) |
@@ -534,7 +534,7 @@ Before touching any module, read its base class + tests first.
 ## 16. Version & Compatibility Policy
 
 ### 16.1 Current
-- **Version**: 1.0.0 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
+- **Version**: 1.0.1 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
 - **Python**: 3.8+ (use no syntax that requires 3.9+ without bumping the floor).
 
 ### 16.2 Breaking-change history (highlights)

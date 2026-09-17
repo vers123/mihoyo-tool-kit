@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2026-09-18
+
+启动时增加 HAR 文件更新提示，引导用户在首次使用或接口失效时更新 Firefox HAR 捕获文件。
+
+### Added
+- **CLI 启动欢迎提示**：交互模式启动时打印欢迎语和 Firefox 导出 HAR 步骤，列出全部 6 个网站的页面 URL 与 HAR 保存目录，按回车继续。
+- **GUI 启动欢迎弹窗**：主窗口显示前弹出 `QMessageBox`，含 HAR 更新步骤和各网站目录，点击「确定」后进入主窗口。
+- **HAR 目录自动创建**：启动时自动创建所有缺失的 HAR 子目录（`har/user/`、`har/news_genshin_en/` 等）。
+- **共享数据结构**：`utils/har_loader.py` 新增 `HAR_SITES` 常量、`ensure_har_dirs()`、`get_har_welcome_text()`、`get_har_welcome_html()`。
+
+### Changed
+- **Version**: 1.0.0 → 1.0.1.
+
+---
+
 ## [1.0.0] - 2026-09-18
 
 First stable release. Version number reset from 5.0.0 to 1.0.0.
