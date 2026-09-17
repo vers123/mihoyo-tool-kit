@@ -9,8 +9,9 @@ PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v1.0.1
 构建前准备：
   1. pip install -r requirements.txt
   2. pip install pyinstaller playwright
-  3. set PLAYWRIGHT_BROWSERS_PATH=%CD%\browser
-  4. playwright install chromium
+
+注意：EXE 不打包 Playwright 浏览器，运行时需用户手动安装：
+  playwright install chromium
 
 图标：resources/icon/app.ico
 版本信息：version_info.txt
@@ -31,18 +32,11 @@ icon_path = os.path.join(project_root, "resources", "icon", "app.ico")
 version_info = os.path.join(project_root, "version_info.txt")
 
 # ---- 需要打包的数据文件 ----
+# 注意：不打包 Playwright 浏览器，运行时由用户手动安装
 datas = [
     (os.path.join(project_root, "config.json"), "."),
     (os.path.join(project_root, "resources"), "resources"),
 ]
-
-# Playwright 浏览器（如果已安装到本地 browser/ 目录）
-playwright_browser_dir = os.path.join(project_root, "browser")
-if os.path.isdir(playwright_browser_dir):
-    datas.append((playwright_browser_dir, "browser"))
-    print(f"[SPEC] 已包含 Playwright 浏览器: {playwright_browser_dir}")
-else:
-    print("[SPEC] 未找到本地 browser/ 目录，将不打包浏览器（运行时需手动安装）")
 
 # ---- 隐藏导入（PySide6 / Playwright / 动态导入的模块）----
 hiddenimports = [

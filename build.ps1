@@ -118,19 +118,8 @@ function Invoke-Exe {
         & $py.Pip install pyinstaller
     }
 
-    # Install Playwright browser to local dir
-    if (-not (Test-Path "browser")) {
-        Write-Host "[INFO] Installing Playwright Chromium to local browser/ dir..."
-        $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $ProjectDir "browser"
-        & $py.Python -m playwright install chromium
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "[WARN] Browser install failed, will not bundle browser"
-        }
-    }
-
-    # Build
+    # Build (EXE 不打包浏览器，运行时由用户手动安装)
     $env:PYI_MODE = $Mode
-    $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $ProjectDir "browser"
     & $py.Python -m PyInstaller app.spec --noconfirm --clean
     if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 
@@ -151,9 +140,9 @@ function Invoke-Docker {
         throw "Docker not found"
     }
     Write-Host "[INFO] Building Docker image..."
-    docker build -t mihoyo-toolkit:1.0.0 -t mihoyo-toolkit:latest .
+    docker build -t mihoyo-toolkit:1.0.1 -t mihoyo-toolkit:latest .
     if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
-    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.0.0"
+    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.0.1"
 }
 
 # ============================================================

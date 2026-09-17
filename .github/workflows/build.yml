@@ -57,15 +57,9 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Install Playwright browser
-        run: |
-          $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\browser"
-          python -m playwright install chromium
-
       - name: Build EXE (onedir)
         run: |
           $env:PYI_MODE = "onedir"
-          $env:PLAYWRIGHT_BROWSERS_PATH = "$PWD\browser"
           python -m PyInstaller app.spec --noconfirm --clean
 
       - name: Upload artifact

@@ -572,7 +572,7 @@ Uses [PyInstaller](https://pyinstaller.org/) with [app.spec](file:///D:/LingLan/
 - **Icon**: [resources/icon/app.ico](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/resources/icon/app.ico)
 - **Version metadata**: [version_info.txt](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/version_info.txt)
 - **Modes**: `onefile` (single EXE) or `onedir` (directory) — set `PYI_MODE` env var
-- **Playwright browser**: bundled from local `browser/` dir (`PLAYWRIGHT_BROWSERS_PATH`)
+- **Playwright browser**: NOT bundled; user must run `playwright install chromium` at runtime
 
 ```powershell
 # One-file EXE (default)
