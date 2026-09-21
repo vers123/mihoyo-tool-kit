@@ -3,6 +3,8 @@ name: Build & Test
 on:
   push:
     branches: [main, master]
+    tags:
+      - 'v*'
   pull_request:
     branches: [main, master]
   release:
@@ -36,11 +38,11 @@ jobs:
           python -m unittest discover -s tests -v
 
   # ============================================================
-  #  Windows EXE 构建（仅在 release 时）
+  #  Windows EXE 构建（tag 推送或 release 时）
   # ============================================================
   build-windows:
     needs: test
-    if: github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
     runs-on: windows-latest
 
     steps:
@@ -62,19 +64,23 @@ jobs:
           $env:PYI_MODE = "onedir"
           python -m PyInstaller app.spec --noconfirm --clean
 
+      - name: Package EXE into zip
+        run: |
+          Compress-Archive -Path dist/* -DestinationPath mihoyo-toolkit-windows.zip
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mihoyo-toolkit-windows
-          path: dist/
+          path: mihoyo-toolkit-windows.zip
           retention-days: 30
 
   # ============================================================
-  #  Docker 构建（仅在 release 时）
+  #  Docker 构建（tag 推送或 release 时）
   # ============================================================
   build-docker:
     needs: test
-    if: github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
@@ -98,3 +104,38 @@ jobs:
           name: mihoyo-toolkit-docker
           path: mihoyo-toolkit-docker.tar.gz
           retention-days: 30
+
+  # ============================================================
+  #  创建 GitHub Release 并上传产物（仅 tag 推送时）
+  # ============================================================
+  release:
+    needs: [build-windows, build-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-windows
+
+      - name: Download Docker artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-docker
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            mihoyo-toolkit-windows.zip
+            mihoyo-toolkit-docker.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

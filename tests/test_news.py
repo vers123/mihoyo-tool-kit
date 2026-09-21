@@ -515,9 +515,10 @@ class TestConfigManagerNews(unittest.TestCase):
         all_sites = config_manager.get_all_news_sites()
         self.assertIsInstance(all_sites, dict)
         self.assertIn("genshin", all_sites)
+        self.assertIn("genshin_en", all_sites)
         self.assertIn("zzz", all_sites)
         self.assertIn("starrail", all_sites)
-        self.assertEqual(len(all_sites), 3)
+        self.assertEqual(len(all_sites), 4)
 
     def test_get_news_output_dir(self):
         """测试获取新闻输出目录"""

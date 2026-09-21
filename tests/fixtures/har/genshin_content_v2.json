@@ -1,0 +1,24 @@
+{
+  "retcode": 0,
+  "message": "OK",
+  "data": {
+    "list": [
+      {
+        "iInfoId": 1001,
+        "sTitle": "测试新闻一",
+        "sIntro": "这是第一条测试新闻的简介",
+        "sCategoryName": "公告",
+        "dtStartTime": "2026-09-20 10:00:00",
+        "sExt": "{\"cover\":[{\"url\":\"https://example.com/poster1.jpg\"}]}"
+      },
+      {
+        "iInfoId": 1002,
+        "sTitle": "测试新闻二",
+        "sIntro": "这是第二条测试新闻的简介",
+        "sCategoryName": "活动",
+        "dtStartTime": "2026-09-21 14:30:00",
+        "sExt": "{\"cover\":[{\"url\":\"https://example.com/poster2.jpg\"}]}"
+      }
+    ]
+  }
+}
