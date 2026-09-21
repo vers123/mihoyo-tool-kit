@@ -15,6 +15,26 @@ from utils.logger import get_module_logger
 
 logger = get_module_logger(__name__)
 
+
+def _indent(elem, space="  "):
+    """ET.indent 兼容封装（Python 3.9+ 原生支持，3.8 用回退实现）"""
+    if hasattr(ET, "indent"):
+        ET.indent(elem, space=space)
+        return
+    # Python 3.8 回退：递归添加缩进
+    def _indent_recursive(node, level=0):
+        children = list(node)
+        if children:
+            node.text = "\n" + space * (level + 1)
+            for i, child in enumerate(children):
+                _indent_recursive(child, level + 1)
+                child.tail = "\n" + space * (level + 1)
+            children[-1].tail = "\n" + space * level
+        else:
+            if level and (node.tail is None):
+                node.tail = "\n" + space * level
+    _indent_recursive(elem)
+
 _DEFAULT_RSS = Path("output") / "news_feed.xml"
 _DEFAULT_JSON = Path("output") / "news_feed.json"
 
@@ -58,7 +78,7 @@ def generate_rss_feed(
                 ET.SubElement(el, "description").text = desc
                 total += 1
 
-        ET.indent(rss, space="  ")
+        _indent(rss, space="  ")
         xml_str = ET.tostring(rss, encoding="unicode")
         out.write_text(
             f'<?xml version="1.0" encoding="UTF-8"?>\n{xml_str}',
