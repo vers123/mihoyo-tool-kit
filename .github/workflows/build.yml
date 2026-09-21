@@ -134,7 +134,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           echo "Extracting CHANGELOG section for version: $VERSION"
           awk -v ver="## [$VERSION]" '
-            $0 ~ "^## \\[" { if (found) exit; if ($0 ~ ver) found=1 }
+            substr($0, 1, 4) == "## [" { if (found) exit; if (index($0, ver)) found=1; next }
             found { print }
           ' CHANGELOG.md > release_notes.md
           echo "--- release notes preview ---"
