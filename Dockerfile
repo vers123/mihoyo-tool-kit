@@ -43,6 +43,9 @@ RUN if [ "$MODE" = "cli" ]; then \
             tqdm>=4.65.0; \
     fi
 
+# 完整模式需要 requirements.txt，先复制
+COPY requirements.txt /tmp/requirements.txt
+
 # ---- 完整模式依赖（含 Playwright + PySide6）----
 RUN if [ "$MODE" = "full" ]; then \
         apt-get update && apt-get install -y --no-install-recommends \
@@ -55,7 +58,7 @@ RUN if [ "$MODE" = "full" ]; then \
             libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0 \
             xauth xvfb \
         && rm -rf /var/lib/apt/lists/* \
-        && pip install --no-cache-dir -r requirements.txt \
+        && pip install --no-cache-dir -r /tmp/requirements.txt \
         && playwright install chromium; \
     fi
 
