@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    miHoYo ToolKit Build Script v1.0.0
+    miHoYo ToolKit Build Script v1.2.0
 
 .DESCRIPTION
     Build script for miHoYo ToolKit. Supports dependency installation,
@@ -58,7 +58,7 @@ $py = Get-Python
 # ============================================================
 function Show-Help {
     Write-Host "============================================================"
-    Write-Host "  miHoYo ToolKit Build Script v1.0.0"
+    Write-Host "  miHoYo ToolKit Build Script v1.2.0"
     Write-Host "============================================================"
     Write-Host ""
     Write-Host "  Usage: .\build.ps1 <command>"
