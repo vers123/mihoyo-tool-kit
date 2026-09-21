@@ -129,11 +129,22 @@ jobs:
         with:
           name: mihoyo-toolkit-docker
 
+      - name: Extract CHANGELOG section for this version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting CHANGELOG section for version: $VERSION"
+          awk -v ver="## [$VERSION]" '
+            $0 ~ "^## \\[" { if (found) exit; if ($0 ~ ver) found=1 }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          echo "--- release notes preview ---"
+          head -20 release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
-          generate_release_notes: true
+          body_path: release_notes.md
           files: |
             mihoyo-toolkit-windows.zip
             mihoyo-toolkit-docker.tar.gz
