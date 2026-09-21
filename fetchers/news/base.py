@@ -14,13 +14,11 @@ import time
 import json
 import html
 import math
-from datetime import datetime
 from tqdm import tqdm
-from playwright.sync_api import sync_playwright, Page, Browser
+from playwright.sync_api import sync_playwright, Page
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
-from utils.error_handler import handle_errors, retry
-from utils.har_loader import find_har_file, load_api_pattern_from_har, print_har_instructions
+from utils.har_loader import find_har_file, print_har_instructions
 
 
 class GameNewsBaseScraper(BaseScraper):
