@@ -140,6 +140,21 @@ jobs:
           echo "--- release notes preview ---"
           head -20 release_notes.md
 
+      - name: Delete existing release for this tag (if any)
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "Checking for existing release with tag: $TAG"
+          EXISTING_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | grep '"id"' | head -1 | grep -oE '[0-9]+')
+          if [ -n "$EXISTING_ID" ]; then
+            echo "Deleting existing release ID: $EXISTING_ID"
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$EXISTING_ID"
+            echo "Deleted existing release."
+          else
+            echo "No existing release found."
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
