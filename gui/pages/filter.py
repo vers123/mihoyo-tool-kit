@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from gui.workers import ScraperWorker
 from gui.widgets import ProgressWidget
-from extractors.txt_filter import TxtFilter, FIELD_CHOICES, MATCH_CHOICES, MATCH_EXACT
+from extractors.txt_filter import TxtFilter, FIELD_CHOICES, MATCH_CHOICES, MATCH_EXACT, SORT_CHOICES, SORT_DESC
 from gui.pages.preview_dialog import PreviewDialog
 
 
@@ -31,7 +31,7 @@ class FilterPage(QWidget):
 
         layout.addWidget(self._make_label("TXT 文件过滤"))
         layout.addWidget(self._make_label(
-            "按关键词匹配提取行，按时间降序重新编号（时间越新序号越小）"
+            "按关键词匹配提取行，按时间升序/降序重新编号"
         ))
 
         # 文件列表
@@ -76,6 +76,15 @@ class FilterPage(QWidget):
         mode_row.addStretch()
         kw_layout.addLayout(mode_row)
 
+        sort_row = QHBoxLayout()
+        sort_row.addWidget(QLabel("排序方向:"))
+        self.sort_combo = QComboBox()
+        for key, label in SORT_CHOICES:
+            self.sort_combo.addItem(label, key)
+        sort_row.addWidget(self.sort_combo)
+        sort_row.addStretch()
+        kw_layout.addLayout(sort_row)
+
         layout.addWidget(kw_group)
 
         # 执行按钮
@@ -117,7 +126,7 @@ class FilterPage(QWidget):
             self.file_list.addItem(item)
 
     def _get_params(self):
-        """获取选中的文件、关键词、字段、匹配模式，校验不通过返回 None"""
+        """获取选中的文件、关键词、字段、匹配模式、排序方向，校验不通过返回 None"""
         selected_paths = []
         for item in self.file_list.selectedItems():
             selected_paths.append(item.data(Qt.UserRole))
@@ -134,20 +143,21 @@ class FilterPage(QWidget):
         keywords = kw_text.split()
         field_choice = self.field_combo.currentData()
         match_mode = self.mode_combo.currentData() or MATCH_EXACT
-        return selected_paths, keywords, field_choice, match_mode
+        sort_order = self.sort_combo.currentData() or SORT_DESC
+        return selected_paths, keywords, field_choice, match_mode, sort_order
 
     def _preview(self):
         """预览过滤结果（不写文件），弹出对话框确认后再输出"""
         params = self._get_params()
         if params is None:
             return
-        selected_paths, keywords, field_choice, match_mode = params
+        selected_paths, keywords, field_choice, match_mode, sort_order = params
 
         # 预览在主线程执行（CPU 密集，数据量不大）
         self._set_buttons_enabled(False)
         try:
             items, has_nodate_file = self.txt_filter.preview(
-                selected_paths, keywords, field_choice, match_mode
+                selected_paths, keywords, field_choice, match_mode, sort_order
             )
         finally:
             self._set_buttons_enabled(True)
@@ -158,7 +168,7 @@ class FilterPage(QWidget):
 
         out_path = PreviewDialog.preview_and_confirm(
             items, has_nodate_file, self.txt_filter,
-            selected_paths, keywords, self
+            selected_paths, keywords, sort_order, self
         )
         if out_path:
             self._log(f"[OK] 已输出: {out_path}")
@@ -170,10 +180,10 @@ class FilterPage(QWidget):
         params = self._get_params()
         if params is None:
             return
-        selected_paths, keywords, field_choice, match_mode = params
+        selected_paths, keywords, field_choice, match_mode, sort_order = params
 
         def _do():
-            self.txt_filter.run(selected_paths, keywords, field_choice, match_mode)
+            self.txt_filter.run(selected_paths, keywords, field_choice, match_mode, sort_order)
 
         self._run_worker(_do, "过滤中...")
 
@@ -210,6 +220,7 @@ class FilterPage(QWidget):
         self.kw_input.setEnabled(enabled)
         self.field_combo.setEnabled(enabled)
         self.mode_combo.setEnabled(enabled)
+        self.sort_combo.setEnabled(enabled)
         self.file_list.setEnabled(enabled)
 
     def _log(self, msg):

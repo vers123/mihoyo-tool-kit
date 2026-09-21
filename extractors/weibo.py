@@ -69,6 +69,18 @@ class WeiboExtractor:
         return {item.url for item in existing_data}
 
     def extract_weibo(self, html_content: str = None, incremental: bool = False) -> List[WeiboData]:
+        """从 HTML 中提取微博数据
+
+        安全策略：
+        - 只要本地数据文件存在，始终将新提取数据与旧数据合并去重后再写入，
+          避免增量抓取后 HTML 只含新数据时覆盖完整历史。
+        - 若 HTML 未解析到任何新数据，但本地已有数据，则直接返回旧数据
+          （调用方据此跳过写入，保留原文件不变）。
+
+        Args:
+            html_content: HTML 内容，为 None 时从文件读取
+            incremental: 兼容参数（保留），不再控制合并行为；合并始终开启
+        """
         if html_content is None:
             if not ErrorHandler.validate_file_exists(self.html_path):
                 return []
@@ -76,7 +88,7 @@ class WeiboExtractor:
             with open(self.html_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
 
-        items = []
+        new_items = []
 
         time_url_pattern = re.compile(
             r'<a class="_time_[^"]*"\s+title="([^"]+)"\s+href="(https://weibo\.com/\d+/[A-Za-z0-9]+)"'
@@ -95,9 +107,9 @@ class WeiboExtractor:
 
             final_date = self._parse_date(time_str)
 
-            items.append(WeiboData(date=final_date, content=content, url=url))
+            new_items.append(WeiboData(date=final_date, content=content, url=url))
 
-        if not items:
+        if not new_items:
             print("[WARN] 主模式未匹配，尝试备用模式")
             alt_pattern = re.compile(
                 r'href="(https://weibo\.com/\d+/[A-Za-z0-9]+)"[^>]*>\s*([^<]*(?:今天|昨天|前天|\d+月\d+日|\d{4}-\d{2}-\d{2})[^<]*)'
@@ -108,12 +120,23 @@ class WeiboExtractor:
                 content = self._extract_content_for_url(html_content, match.end())
                 if content:
                     final_date = self._parse_date(time_str)
-                    items.append(WeiboData(date=final_date, content=content, url=url))
+                    new_items.append(WeiboData(date=final_date, content=content, url=url))
 
-        if incremental and config_manager.get("incremental_settings.merge_data", True):
-            existing_data = self.load_existing_data()
-            items = self._merge_data(existing_data, items)
-            print(f"[INFO] 增量合并完成，共 {len(items)} 条数据")
+        self._has_new_data = bool(new_items)
+
+        # 始终加载已有数据（只要文件存在），用于合并
+        existing_data = self.load_existing_data()
+
+        if not new_items:
+            print("[WARN] 未提取到微博数据")
+            if existing_data:
+                print(f"[INFO] 本地已有 {len(existing_data)} 条数据，保留原文件不覆盖")
+                return existing_data
+            return []
+
+        # 合并新旧数据（新数据覆盖同 URL 的旧数据）
+        items = self._merge_data(existing_data, new_items)
+        print(f"[INFO] 合并完成：新 {len(new_items)} 条 + 旧 {len(existing_data)} 条 = {len(items)} 条")
 
         seen_urls = set()
         unique_items = []
@@ -220,6 +243,11 @@ def run(incremental: bool = False):
     if not weibo_data:
         print("[ERROR] 未找到微博数据")
         print(f"[HINT] 请先执行「抓取微博用户主页」生成 {extractor.html_path}")
+        return
+
+    # 无新增数据时保留原文件不写入
+    if not getattr(extractor, '_has_new_data', True):
+        print(f"[INFO] 无新增数据，保留原文件（共 {len(weibo_data)} 条）")
         return
 
     if extractor.save_weibo_data(weibo_data):

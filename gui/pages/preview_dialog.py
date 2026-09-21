@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from extractors.txt_filter import TxtFilter
+from extractors.txt_filter import TxtFilter, SORT_CHOICES, SORT_DESC
 
 
 class PreviewDialog(QDialog):
@@ -24,6 +24,7 @@ class PreviewDialog(QDialog):
         txt_filter: TxtFilter 实例（用于确认输出时调用 write_to_file）
         file_paths: 原始文件路径列表（用于输出命名）
         keywords: 关键词列表（用于输出命名）
+        sort_order: 排序方向（SORT_DESC / SORT_ASC），用于信息栏展示
         parent: 父窗口
     """
 
@@ -34,6 +35,7 @@ class PreviewDialog(QDialog):
         txt_filter: TxtFilter,
         file_paths: List[str],
         keywords: List[str],
+        sort_order: str = SORT_DESC,
         parent=None,
     ):
         super().__init__(parent)
@@ -42,6 +44,7 @@ class PreviewDialog(QDialog):
         self._txt_filter = txt_filter
         self._file_paths = file_paths
         self._keywords = keywords
+        self._sort_order = sort_order
         self._output_path: Optional[str] = None
 
         self.setWindowTitle("过滤预览")
@@ -56,13 +59,14 @@ class PreviewDialog(QDialog):
         # ---- 统计信息 ----
         n = len(self._items)
         kw_str = " / ".join(self._keywords)
+        sort_label = dict(SORT_CHOICES).get(self._sort_order, self._sort_order)
         info_text = (
-            f"匹配 {n} 行  |  关键词: {kw_str}  |  "
+            f"匹配 {n} 行  |  关键词: {kw_str}  |  排序: {sort_label}  |  "
         )
         if self._items:
-            latest = self._items[0].get("date", "(无日期)")
-            oldest = self._items[-1].get("date", "(无日期)")
-            info_text += f"时间范围: {oldest} ~ {latest}"
+            first_date = self._items[0].get("date", "(无日期)")
+            last_date = self._items[-1].get("date", "(无日期)")
+            info_text += f"首条~末条: {first_date} ~ {last_date}"
         if self._has_nodate_file:
             info_text += "  |  [提示] 部分文件无日期，已按原顺序排在末尾"
 
@@ -164,12 +168,13 @@ class PreviewDialog(QDialog):
         txt_filter: TxtFilter,
         file_paths: List[str],
         keywords: List[str],
+        sort_order: str = SORT_DESC,
         parent=None,
     ) -> Optional[str]:
         """弹出预览对话框，用户确认后返回输出路径，否则 None"""
         dlg = PreviewDialog(
             items, has_nodate_file, txt_filter,
-            file_paths, keywords, parent
+            file_paths, keywords, sort_order, parent
         )
         dlg.exec()
         return dlg.output_path

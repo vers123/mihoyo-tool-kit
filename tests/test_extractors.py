@@ -67,12 +67,15 @@ class TestPostExtractor(unittest.TestCase):
         from extractors.time import PostExtractor
 
         extractor = PostExtractor()
-        post_data = extractor.extract_posts(self.test_html)
-        
-        self.assertEqual(len(post_data), 1)
-        self.assertEqual(post_data[0].title, "测试帖子标题")
-        self.assertEqual(post_data[0].date, "2024-01-15")
-        self.assertEqual(post_data[0].url, "https://www.miyoushe.com/ys/article/123")
+        # 使用不存在的临时路径，避免加载本地真实数据干扰测试
+        with tempfile.TemporaryDirectory() as temp_dir:
+            extractor.output_path = os.path.join(temp_dir, "nonexistent_posts.txt")
+            post_data = extractor.extract_posts(self.test_html)
+
+            self.assertEqual(len(post_data), 1)
+            self.assertEqual(post_data[0].title, "测试帖子标题")
+            self.assertEqual(post_data[0].date, "2024-01-15")
+            self.assertEqual(post_data[0].url, "https://www.miyoushe.com/ys/article/123")
     
     def test_parse_date(self):
         from extractors.time import PostExtractor

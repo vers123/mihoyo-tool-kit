@@ -1,6 +1,6 @@
 """
 TXT 文件过滤工具
-按关键词匹配提取行，按时间降序重新编号（时间越新序号越小）
+按关键词匹配提取行，按时间降序/升序重新编号
 
 支持格式：
 - 7字段：序号-标题-[日期]-[分类]-[摘要]-[封面图URL]-(完整URL)
@@ -10,6 +10,7 @@ TXT 文件过滤工具
 
 匹配字段可选：整行 / 标题 / 标题+摘要 / 标题+摘要+分类
 匹配方式：包含匹配，多关键词空格分隔，OR 逻辑（任一满足即命中）
+排序方向：降序（默认，时间越新序号越小）/ 升序（时间越旧序号越小）
 """
 
 import os
@@ -43,6 +44,15 @@ MATCH_FUZZY = "fuzzy"   # 模糊匹配：关键词拆为 2-gram 片段，任一�
 MATCH_CHOICES = [
     (MATCH_EXACT, "精准匹配（完整子串）"),
     (MATCH_FUZZY, "模糊匹配（2-gram 片段）"),
+]
+
+# 排序方向选项常量
+SORT_DESC = "desc"   # 降序：时间越新序号越小（默认）
+SORT_ASC = "asc"     # 升序：时间越旧序号越小
+
+SORT_CHOICES = [
+    (SORT_DESC, "时间倒序（最新在前）"),
+    (SORT_ASC,  "时间顺序（最早在前）"),
 ]
 
 
@@ -265,11 +275,13 @@ class TxtFilter:
         keywords: List[str],
         field_choice: str = FIELD_ALL,
         match_mode: str = MATCH_EXACT,
+        sort_order: str = SORT_DESC,
     ) -> Tuple[List[Dict], bool]:
-        """读取文件 → 过滤 → 按日期降序排序 → 重新编号
+        """读取文件 → 过滤 → 按日期排序 → 重新编号
 
         Args:
             match_mode: MATCH_EXACT 或 MATCH_FUZZY
+            sort_order: SORT_DESC（降序，默认）或 SORT_ASC（升序）
 
         Returns:
             (items, has_nodate_file)
@@ -328,13 +340,14 @@ class TxtFilter:
         if not all_items:
             return [], has_nodate_file
 
-        # 按日期降序排序（时间越新序号越小）
-        # 有日期的行按日期降序，无日期的行排到最后保持原顺序
+        # 按日期排序（降序：时间越新序号越小；升序：时间越旧序号越小）
+        # 有日期的行按所选方向排序，无日期的行始终排到最后保持原顺序
         dated = [x for x in all_items if x["has_date"]]
         nodate = [x for x in all_items if not x["has_date"]]
 
         if dated:
-            dated.sort(key=lambda x: x["date"], reverse=True)
+            reverse = (sort_order == SORT_DESC)
+            dated.sort(key=lambda x: x["date"], reverse=reverse)
 
         sorted_items = dated + nodate
 
@@ -383,6 +396,7 @@ class TxtFilter:
         keywords: List[str],
         field_choice: str = FIELD_ALL,
         match_mode: str = MATCH_EXACT,
+        sort_order: str = SORT_DESC,
     ) -> Optional[str]:
         """执行过滤并写入文件
 
@@ -391,6 +405,7 @@ class TxtFilter:
             keywords: 关键词列表（OR 逻辑）
             field_choice: 匹配字段选择
             match_mode: 匹配模式（精准/模糊）
+            sort_order: 排序方向（降序/升序）
 
         Returns:
             输出文件路径，无匹配返回 None
@@ -402,11 +417,13 @@ class TxtFilter:
         print(f"  关键词: {keywords}（OR）")
         field_label = dict(FIELD_CHOICES).get(field_choice, field_choice)
         mode_label = dict(MATCH_CHOICES).get(match_mode, match_mode)
+        sort_label = dict(SORT_CHOICES).get(sort_order, sort_order)
         print(f"  匹配字段: {field_label}")
         print(f"  匹配模式: {mode_label}")
+        print(f"  排序方向: {sort_label}")
 
         items, has_nodate_file = self.filter_and_sort(
-            file_paths, keywords, field_choice, match_mode
+            file_paths, keywords, field_choice, match_mode, sort_order
         )
 
         if not items:
@@ -424,9 +441,9 @@ class TxtFilter:
         print(f"  输出路径: {out_path}")
 
         if items:
-            print(f"  最新: {items[0].get('date', '(无日期)')} - {items[0]['title'][:40]}")
+            print(f"  首条: {items[0].get('date', '(无日期)')} - {items[0]['title'][:40]}")
             if len(items) > 1:
-                print(f"  最旧: {items[-1].get('date', '(无日期)')} - {items[-1]['title'][:40]}")
+                print(f"  末条: {items[-1].get('date', '(无日期)')} - {items[-1]['title'][:40]}")
 
         return out_path
 
@@ -436,6 +453,7 @@ class TxtFilter:
         keywords: List[str],
         field_choice: str = FIELD_ALL,
         match_mode: str = MATCH_EXACT,
+        sort_order: str = SORT_DESC,
     ) -> Tuple[List[Dict], bool]:
         """预览过滤结果（不写文件）
 
@@ -450,11 +468,13 @@ class TxtFilter:
         print(f"  关键词: {keywords}（OR）")
         field_label = dict(FIELD_CHOICES).get(field_choice, field_choice)
         mode_label = dict(MATCH_CHOICES).get(match_mode, match_mode)
+        sort_label = dict(SORT_CHOICES).get(sort_order, sort_order)
         print(f"  匹配字段: {field_label}")
         print(f"  匹配模式: {mode_label}")
+        print(f"  排序方向: {sort_label}")
 
         items, has_nodate_file = self.filter_and_sort(
-            file_paths, keywords, field_choice, match_mode
+            file_paths, keywords, field_choice, match_mode, sort_order
         )
 
         if not items:
@@ -463,9 +483,9 @@ class TxtFilter:
 
         print(f"[PREVIEW] 匹配 {len(items)} 行")
         if items:
-            print(f"  最新: {items[0].get('date', '(无日期)')} - {items[0]['title'][:40]}")
+            print(f"  首条: {items[0].get('date', '(无日期)')} - {items[0]['title'][:40]}")
             if len(items) > 1:
-                print(f"  最旧: {items[-1].get('date', '(无日期)')} - {items[-1]['title'][:40]}")
+                print(f"  末条: {items[-1].get('date', '(无日期)')} - {items[-1]['title'][:40]}")
 
         return items, has_nodate_file
 
@@ -586,6 +606,14 @@ def run_filter():
     mode_map = {str(i): k for i, (k, _) in enumerate(MATCH_CHOICES, 1)}
     match_mode = mode_map.get(mode_input, MATCH_EXACT)
 
+    # 4.6 选择排序方向
+    print("\n排序方向：")
+    for i, (key, label) in enumerate(SORT_CHOICES, 1):
+        print(f"  {i}. {label}")
+    sort_input = input("\n选择 [1]（默认时间倒序）: ").strip()
+    sort_map = {str(i): k for i, (k, _) in enumerate(SORT_CHOICES, 1)}
+    sort_order = sort_map.get(sort_input, SORT_DESC)
+
     # 5. 输入关键词
     kw_input = input("\n输入关键词（多个用空格分隔，OR 逻辑）: ").strip()
     if not kw_input:
@@ -595,4 +623,4 @@ def run_filter():
     keywords = kw_input.split()
 
     # 6. 执行
-    tf.run(selected_paths, keywords, field_choice, match_mode)
+    tf.run(selected_paths, keywords, field_choice, match_mode, sort_order)

@@ -140,9 +140,9 @@ function Invoke-Docker {
         throw "Docker not found"
     }
     Write-Host "[INFO] Building Docker image..."
-    docker build -t mihoyo-toolkit:1.0.1 -t mihoyo-toolkit:latest .
+    docker build -t mihoyo-toolkit:1.2.0 -t mihoyo-toolkit:latest .
     if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
-    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.0.1"
+    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.2.0"
 }
 
 # ============================================================

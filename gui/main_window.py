@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         return QApplication.instance()
 
     def _setup_ui(self):
-        self.setWindowTitle("米游社工具箱 v1.0.1")
+        self.setWindowTitle("米游社工具箱 v1.2.0")
         self.resize(900, 650)
 
         # 设置窗口图标
