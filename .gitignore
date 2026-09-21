@@ -47,6 +47,9 @@ image_urls/
 
 # HAR files (may contain cookies / session data)
 har/
+# 但保留测试用 fixture
+!tests/fixtures/har/
+!tests/fixtures/har/*
 
 # Logs
 logs/
