@@ -3,7 +3,7 @@ import time
 import html
 import json
 from tqdm import tqdm
-from playwright.sync_api import sync_playwright, Page, Browser
+from playwright.sync_api import Page
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
 from utils.error_handler import handle_errors, retry

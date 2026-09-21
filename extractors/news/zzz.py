@@ -5,7 +5,6 @@
 
 from typing import List
 from .base import GameNewsBaseExtractor, NewsItem
-from core.config_manager import config_manager
 from utils.error_handler import handle_errors
 
 

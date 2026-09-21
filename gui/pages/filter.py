@@ -1,9 +1,8 @@
 """TXT 过滤页面"""
 
-import os
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QListWidget, QListWidgetItem, QLineEdit, QComboBox, QCheckBox,
+    QListWidget, QListWidgetItem, QLineEdit, QComboBox,
     QGroupBox, QAbstractItemView, QMessageBox
 )
 from PySide6.QtCore import Qt

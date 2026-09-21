@@ -1,6 +1,6 @@
 """自定义 GUI 组件"""
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QTextCursor, QColor, QTextCharFormat, QFont
 from PySide6.QtWidgets import QPlainTextEdit, QProgressBar, QLabel, QWidget, QVBoxLayout
 

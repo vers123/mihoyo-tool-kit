@@ -4,9 +4,8 @@ import os
 import json
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QTableWidget, QTableWidgetItem, QHeaderView, QPlainTextEdit, QSplitter
+    QPlainTextEdit
 )
-from PySide6.QtCore import Qt
 from gui.workers import ScraperWorker
 from gui.widgets import ProgressWidget
 from core.config_manager import config_manager

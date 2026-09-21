@@ -1,4 +1,3 @@
-from playwright.sync_api import sync_playwright
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
 from utils.error_handler import handle_errors, retry

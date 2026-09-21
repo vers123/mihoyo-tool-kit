@@ -3,7 +3,6 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
 )
-from PySide6.QtCore import Qt
 from gui.workers import ScraperWorker
 from gui.widgets import ProgressWidget
 
