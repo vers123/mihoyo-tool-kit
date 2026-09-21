@@ -3,7 +3,7 @@
 > **Audience**: AI coding assistants and automated code agents (Trae, Cursor, Copilot, Claude Code, etc.).
 > **Purpose**: Give an AI agent everything it needs to **read, navigate, modify, debug, and refactor** this codebase safely, without first requiring a human-guided tour.
 > **Status**: Source of truth for machine consumption. The human-facing [README.md](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/README.md) is a subset of this information; when they conflict, the code wins, then this document, then the human README.
-> **Project version**: 1.0.1 · **Last updated**: 2026-09-18
+> **Project version**: 1.2.0 · **Last updated**: 2026-09-22
 
 ---
 
@@ -12,7 +12,7 @@
 | Field | Value |
 | --- | --- |
 | Project name | miHoYo ToolKit / 米游社工具箱 |
-| Version | 1.0.1 |
+| Version | 1.2.0 |
 | Language | Python 3.8+ |
 | Core deps | Playwright ≥1.40 · PySide6 ≥6.5 · httpx ≥0.27 · tenacity ≥8.2 · pydantic ≥2.0 · openpyxl ≥3.1 · tqdm ≥4.65 · Pillow ≥10.0 |
 | Entry point | [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) |
@@ -300,7 +300,7 @@ data/
 │   ├── image_urls.txt
 │   ├── character_list.html
 │   └── filtered/                 # TxtFilter output (CLI 39 / GUI "TXT 过滤")
-│       └── <base>_<keyword>.txt   # filtered + date-desc sorted + renumbered
+│       └── <base>_<keyword>.txt   # filtered + date-asc/desc sorted + renumbered
 ├── images/                       # Downloaded image assets
 ├── backups/                     # backup_manager rotation root
 │   ├── posts.txt/<base_timestamp.ext>
@@ -429,7 +429,7 @@ python tests/integration_test.py              # end-to-end script (not a unittes
 | [tests/test_models.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/test_models.py) | pydantic model validation |
 | [tests/test_cli.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/test_cli.py) | argparse, `--fetch`, `--export-excel`, `--count` |
 | [tests/test_har_fixture.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/test_har_fixture.py) | HAR parsing against a fixture file |
-| [tests/test_txt_filter.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/test_txt_filter.py) | `TxtFilter` line parsing, keyword OR matching (case-insensitive), multi-file merge, date-desc sort, renumber |
+| [tests/test_txt_filter.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/test_txt_filter.py) | `TxtFilter` line parsing, keyword OR matching (case-insensitive), multi-file merge, date asc/desc sort, renumber |
 | [tests/integration_test.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/tests/integration_test.py) | Manual end-to-end (not part of unittest discovery) |
 
 ### 11.3 Conventions
@@ -534,10 +534,14 @@ Before touching any module, read its base class + tests first.
 ## 16. Version & Compatibility Policy
 
 ### 16.1 Current
-- **Version**: 1.0.1 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
+- **Version**: 1.2.0 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
 - **Python**: 3.8+ (use no syntax that requires 3.9+ without bumping the floor).
 
 ### 16.2 Breaking-change history (highlights)
+- **V1.2.0** — GUI startup HAR welcome dialog replaced `QMessageBox` with a `QTextBrowser`-based custom dialog. All text (URLs, directories, steps) is now selectable and copyable, and website URLs are clickable (open in the default browser). Welcome HTML wraps each site URL in an `<a href>` tag.
+- **V1.1.1** — News/weibo/user-post extractors now always merge new data with existing local data files instead of overwriting. When HTML yields no new items, the original file is left untouched.
+- **V1.1.0** — TXT filter supports user-selectable sort order (ascending/descending); default remains descending. No-date rows always stay at the end.
+- **V1.0.1** — CLI/GUI startup HAR update prompts. Browser no longer bundled; users install Playwright Chromium locally.
 - **V1.0.0** — First stable release. Version number reset from 5.0.0 to 1.0.0. GUI switched to PySide6 native style (no custom QSS). Added TXT filter with preview, fuzzy/exact match modes, tqdm progress bars. Fixed weibo `mblogid` parsing, full pagination (no artificial limits), English date parsing. Added `CHANGELOG.md`.
 - **V5.0.0** — News storage moved to SQLite (`data/news.db`); data files retained for human reading. Auto-migration of pre-V5 filenames via `utils/migration.py`. 7-field `NewsItem` introduced; 4-field legacy read-only.
 - **V5.x non-interactive path** — Added `--fetch` / `--export-excel` / `--count` + `core/api_client.py` for container use without Playwright.

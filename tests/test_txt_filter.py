@@ -1,6 +1,6 @@
 """
 TxtFilter 单元测试
-覆盖：行解析、关键词匹配、字段提取、多文件合并、日期降序排序、重编号、无日期文件处理
+覆盖：行解析、关键词匹配、字段提取、多文件合并、日期升序/降序排序、重编号、无日期文件处理
 """
 
 import os
@@ -10,6 +10,7 @@ import unittest
 from extractors.txt_filter import (
     TxtFilter,
     FIELD_ALL, FIELD_TITLE, FIELD_TITLE_INTRO, FIELD_TITLE_INTRO_CAT,
+    SORT_DESC, SORT_ASC,
 )
 
 
@@ -255,6 +256,91 @@ class TestFilterAndSort(unittest.TestCase):
             [path], ["不存在的关键词"], FIELD_ALL
         )
         self.assertEqual(len(items), 0)
+
+    def test_default_sort_is_descending(self):
+        """不传 sort_order 时默认降序：最新排最前"""
+        content = (
+            "0001-活动A-[2026-09-01]-[公告]-[摘要]-[img]-(https://example.com/url1)\n"
+            "0002-活动B-[2026-09-05]-[公告]-[摘要]-[img]-(https://example.com/url2)\n"
+            "0003-活动C-[2026-09-03]-[公告]-[摘要]-[img]-(https://example.com/url3)\n"
+        )
+        path = self._write_tmp("defsort.txt", content)
+        items, _ = self.tf.filter_and_sort([path], ["活动"], FIELD_TITLE)
+        self.assertEqual(len(items), 3)
+        # 默认降序：0905 -> 0903 -> 0901
+        self.assertEqual(items[0]["date"], "2026-09-05")
+        self.assertEqual(items[1]["date"], "2026-09-03")
+        self.assertEqual(items[2]["date"], "2026-09-01")
+
+    def test_ascending_sort_oldest_first(self):
+        """升序排序：最早排最前"""
+        content = (
+            "0001-活动A-[2026-09-01]-[公告]-[摘要]-[img]-(https://example.com/url1)\n"
+            "0002-活动B-[2026-09-05]-[公告]-[摘要]-[img]-(https://example.com/url2)\n"
+            "0003-活动C-[2026-09-03]-[公告]-[摘要]-[img]-(https://example.com/url3)\n"
+        )
+        path = self._write_tmp("ascsort.txt", content)
+        items, _ = self.tf.filter_and_sort(
+            [path], ["活动"], FIELD_TITLE, sort_order=SORT_ASC
+        )
+        self.assertEqual(len(items), 3)
+        # 升序：0901 -> 0903 -> 0905
+        self.assertEqual(items[0]["date"], "2026-09-01")
+        self.assertEqual(items[1]["date"], "2026-09-03")
+        self.assertEqual(items[2]["date"], "2026-09-05")
+        # 重编号从 0001 开始
+        self.assertEqual(items[0]["index"], "0001")
+        self.assertEqual(items[2]["index"], "0003")
+
+    def test_ascending_multi_file_merge(self):
+        """升序多文件合并：按日期从旧到新"""
+        f1 = "0001-原神A-[2026-09-01]-[公告]-[摘要]-[img]-(https://example.com/url1)\n"
+        f2 = "0002-原神B-[2026-09-05]-[公告]-[摘要]-[img]-(https://example.com/url2)\n"
+        p1 = self._write_tmp("f1_asc.txt", f1)
+        p2 = self._write_tmp("f2_asc.txt", f2)
+        items, _ = self.tf.filter_and_sort(
+            [p1, p2], ["原神"], FIELD_ALL, sort_order=SORT_ASC
+        )
+        self.assertEqual(len(items), 2)
+        # 升序：0901 在前
+        self.assertEqual(items[0]["date"], "2026-09-01")
+        self.assertEqual(items[1]["date"], "2026-09-05")
+        self.assertEqual(items[0]["index"], "0001")
+        self.assertEqual(items[1]["index"], "0002")
+
+    def test_ascending_nodate_stays_at_end(self):
+        """升序模式下，无日期行仍排在末尾保持原顺序"""
+        dated = "0001-活动A-[2026-09-05]-[公告]-[摘要]-[img]-(https://example.com/url1)\n"
+        nodate = "0001-10000001-角色A\n0002-10000002-角色B\n"
+        p1 = self._write_tmp("dated_asc.txt", dated)
+        p2 = self._write_tmp("nodate_asc.txt", nodate)
+        items, has_nodate = self.tf.filter_and_sort(
+            [p1, p2], ["A", "角色"], FIELD_TITLE, sort_order=SORT_ASC
+        )
+        # 有日期行排前，无日期行排后
+        self.assertTrue(items[0]["has_date"])
+        self.assertFalse(items[1]["has_date"])
+        self.assertFalse(items[2]["has_date"])
+        self.assertTrue(has_nodate)
+        # 无日期行保持原顺序
+        self.assertEqual(items[1]["title"], "角色A")
+        self.assertEqual(items[2]["title"], "角色B")
+
+    def test_descending_explicit_matches_default(self):
+        """显式传 SORT_DESC 与默认行为一致"""
+        content = (
+            "0001-活动A-[2026-09-01]-[公告]-[摘要]-[img]-(https://example.com/url1)\n"
+            "0002-活动B-[2026-09-05]-[公告]-[摘要]-[img]-(https://example.com/url2)\n"
+        )
+        path = self._write_tmp("descsort.txt", content)
+        default_items, _ = self.tf.filter_and_sort([path], ["活动"], FIELD_TITLE)
+        explicit_items, _ = self.tf.filter_and_sort(
+            [path], ["活动"], FIELD_TITLE, sort_order=SORT_DESC
+        )
+        self.assertEqual(
+            [it["date"] for it in default_items],
+            [it["date"] for it in explicit_items],
+        )
 
 
 class TestOutputName(unittest.TestCase):

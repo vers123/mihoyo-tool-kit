@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "1.0.1"
+        self.version = "1.2.0"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -1037,11 +1037,11 @@ class MiHoYoToolKit:
             logger.error(f"Feed 导出失败: {e}", exc_info=True)
 
     def _filter_txt(self):
-        """D3: 过滤 TXT 文件（按关键词匹配，按时间降序重编号）"""
+        """D3: 过滤 TXT 文件（按关键词匹配，按时间升序/降序重编号）"""
         from extractors import run_filter
         print("\n[FILTER] TXT 文件过滤工具")
         print("=" * 70)
-        print("按关键词匹配 txt 行，按时间降序重新编号（时间越新序号越小）")
+        print("按关键词匹配 txt 行，按时间升序/降序重新编号")
         run_filter()
 
     def run(self):

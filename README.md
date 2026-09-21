@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.1-green)](Version)
+[![Version](https://img.shields.io/badge/version-1.2.0-green)](Version)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -23,7 +23,7 @@
 - **四站点新闻抓取** — 原神中文、原神英文、绝区零、星穹铁道，统一 API 架构
 - **微博用户抓取** — 支持完整分页（`since_id` 游标），可抓到最早微博
 - **双模式启动** — 命令行菜单（CLI）和 PySide6 图形界面（GUI）两种启动方式
-- **TXT 过滤** — 按关键词匹配提取行，支持精准/模糊匹配、预览、按时间重编号
+- **TXT 过滤** — 按关键词匹配提取行，支持精准/模糊匹配、时间升序/降序排序、预览、按时间重编号
 - **原生 GUI 风格** — PySide6 平台原生样式，应用图标 + 游戏字体主题化
 - **API 拦截抓取** — 自动拦截浏览器 API 响应，绕过虚拟滚动，数据完整无遗漏
 - **Firefox 免登录** — 读取 Firefox Cookie 自动注入，无需每次手动登录
@@ -145,7 +145,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出。GUI 模�
 | :---: | ------ | ------ |
 | 37 | 导出新闻到 Excel | 从 SQLite 导出四站点新闻到 .xlsx（每站点一 sheet） |
 | 38 | 导出 RSS/JSON Feed | 从 SQLite 生成 RSS/JSON feed 供外部订阅 |
-| 39 | 过滤 TXT 文件 | 按关键词匹配提取行，按时间降序重新编号（支持精准/模糊匹配） |
+| 39 | 过滤 TXT 文件 | 按关键词匹配提取行，按时间升序/降序重新编号（支持精准/模糊匹配） |
 
 ### GUI 界面
 
@@ -403,4 +403,4 @@ See [构建与打包](#构建与打包) section. Supports PyInstaller EXE (Windo
 
 ---
 
-**V1.0.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V1.2.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

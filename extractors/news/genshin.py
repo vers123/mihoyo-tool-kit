@@ -82,6 +82,11 @@ def run(incremental: bool = False):
         print(f"[HINT] 请先执行「抓取原神新闻页面」生成 {extractor.html_path}")
         return
 
+    # 无新增数据时保留原文件不写入
+    if not getattr(extractor, '_has_new_data', True):
+        print(f"[INFO] 无新增数据，保留原文件（共 {len(news_data)} 条）")
+        return
+
     if extractor.save_news_data(news_data):
         print(f"[OK] 完成！共 {len(news_data)} 条新闻")
         print(f"[OK] 已保存到：{extractor.output_path}")
