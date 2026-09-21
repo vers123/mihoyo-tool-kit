@@ -145,7 +145,7 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           echo "Checking for existing release with tag: $TAG"
           EXISTING_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | grep '"id"' | head -1 | grep -oE '[0-9]+')
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | grep '"id"' | head -1 | grep -oE '[0-9]+' || true)
           if [ -n "$EXISTING_ID" ]; then
             echo "Deleting existing release ID: $EXISTING_ID"
             curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
