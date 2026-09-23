@@ -54,7 +54,7 @@ def get_har_welcome_text() -> str:
     ensure_har_dirs()
     lines = []
     lines.append("=" * 70)
-    lines.append("  欢迎使用 米游社工具箱 v1.2.0")
+    lines.append("  欢迎使用 米游社工具箱 v1.3.0")
     lines.append("=" * 70)
     lines.append("")
     lines.append("【重要提示】首次使用或接口失效时，请先按以下步骤更新 HAR 文件：")
@@ -89,7 +89,7 @@ def get_har_welcome_html() -> str:
     """生成 GUI 用的 HTML 格式欢迎语和 HAR 更新步骤提示"""
     ensure_har_dirs()
     parts = []
-    parts.append("<h3>欢迎使用 米游社工具箱 v1.2.0</h3>")
+    parts.append("<h3>欢迎使用 米游社工具箱 v1.3.0</h3>")
     parts.append("<p><b>【重要提示】</b>首次使用或接口失效时，请先按以下步骤更新 HAR 文件：</p>")
     parts.append("<p><b>【首次使用准备】安装 Playwright 浏览器（只需执行一次）：</b></p>")
     parts.append("<pre>pip install playwright\nplaywright install chromium</pre>")
