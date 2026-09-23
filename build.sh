@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# miHoYo ToolKit Build Script v1.2.0 (Linux/macOS)
+# miHoYo ToolKit Build Script v1.3.0 (Linux/macOS)
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -21,7 +21,7 @@ CMD="${1:-help}"
 show_help() {
     cat <<EOF
 ============================================================
-  miHoYo ToolKit Build Script v1.2.0
+  miHoYo ToolKit Build Script v1.3.0
 ============================================================
 
   Usage: ./build.sh <command>
@@ -65,8 +65,8 @@ case "$CMD" in
         ;;
     docker)
         echo "[INFO] Building Docker image..."
-        docker build -t mihoyo-toolkit:1.2.0 -t mihoyo-toolkit:latest .
-        echo "[OK] Docker image built: mihoyo-toolkit:1.2.0"
+        docker build -t mihoyo-toolkit:1.3.0 -t mihoyo-toolkit:latest .
+        echo "[OK] Docker image built: mihoyo-toolkit:1.3.0"
         ;;
     clean)
         echo "[INFO] Will clean:"

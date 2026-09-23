@@ -38,16 +38,19 @@ class OtherPage(QWidget):
         form.setSpacing(8)
 
         self.tutorial_input = QLineEdit()
-        self.tutorial_input.setPlaceholderText("mh4imrrhzdzi")
+        self.tutorial_input.setPlaceholderText("mh4imrrhzdzi 或 mhs2w008wf14")
         self.tutorial_input.setText("mh4imrrhzdzi")
         form.addRow("教程ID:", self.tutorial_input)
 
         tutorial_btns = QHBoxLayout()
         self.btn_tutorial_fetch = QPushButton("抓取教程")
         self.btn_tutorial_fetch.clicked.connect(lambda: self._run_task("tutorial_fetch"))
-        self.btn_tutorial_extract = QPushButton("提取角色")
+        self.btn_tutorial_batch = QPushButton("批量抓取目录")
+        self.btn_tutorial_batch.clicked.connect(lambda: self._run_task("tutorial_batch"))
+        self.btn_tutorial_extract = QPushButton("提取数据")
         self.btn_tutorial_extract.clicked.connect(lambda: self._run_task("tutorial_extract"))
         tutorial_btns.addWidget(self.btn_tutorial_fetch)
+        tutorial_btns.addWidget(self.btn_tutorial_batch)
         tutorial_btns.addWidget(self.btn_tutorial_extract)
         tutorial_btns.addStretch()
         form.addRow("", tutorial_btns)
@@ -101,11 +104,16 @@ class OtherPage(QWidget):
             from fetchers import run_tutorial
             func = lambda: run_tutorial(tid)
             self.progress.start(text=f"抓取教程 {tid} 中...")
+        elif task == "tutorial_batch":
+            tid = self.tutorial_input.text().strip() or "mhs2w008wf14"
+            from fetchers import run_tutorial_batch
+            func = lambda: run_tutorial_batch(tid)
+            self.progress.start(text=f"批量抓取教程目录 {tid} 中...")
         elif task == "tutorial_extract":
             tid = self.tutorial_input.text().strip() or "mh4imrrhzdzi"
             from extractors import run_extract_tutorial
             func = lambda: run_extract_tutorial(tid)
-            self.progress.start(text=f"提取角色数据 {tid} 中...")
+            self.progress.start(text=f"提取教程数据 {tid} 中...")
         elif task == "custom":
             url = self.url_input.text().strip()
             if not url:
@@ -143,5 +151,5 @@ class OtherPage(QWidget):
 
     def _set_buttons_enabled(self, enabled):
         for btn in (self.btn_baike, self.btn_extract_images, self.btn_tutorial_fetch,
-                     self.btn_tutorial_extract, self.btn_custom):
+                     self.btn_tutorial_batch, self.btn_tutorial_extract, self.btn_custom):
             btn.setEnabled(enabled)

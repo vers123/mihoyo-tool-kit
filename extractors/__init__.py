@@ -1,4 +1,4 @@
-from .tutorial import TutorialExtractor, run as run_extract_tutorial
+from .tutorial import TutorialExtractor, ChangelogExtractor, run as run_extract_tutorial
 from .images import ImageExtractor, run as run_extract_images
 from .time import PostExtractor, run as run_extract_time
 from .weibo import WeiboExtractor, run as run_extract_weibo
@@ -30,6 +30,7 @@ run_extract_news = run_extract_news_genshin
 __all__ = [
     "NewsExtractor",
     "TutorialExtractor",
+    "ChangelogExtractor",
     "ImageExtractor",
     "PostExtractor",
     "WeiboExtractor",

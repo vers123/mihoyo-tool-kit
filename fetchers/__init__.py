@@ -45,11 +45,11 @@ def _lazy_load_baike():
 
 
 def _lazy_load_tutorial():
-    global TutorialScraper, run_tutorial, _tutorial_loaded
+    global TutorialScraper, run_tutorial, run_tutorial_batch, _tutorial_loaded
     if not _tutorial_loaded:
-        from .tutorial import TutorialScraper, run as run_tutorial
+        from .tutorial import TutorialScraper, run as run_tutorial, run_tutorial_batch
         _tutorial_loaded = True
-    return TutorialScraper, run_tutorial
+    return TutorialScraper, run_tutorial, run_tutorial_batch
 
 
 def _lazy_load_custom():
@@ -82,6 +82,8 @@ def __getattr__(name):
         return _lazy_load_tutorial()[0]
     if name == "run_tutorial":
         return _lazy_load_tutorial()[1]
+    if name == "run_tutorial_batch":
+        return _lazy_load_tutorial()[2]
     if name == "CustomScraper":
         return _lazy_load_custom()[0]
     if name == "run_custom":
@@ -113,6 +115,7 @@ __all__ = [
     "run_news_zzz",
     "run_news_starrail",
     "run_tutorial",
+    "run_tutorial_batch",
     "run_custom",
     "run_weibo",
 ]

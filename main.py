@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "1.2.0"
+        self.version = "1.3.0"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -174,113 +174,119 @@ class MiHoYoToolKit:
                 "handler": self._fetch_tutorial_page
             },
             "23": {
-                "label": "提取教程角色数据",
-                "description": "从教程页面提取角色编号和名称",
+                "label": "批量抓取教程目录",
+                "description": "抓取更新日志索引页，提取所有链接并逐个抓取教程详情页",
+                "group": "其他抓取",
+                "handler": self._fetch_tutorial_batch
+            },
+            "24": {
+                "label": "提取教程数据",
+                "description": "从教程页面提取角色数据或更新日志（自动识别）",
                 "group": "其他抓取",
                 "handler": self._extract_tutorial_data
             },
-            "24": {
+            "25": {
                 "label": "提取图鉴图片链接",
                 "description": "从抓取的图鉴页面提取角色图片链接",
                 "group": "其他抓取",
                 "handler": self._extract_image_urls
             },
-            "25": {
+            "26": {
                 "label": "抓取自定义网站",
                 "description": "抓取任意网站的HTML页面",
                 "group": "其他抓取",
                 "handler": self._fetch_custom_site
             },
             # === 微博 ===
-            "26": {
+            "27": {
                 "label": "抓取微博用户主页",
                 "description": "从微博抓取指定用户的发帖记录",
                 "group": "微博",
                 "handler": self._fetch_weibo_posts
             },
-            "27": {
+            "28": {
                 "label": "增量抓取微博用户",
                 "description": "增量更新微博用户发帖，自动备份旧数据",
                 "group": "微博",
                 "handler": self._incremental_fetch_weibo_posts
             },
-            "28": {
+            "29": {
                 "label": "提取微博数据",
                 "description": "从微博页面提取发帖时间和内容",
                 "group": "微博",
                 "handler": self._extract_weibo_data
             },
-            "29": {
+            "30": {
                 "label": "增量提取微博数据",
                 "description": "增量提取并合并新旧微博数据",
                 "group": "微博",
                 "handler": self._incremental_extract_weibo_data
             },
             # === 系统工具 ===
-            "30": {
+            "31": {
                 "label": "查看备份文件",
                 "description": "查看所有数据备份文件",
                 "group": "系统工具",
                 "handler": self._show_backups
             },
-            "31": {
+            "32": {
                 "label": "恢复备份数据",
                 "description": "从备份文件恢复数据",
                 "group": "系统工具",
                 "handler": self._restore_backup
             },
-            "32": {
+            "33": {
                 "label": "查看当前配置",
                 "description": "显示当前的配置信息",
                 "group": "系统工具",
                 "handler": self._show_config
             },
-            "33": {
+            "34": {
                 "label": "修改配置参数",
                 "description": "修改URL、超时时间等配置",
                 "group": "系统工具",
                 "handler": self._modify_config
             },
-            "34": {
+            "35": {
                 "label": "重新加载配置",
                 "description": "从配置文件重新加载配置",
                 "group": "系统工具",
                 "handler": self._reload_config
             },
-            "35": {
+            "36": {
                 "label": "系统信息",
                 "description": "显示系统环境和依赖信息",
                 "group": "系统工具",
                 "handler": self._show_system_info
             },
-            "36": {
+            "37": {
                 "label": "数据迁移工具",
                 "description": "迁移旧版本数据到新目录结构",
                 "group": "系统工具",
                 "handler": self._run_migration
             },
-            "40": {
+            "38": {
                 "label": "清理缓存文件",
                 "description": "清理 __pycache__、日志、构建临时文件等（需二次确认）",
                 "group": "系统工具",
                 "handler": self._clean_cache
             },
             # === 数据导出 ===
-            "37": {
+            "39": {
                 "label": "导出新闻到 Excel",
                 "description": "从 SQLite 导出四站点新闻到 .xlsx（每站点一 sheet）",
                 "group": "数据导出",
                 "handler": self._export_news_excel
             },
             # === 数据导出（D2） ===
-            "38": {
+            "40": {
                 "label": "导出 RSS/JSON Feed",
                 "description": "从 SQLite 生成 RSS/JSON feed 供外部订阅",
                 "group": "数据导出",
                 "handler": self._export_feed
             },
             # === 数据导出（D3：TXT 过滤） ===
-            "39": {
+            "41": {
                 "label": "过滤 TXT 文件",
                 "description": "按关键词匹配提取行，按时间降序重新编号",
                 "group": "数据导出",
@@ -530,17 +536,35 @@ class MiHoYoToolKit:
     
     @log_function_call
     @handle_errors
+    def _fetch_tutorial_batch(self):
+        from fetchers import run_tutorial_batch
+
+        print("\n开始批量抓取教程目录...")
+        print("索引页ID: mhs2w008wf14 (https://act.mihoyo.com/ys/ugc/tutorial/detail/mhs2w008wf14)")
+        print("将抓取索引页中所有教程详情页链接，并逐个抓取保存")
+
+        index_id = input("请输入索引页ID [mhs2w008wf14]: ").strip()
+        if not index_id:
+            index_id = "mhs2w008wf14"
+
+        print(f"\n[INFO] 索引页: https://act.mihoyo.com/ys/ugc/tutorial/detail/{index_id}")
+
+        run_tutorial_batch(index_id)
+
+    @log_function_call
+    @handle_errors
     def _extract_tutorial_data(self):
         from extractors import run_extract_tutorial
 
-        print("\n开始提取教程页面角色数据...")
-        print("默认教程ID: mh4imrrhzdzi")
+        print("\n开始提取教程页面数据...")
+        print("默认教程ID: mh4imrrhzdzi（角色编号）或 mhs2w008wf14（更新日志）")
 
         tutorial_id = input("请输入教程ID [mh4imrrhzdzi]: ").strip()
         if not tutorial_id:
             tutorial_id = "mh4imrrhzdzi"
 
-        print(f"\n[INFO] 开始提取角色数据: {tutorial_id}")
+        print(f"\n[INFO] 开始提取数据: {tutorial_id}")
+        print("[INFO] 自动识别页面类型（角色编号 / 更新日志）")
 
         run_extract_tutorial(tutorial_id)
 

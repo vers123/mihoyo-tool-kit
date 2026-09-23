@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v1.2.0
+PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v1.3.0
 
 支持 onefile / onedir 两种模式，通过环境变量 PYI_MODE 切换：
   set PYI_MODE=onefile  （单文件，默认）

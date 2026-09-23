@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    miHoYo ToolKit Build Script v1.2.0
+    miHoYo ToolKit Build Script v1.3.0
 
 .DESCRIPTION
     Build script for miHoYo ToolKit. Supports dependency installation,
@@ -58,7 +58,7 @@ $py = Get-Python
 # ============================================================
 function Show-Help {
     Write-Host "============================================================"
-    Write-Host "  miHoYo ToolKit Build Script v1.2.0"
+    Write-Host "  miHoYo ToolKit Build Script v1.3.0"
     Write-Host "============================================================"
     Write-Host ""
     Write-Host "  Usage: .\build.ps1 <command>"
@@ -140,9 +140,9 @@ function Invoke-Docker {
         throw "Docker not found"
     }
     Write-Host "[INFO] Building Docker image..."
-    docker build -t mihoyo-toolkit:1.2.0 -t mihoyo-toolkit:latest .
+    docker build -t mihoyo-toolkit:1.3.0 -t mihoyo-toolkit:latest .
     if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
-    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.2.0"
+    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.3.0"
 }
 
 # ============================================================
