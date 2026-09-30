@@ -98,8 +98,6 @@ class MiHoYoApiClient:
         字段格式与 fetchers/news/base.py._extract_items_from_api 一致，
         保证 _build_html_from_api_data 可直接复用。
         """
-        import json as _json
-
         items: List[dict] = []
         if not isinstance(data, dict):
             return items

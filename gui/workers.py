@@ -41,6 +41,7 @@ class ScraperWorker(QThread):
     """抓取/提取任务后台线程"""
     log_message = Signal(str)
     finished_ok = Signal(bool, str)
+    progress_update = Signal(int, int, str)  # current, total, text
 
     def __init__(self, func, *args, **kwargs):
         super().__init__()

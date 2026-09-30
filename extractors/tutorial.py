@@ -1,7 +1,7 @@
 import re
 import os
 import json
-from typing import List, Dict, Optional
+from typing import List
 from dataclasses import dataclass
 from core.config_manager import config_manager
 from utils.error_handler import handle_errors, ErrorHandler
@@ -18,22 +18,25 @@ class CharacterData:
 
 
 class TutorialExtractor:
-    def __init__(self, tutorial_id: str = None):
+    def __init__(self, tutorial_id: str = None, lang: str = None):
         self.base_dir = os.path.dirname(__file__)
 
         if not tutorial_id:
             tutorial_id = "mh4imrrhzdzi"
 
+        file_suffix = f"_{lang}" if lang else ""
         self.html_path = os.path.join(
             config_manager.get_output_dir("html"),
-            f"tutorial_{tutorial_id}.html"
+            "tutorial",
+            f"tutorial_{tutorial_id}{file_suffix}.html"
         )
         self.output_dir = config_manager.get_output_dir("data")
         self.output_path = os.path.join(
             self.output_dir,
-            f"characters_{tutorial_id}.txt"
+            f"characters_{tutorial_id}{file_suffix}.txt"
         )
         self.tutorial_id = tutorial_id
+        self.lang = lang
 
     def extract_characters(self, html_content: str = None) -> List[CharacterData]:
         if html_content is None:
@@ -105,14 +108,17 @@ class ChangelogExtractor:
 
     CHANGELOG_PATTERN = re.compile(r"更新日志|月之[一二三四五六七八九十]+版本|\d+\.0版本")
 
-    def __init__(self, tutorial_id: str = None):
+    def __init__(self, tutorial_id: str = None, lang: str = None):
         if not tutorial_id:
             tutorial_id = "mhs2w008wf14"
 
         self.tutorial_id = tutorial_id
+        self.lang = lang
+        file_suffix = f"_{lang}" if lang else ""
         self.html_path = os.path.join(
             config_manager.get_output_dir("html"),
-            f"tutorial_{tutorial_id}.html"
+            "tutorial",
+            f"tutorial_{tutorial_id}{file_suffix}.html"
         )
         self.output_dir = config_manager.get_output_dir("data")
         self.output_path = os.path.join(
@@ -320,18 +326,20 @@ class ChangelogExtractor:
 
 
 @handle_errors
-def run(tutorial_id: str = None):
+def run(tutorial_id: str = None, lang: str = None):
     if not tutorial_id:
         tutorial_id = "mh4imrrhzdzi"
 
+    file_suffix = f"_{lang}" if lang else ""
     # 读取 HTML 文件
     html_path = os.path.join(
         config_manager.get_output_dir("html"),
-        f"tutorial_{tutorial_id}.html"
+        "tutorial",
+        f"tutorial_{tutorial_id}{file_suffix}.html"
     )
     if not ErrorHandler.validate_file_exists(html_path):
         print(f"[ERROR] HTML文件不存在: {html_path}")
-        print(f"[HINT] 请先执行「抓取米游社教程页面」生成该文件")
+        print("[HINT] 请先执行「抓取米游社教程页面」生成该文件")
         return
 
     with open(html_path, "r", encoding="utf-8") as f:
@@ -339,15 +347,15 @@ def run(tutorial_id: str = None):
 
     # 自动检测页面类型
     if ChangelogExtractor.is_changelog(html_content):
-        _run_changelog(tutorial_id, html_content)
+        _run_changelog(tutorial_id, html_content, lang)
     else:
-        _run_character_extract(tutorial_id, html_content)
+        _run_character_extract(tutorial_id, html_content, lang)
 
 
-def _run_changelog(tutorial_id: str, html_content: str):
+def _run_changelog(tutorial_id: str, html_content: str, lang: str = None):
     print("\n[START] 提取更新日志数据")
 
-    extractor = ChangelogExtractor(tutorial_id)
+    extractor = ChangelogExtractor(tutorial_id, lang)
     data = extractor.extract(html_content)
 
     if not data.get("versions"):
@@ -378,10 +386,10 @@ def _run_changelog(tutorial_id: str, html_content: str):
         print("[ERROR] 保存更新日志失败")
 
 
-def _run_character_extract(tutorial_id: str, html_content: str):
+def _run_character_extract(tutorial_id: str, html_content: str, lang: str = None):
     print("\n[START] 提取教程页面角色数据")
 
-    extractor = TutorialExtractor(tutorial_id)
+    extractor = TutorialExtractor(tutorial_id, lang)
     character_data = extractor.extract_characters(html_content)
 
     if not character_data:

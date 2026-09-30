@@ -3,12 +3,12 @@ from __future__ import annotations
 from playwright.sync_api import sync_playwright, Page, Browser
 import os
 import time
-from typing import Dict, Any, Set, Optional, List, Callable
+from typing import Any, Set, Optional, Callable
 from dataclasses import dataclass, field
 from tqdm import tqdm
 from .config_manager import config_manager
 from utils.cookie_loader import load_firefox_cookies
-from utils.har_loader import find_har_file, load_api_pattern_from_har, print_har_instructions
+from utils.har_loader import find_har_file, print_har_instructions
 
 
 @dataclass
@@ -122,7 +122,7 @@ class BaseScraper:
                     for item in items:
                         item_url = item.get("url", "")
                         if item_url and item_url in self.config.existing_urls:
-                            print(f"[INFO] 发现已存在数据，增量模式停止")
+                            print("[INFO] 发现已存在数据，增量模式停止")
                             self._api_stop_requested = True
                             return
 

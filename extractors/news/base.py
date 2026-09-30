@@ -13,7 +13,7 @@ import os
 from typing import List, Set
 from dataclasses import dataclass
 from core.config_manager import config_manager
-from utils.error_handler import handle_errors, ErrorHandler
+from utils.error_handler import ErrorHandler
 from utils.backup_manager import backup_manager
 
 

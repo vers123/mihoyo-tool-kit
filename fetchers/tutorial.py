@@ -1,19 +1,31 @@
 from core.scraper import BaseScraper, ScraperConfig
 from core.config_manager import config_manager
 from utils.error_handler import handle_errors, retry
+import os
 
 
 class TutorialScraper(BaseScraper):
-    def __init__(self, tutorial_id: str = None):
+    def __init__(self, tutorial_id: str = None, lang: str = None):
         if not tutorial_id:
             tutorial_id = "mh4imrrhzdzi"
 
         url = f"https://act.mihoyo.com/ys/ugc/tutorial/detail/{tutorial_id}"
+        if lang:
+            url += f"?lang={lang}"
+
+        # 教程HTML统一保存到 data/html/tutorial/ 子文件夹
+        html_dir = config_manager.get_output_dir("html")
+        tutorial_dir = os.path.join(html_dir, "tutorial")
+        os.makedirs(tutorial_dir, exist_ok=True)
+
+        # 文件名包含语言后缀（如有）
+        file_suffix = f"_{lang}" if lang else ""
+        filename = f"tutorial/tutorial_{tutorial_id}{file_suffix}.html"
 
         scraper_config = ScraperConfig(
             url=url,
-            output_filename=f"tutorial_{tutorial_id}.html",
-            headless=config_manager.get("headless", False),
+            output_filename=filename,
+            headless=True,  # 教程抓取强制后台运行
             wait_seconds=config_manager.get("wait_seconds", 5),
             timeout=config_manager.get("timeout", 120000),
             user_agent=config_manager.get("user_agent"),
@@ -22,13 +34,14 @@ class TutorialScraper(BaseScraper):
         )
         super().__init__(scraper_config)
         self.tutorial_id = tutorial_id
+        self.lang = lang
 
 
 @handle_errors
 @retry(max_attempts=config_manager.get("retry_settings.max_attempts", 3),
        delay=config_manager.get("retry_settings.delay", 2.0))
-def run(tutorial_id: str = None):
-    scraper = TutorialScraper(tutorial_id)
+def run(tutorial_id: str = None, lang: str = None):
+    scraper = TutorialScraper(tutorial_id, lang)
     html_content = scraper.run()
 
     if html_content:
@@ -39,8 +52,14 @@ def run(tutorial_id: str = None):
         return None
 
 
-def run_tutorial_batch(index_id: str = None):
-    """抓取目录索引页，提取所有教程链接，逐个抓取所有教程详情页"""
+def run_tutorial_batch(index_id: str = None, lang: str = None, progress_callback=None):
+    """抓取目录索引页，提取所有教程链接，逐个抓取所有教程详情页
+
+    Args:
+        index_id: 索引页教程ID，默认 mhs2w008wf14
+        lang: 语言版本，zh-cn 或 en-us
+        progress_callback: 可选回调函数 (current, total, text) 用于报告进度
+    """
     if not index_id:
         index_id = "mhs2w008wf14"
 
@@ -49,7 +68,7 @@ def run_tutorial_batch(index_id: str = None):
 
     # 1. 抓取索引页
     print("\n[STEP 1/3] 抓取索引页...")
-    html_content = run(index_id)
+    html_content = run(index_id, lang)
     if not html_content:
         print("[ERROR] 索引页抓取失败，无法继续")
         return
@@ -61,7 +80,7 @@ def run_tutorial_batch(index_id: str = None):
         print("[WARN] 该页面不是更新日志/目录页，无法提取链接")
         return
 
-    extractor = ChangelogExtractor(index_id)
+    extractor = ChangelogExtractor(index_id, lang)
     links = extractor.extract_all_links(html_content)
     if not links:
         print("[ERROR] 未提取到任何教程链接")
@@ -74,24 +93,31 @@ def run_tutorial_batch(index_id: str = None):
     success_count = 0
     skip_count = 0
     fail_count = 0
+    total = len(links)
 
     import os
     html_dir = config_manager.get_output_dir("html")
+    tutorial_dir = os.path.join(html_dir, "tutorial")
 
+    file_suffix = f"_{lang}" if lang else ""
     for i, link in enumerate(links, 1):
         tid = link["tutorial_id"]
         title = link["title"]
-        html_path = os.path.join(html_dir, f"tutorial_{tid}.html")
+        html_path = os.path.join(tutorial_dir, f"tutorial_{tid}{file_suffix}.html")
 
         # 跳过已存在的文件
         if os.path.exists(html_path):
-            print(f"  [{i}/{len(links)}] 跳过（已存在）: {title} ({tid})")
+            print(f"  [{i}/{total}] 跳过（已存在）: {title} ({tid})")
+            if progress_callback:
+                progress_callback(i, total, f"[{i}/{total}] 跳过: {title}")
             skip_count += 1
             continue
 
-        print(f"  [{i}/{len(links)}] 抓取: {title} ({tid})")
+        print(f"  [{i}/{total}] 抓取: {title} ({tid})")
+        if progress_callback:
+            progress_callback(i, total, f"[{i}/{total}] 抓取: {title}")
         try:
-            sub_html = run(tid)
+            sub_html = run(tid, lang)
             if sub_html:
                 success_count += 1
             else:

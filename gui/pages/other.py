@@ -1,7 +1,7 @@
 """其他抓取页面"""
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QFormLayout
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QLineEdit, QFormLayout, QComboBox
 )
 from gui.workers import ScraperWorker
 from gui.widgets import ProgressWidget
@@ -41,6 +41,12 @@ class OtherPage(QWidget):
         self.tutorial_input.setPlaceholderText("mh4imrrhzdzi 或 mhs2w008wf14")
         self.tutorial_input.setText("mh4imrrhzdzi")
         form.addRow("教程ID:", self.tutorial_input)
+
+        self.tutorial_lang = QComboBox()
+        self.tutorial_lang.addItem("默认（无语言参数）", "")
+        self.tutorial_lang.addItem("中文 (zh-cn)", "zh-cn")
+        self.tutorial_lang.addItem("英文 (en-us)", "en-us")
+        form.addRow("语言:", self.tutorial_lang)
 
         tutorial_btns = QHBoxLayout()
         self.btn_tutorial_fetch = QPushButton("抓取教程")
@@ -101,18 +107,25 @@ class OtherPage(QWidget):
             self.progress.start(text="提取图片链接中...")
         elif task == "tutorial_fetch":
             tid = self.tutorial_input.text().strip() or "mh4imrrhzdzi"
+            lang = self.tutorial_lang.currentData()
             from fetchers import run_tutorial
-            func = lambda: run_tutorial(tid)
+            func = lambda: run_tutorial(tid, lang if lang else None)
             self.progress.start(text=f"抓取教程 {tid} 中...")
         elif task == "tutorial_batch":
             tid = self.tutorial_input.text().strip() or "mhs2w008wf14"
+            lang = self.tutorial_lang.currentData()
             from fetchers import run_tutorial_batch
-            func = lambda: run_tutorial_batch(tid)
+            worker_ref = None
+            def batch_func():
+                run_tutorial_batch(tid, lang if lang else None,
+                                   progress_callback=lambda c, t, txt: worker_ref.progress_update.emit(c, t, txt) if worker_ref else None)
+            func = batch_func
             self.progress.start(text=f"批量抓取教程目录 {tid} 中...")
         elif task == "tutorial_extract":
             tid = self.tutorial_input.text().strip() or "mh4imrrhzdzi"
+            lang = self.tutorial_lang.currentData()
             from extractors import run_extract_tutorial
-            func = lambda: run_extract_tutorial(tid)
+            func = lambda: run_extract_tutorial(tid, lang if lang else None)
             self.progress.start(text=f"提取教程数据 {tid} 中...")
         elif task == "custom":
             url = self.url_input.text().strip()
@@ -129,9 +142,13 @@ class OtherPage(QWidget):
         self._set_buttons_enabled(False)
         self.btn_stop.setVisible(True)
         self.worker = ScraperWorker(func)
+        # 批量抓取需要 worker_ref 以发送进度信号
+        if task == "tutorial_batch":
+            worker_ref = self.worker
         main_window = self.window()
         if hasattr(main_window, 'log_viewer'):
             self.worker.log_message.connect(main_window.log_viewer.append_log)
+        self.worker.progress_update.connect(self.progress.update_progress)
         self.worker.finished_ok.connect(self._on_finished)
         self.worker.start()
 

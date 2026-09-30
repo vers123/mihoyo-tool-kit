@@ -3,7 +3,7 @@
 > **Audience**: AI coding assistants and automated code agents (Trae, Cursor, Copilot, Claude Code, etc.).
 > **Purpose**: Give an AI agent everything it needs to **read, navigate, modify, debug, and refactor** this codebase safely, without first requiring a human-guided tour.
 > **Status**: Source of truth for machine consumption. The human-facing [README.md](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/README.md) is a subset of this information; when they conflict, the code wins, then this document, then the human README.
-> **Project version**: 1.3.0 · **Last updated**: 2026-09-23
+> **Project version**: 1.4.0 · **Last updated**: 2026-10-01
 
 ---
 
@@ -12,7 +12,7 @@
 | Field | Value |
 | --- | --- |
 | Project name | miHoYo ToolKit / 米游社工具箱 |
-| Version | 1.3.0 |
+| Version | 1.4.0 |
 | Language | Python 3.8+ |
 | Core deps | Playwright ≥1.40 · PySide6 ≥6.5 · httpx ≥0.27 · tenacity ≥8.2 · pydantic ≥2.0 · openpyxl ≥3.1 · tqdm ≥4.65 · Pillow ≥10.0 |
 | Entry point | [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) |
@@ -534,10 +534,11 @@ Before touching any module, read its base class + tests first.
 ## 16. Version & Compatibility Policy
 
 ### 16.1 Current
-- **Version**: 1.3.0 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
+- **Version**: 1.4.0 (held in [main.py](file:///D:/LingLan/material/github/vers123/mihoyo/mihoyo-tool-kit/main.py) `MiHoYoToolKit.__init__` and the human README badge).
 - **Python**: 3.8+ (use no syntax that requires 3.9+ without bumping the floor).
 
 ### 16.2 Breaking-change history (highlights)
+- **V1.4.0** — Tutorial scraper enhancements: Chinese/English language support (`lang` param), HTML saved to `data/html/tutorial/` subfolder, forced headless mode, GUI progress bar for batch fetch, tutorial HAR sites added to welcome dialog.
 - **V1.3.0** — Added tutorial batch directory fetch (`run_tutorial_batch`): fetches the changelog index page, extracts all tutorial detail-page links via `ChangelogExtractor.extract_all_links()`, and downloads each linked page. CLI menu renumbered (new item 23, items 24-41 shifted). GUI gains a "批量抓取目录" button.
 - **V1.2.0** — GUI startup HAR welcome dialog replaced `QMessageBox` with a `QTextBrowser`-based custom dialog. All text (URLs, directories, steps) is now selectable and copyable, and website URLs are clickable (open in the default browser). Welcome HTML wraps each site URL in an `<a href>` tag.
 - **V1.1.1** — News/weibo/user-post extractors now always merge new data with existing local data files instead of overwriting. When HTML yields no new items, the original file is left untouched.

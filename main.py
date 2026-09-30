@@ -8,7 +8,7 @@
 import sys
 import os
 import platform
-from typing import Dict, Optional
+from typing import Dict
 
 # 添加项目路径
 sys.path.append(os.path.dirname(__file__))
@@ -28,7 +28,7 @@ class MiHoYoToolKit:
     """米游社工具箱主类"""
     
     def __init__(self):
-        self.version = "1.3.0"
+        self.version = "1.4.0"
         self.title = f"米游社工具箱 v{self.version}"
         self.options = self._setup_options()
         
@@ -529,10 +529,16 @@ class MiHoYoToolKit:
         if not tutorial_id:
             tutorial_id = "mh4imrrhzdzi"
 
-        print(f"\n[INFO] 开始抓取教程页面: {tutorial_id}")
-        print(f"[INFO] 教程链接: https://act.mihoyo.com/ys/ugc/tutorial/detail/{tutorial_id}")
+        lang = input("语言版本 [1=默认 2=zh-cn 3=en-us] (默认1): ").strip()
+        lang = {"2": "zh-cn", "3": "en-us"}.get(lang)
 
-        run_tutorial(tutorial_id)
+        url = f"https://act.mihoyo.com/ys/ugc/tutorial/detail/{tutorial_id}"
+        if lang:
+            url += f"?lang={lang}"
+        print(f"\n[INFO] 开始抓取教程页面: {tutorial_id}")
+        print(f"[INFO] 教程链接: {url}")
+
+        run_tutorial(tutorial_id, lang)
     
     @log_function_call
     @handle_errors
@@ -547,9 +553,15 @@ class MiHoYoToolKit:
         if not index_id:
             index_id = "mhs2w008wf14"
 
-        print(f"\n[INFO] 索引页: https://act.mihoyo.com/ys/ugc/tutorial/detail/{index_id}")
+        lang = input("语言版本 [1=默认 2=zh-cn 3=en-us] (默认1): ").strip()
+        lang = {"2": "zh-cn", "3": "en-us"}.get(lang)
 
-        run_tutorial_batch(index_id)
+        url = f"https://act.mihoyo.com/ys/ugc/tutorial/detail/{index_id}"
+        if lang:
+            url += f"?lang={lang}"
+        print(f"\n[INFO] 索引页: {url}")
+
+        run_tutorial_batch(index_id, lang)
 
     @log_function_call
     @handle_errors
@@ -563,10 +575,13 @@ class MiHoYoToolKit:
         if not tutorial_id:
             tutorial_id = "mh4imrrhzdzi"
 
+        lang = input("语言版本 [1=默认 2=zh-cn 3=en-us] (默认1): ").strip()
+        lang = {"2": "zh-cn", "3": "en-us"}.get(lang)
+
         print(f"\n[INFO] 开始提取数据: {tutorial_id}")
         print("[INFO] 自动识别页面类型（角色编号 / 更新日志）")
 
-        run_extract_tutorial(tutorial_id)
+        run_extract_tutorial(tutorial_id, lang)
 
     @log_function_call
     @handle_errors
@@ -891,7 +906,6 @@ class MiHoYoToolKit:
         
         # 检查Playwright
         try:
-            import playwright
             from playwright._repo_version import version
             print(f"   Playwright版本: {version}")
         except ImportError:
@@ -926,12 +940,12 @@ class MiHoYoToolKit:
         if confirm == "y":
             result = manager.run_migration()
             if result["success"]:
-                print(f"\n[OK] 数据迁移成功完成！")
+                print("\n[OK] 数据迁移成功完成！")
                 print(f"   迁移文件数: {len(result['migrated_files'])}")
                 print(f"   跳过文件数: {len(result['skipped_files'])}")
                 print("\n[提示] 源文件已保留，确认无误后可手动删除")
             else:
-                print(f"\n[ERROR] 数据迁移出现错误")
+                print("\n[ERROR] 数据迁移出现错误")
                 for err in result["errors"]:
                     print(f"   - {err}")
         else:
@@ -1008,7 +1022,7 @@ class MiHoYoToolKit:
         # 5. .pytest_cache
         pytest_cache = os.path.join(project_root, ".pytest_cache")
         if os.path.isdir(pytest_cache):
-            print(f"  删除目录: .pytest_cache/")
+            print("  删除目录: .pytest_cache/")
             shutil.rmtree(pytest_cache, ignore_errors=True)
             deleted_count += 1
 
@@ -1025,6 +1039,7 @@ class MiHoYoToolKit:
 
         try:
             path = run_export_excel()
+            print(f"\n[OK] 导出完成: {path}")
         except Exception as e:
             print(f"\n[ERROR] 导出失败: {e}")
             logger.error(f"Excel 导出失败: {e}", exc_info=True)
@@ -1131,14 +1146,13 @@ def main():
         return
 
     # 交互/GUI 模式：浏览器兜底需要 playwright
-    try:
-        import playwright
-        print("[OK] Playwright依赖检查通过")
-    except ImportError:
+    import importlib.util
+    if importlib.util.find_spec("playwright") is None:
         print("[ERROR] 缺少Playwright依赖，请运行: pip install playwright")
         print("然后运行: playwright install chromium")
         print("[TIP] 如仅用 API 直连，可用 --fetch / --export-excel 非交互运行")
         return
+    print("[OK] Playwright依赖检查通过")
 
     # 检查并执行数据迁移（自动）
     try:

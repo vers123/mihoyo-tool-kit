@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# miHoYo ToolKit Build Script v1.3.0 (Linux/macOS)
+# miHoYo ToolKit Build Script (Linux/macOS)
+# 版本号从 version_info.txt 读取（单一数据源）
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
+
+# 从 version_info.txt 读取版本号
+VERSION=$(grep "ProductVersion" version_info.txt | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1)
+VERSION="${VERSION:-0.0.0}"
 
 # Detect Python
 if [ -f ".venv/bin/python" ]; then
@@ -21,7 +26,7 @@ CMD="${1:-help}"
 show_help() {
     cat <<EOF
 ============================================================
-  miHoYo ToolKit Build Script v1.3.0
+  miHoYo ToolKit Build Script v$VERSION
 ============================================================
 
   Usage: ./build.sh <command>
@@ -65,8 +70,8 @@ case "$CMD" in
         ;;
     docker)
         echo "[INFO] Building Docker image..."
-        docker build -t mihoyo-toolkit:1.3.0 -t mihoyo-toolkit:latest .
-        echo "[OK] Docker image built: mihoyo-toolkit:1.3.0"
+        docker build -t mihoyo-toolkit:$VERSION -t mihoyo-toolkit:latest .
+        echo "[OK] Docker image built: mihoyo-toolkit:$VERSION"
         ;;
     clean)
         echo "[INFO] Will clean:"

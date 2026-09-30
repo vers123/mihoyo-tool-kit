@@ -181,9 +181,9 @@ class GameNewsBaseScraper(BaseScraper):
         """
         game_label = self._get_game_label()
         html_parts = [
-            f'<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8">',
+            '<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8">',
             f'<title>{game_label}新闻</title></head><body>',
-            f'<div class="news-container">',
+            '<div class="news-container">',
             f'<h1>{game_label}新闻列表（共 {len(items)} 条）</h1>',
             '<ul class="news__list">'
         ]
@@ -331,7 +331,7 @@ class GameNewsBaseScraper(BaseScraper):
                     found_existing = False
                     for item in items:
                         if item.get("url", "") in self.config.existing_urls:
-                            print(f"[INFO] 增量模式：发现已存在数据，停止抓取")
+                            print("[INFO] 增量模式：发现已存在数据，停止抓取")
                             found_existing = True
                             break
                     if found_existing:

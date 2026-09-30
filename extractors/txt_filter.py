@@ -412,7 +412,7 @@ class TxtFilter:
         """
         os.makedirs(self.output_dir, exist_ok=True)
 
-        print(f"\n[FILTER] 过滤条件：")
+        print("\n[FILTER] 过滤条件：")
         print(f"  文件数: {len(file_paths)}")
         print(f"  关键词: {keywords}（OR）")
         field_label = dict(FIELD_CHOICES).get(field_choice, field_choice)
@@ -434,10 +434,10 @@ class TxtFilter:
         out_path = os.path.join(self.output_dir, out_name)
         n = self.write_output(items, out_path)
 
-        print(f"\n[OK] 过滤完成")
+        print("\n[OK] 过滤完成")
         print(f"  匹配行数: {n}")
         if has_nodate_file:
-            print(f"  [提示] 部分文件无日期字段，已按原顺序排在末尾")
+            print("  [提示] 部分文件无日期字段，已按原顺序排在末尾")
         print(f"  输出路径: {out_path}")
 
         if items:
@@ -463,7 +463,7 @@ class TxtFilter:
         Returns:
             (items, has_nodate_file) — 同 filter_and_sort
         """
-        print(f"\n[PREVIEW] 过滤条件：")
+        print("\n[PREVIEW] 过滤条件：")
         print(f"  文件数: {len(file_paths)}")
         print(f"  关键词: {keywords}（OR）")
         field_label = dict(FIELD_CHOICES).get(field_choice, field_choice)
@@ -499,7 +499,7 @@ class TxtFilter:
         out_path = os.path.join(self.output_dir, out_name)
         n = self.write_output(items, out_path)
 
-        print(f"\n[OK] 过滤完成")
+        print("\n[OK] 过滤完成")
         print(f"  匹配行数: {n}")
         print(f"  输出路径: {out_path}")
         return out_path
@@ -582,7 +582,7 @@ def run_filter():
             nodate_files.append(rel)
 
     if nodate_files:
-        print(f"\n[提示] 以下文件没有日期字段，将保持原顺序排在末尾：")
+        print("\n[提示] 以下文件没有日期字段，将保持原顺序排在末尾：")
         for f in nodate_files:
             print(f"  - {f}")
         confirm = input("\n是否继续？(Y/n): ").strip().lower()

@@ -185,15 +185,15 @@ class SystemPage(QWidget):
             f"[INFO] 工作目录: {config_manager.get_project_root()}",
         ]
         try:
-            import playwright
-            lines.append(f"[INFO] Playwright: 已安装")
+            from playwright._repo_version import version
+            lines.append(f"[INFO] Playwright: {version}")
         except ImportError:
-            lines.append(f"[WARN] Playwright: 未安装")
+            lines.append("[WARN] Playwright: 未安装")
         try:
             import PySide6
             lines.append(f"[INFO] PySide6: {PySide6.__version__}")
         except ImportError:
-            lines.append(f"[WARN] PySide6: 未安装")
+            lines.append("[WARN] PySide6: 未安装")
         lines.append("")
         lines.append("--- 字体来源 ---")
         lines.append("游戏字体来自 HoYo-Glyphs 项目:")

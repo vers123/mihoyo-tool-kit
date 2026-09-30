@@ -3,7 +3,6 @@ import sqlite3
 import shutil
 import tempfile
 from typing import List, Dict, Optional
-from pathlib import Path
 
 
 def _firefox_profile_dirs() -> List[str]:

@@ -1,7 +1,6 @@
 import re
 import time
 import html
-import json
 from tqdm import tqdm
 from playwright.sync_api import Page
 from core.scraper import BaseScraper, ScraperConfig
@@ -107,7 +106,7 @@ class WeiboScraper(BaseScraper):
                     xsrf_token = cookie.get("value", "")
                     break
             if xsrf_token:
-                print(f"[INFO] 已获取 XSRF-TOKEN")
+                print("[INFO] 已获取 XSRF-TOKEN")
             else:
                 print("[WARN] 未找到 XSRF-TOKEN，API 可能返回空数据")
         except Exception as e:

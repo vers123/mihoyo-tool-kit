@@ -1,11 +1,12 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    miHoYo ToolKit Build Script v1.3.0
+    miHoYo ToolKit Build Script
 
 .DESCRIPTION
     Build script for miHoYo ToolKit. Supports dependency installation,
     testing, EXE packaging (PyInstaller), Docker build, and cache cleanup.
+    Version is read from version_info.txt (ProductVersion).
 
 .PARAMETER Command
     The build command to execute:
@@ -35,6 +36,15 @@ $ErrorActionPreference = "Stop"
 $ProjectDir = $PSScriptRoot
 Set-Location $ProjectDir
 
+# 从 version_info.txt 读取版本号（单一数据源）
+function Get-ProjectVersion {
+    $content = Get-Content "version_info.txt" -Raw
+    $match = [regex]::Match($content, "ProductVersion', u'([\d.]+)'")
+    if ($match.Success) { return $match.Groups[1].Value }
+    return "0.0.0"
+}
+$VERSION = Get-ProjectVersion
+
 # Detect Python
 function Get-Python {
     if (Test-Path ".venv\Scripts\python.exe") {
@@ -58,7 +68,7 @@ $py = Get-Python
 # ============================================================
 function Show-Help {
     Write-Host "============================================================"
-    Write-Host "  miHoYo ToolKit Build Script v1.3.0"
+    Write-Host "  miHoYo ToolKit Build Script v$VERSION"
     Write-Host "============================================================"
     Write-Host ""
     Write-Host "  Usage: .\build.ps1 <command>"
@@ -140,9 +150,9 @@ function Invoke-Docker {
         throw "Docker not found"
     }
     Write-Host "[INFO] Building Docker image..."
-    docker build -t mihoyo-toolkit:1.3.0 -t mihoyo-toolkit:latest .
+    docker build -t mihoyo-toolkit:$VERSION -t mihoyo-toolkit:latest .
     if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
-    Write-Host "[OK] Docker image built: mihoyo-toolkit:1.3.0"
+    Write-Host "[OK] Docker image built: mihoyo-toolkit:$VERSION"
 }
 
 # ============================================================
