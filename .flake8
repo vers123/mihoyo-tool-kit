@@ -1,0 +1,20 @@
+[flake8]
+max-line-length = 140
+exclude =
+    .venv,
+    .git,
+    data,
+    logs,
+    har,
+    build,
+    dist,
+    tests,
+    __pycache__,
+    .pytest_cache,
+    browser
+# E731: lambda assignment (common in PySide6 signal connections)
+# E127: continuation line over-indented (style preference)
+# E402: module import not at top (intentional sys.path setup in main.py)
+# W503: line break before binary operator (PEP 8 modern recommended style)
+# E241: multiple spaces after ',' (intentional alignment in tuples/dicts)
+ignore = E731,E127,E402,W503,E241

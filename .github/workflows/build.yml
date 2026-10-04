@@ -1,0 +1,189 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  release:
+    types: [published]
+
+jobs:
+  # ============================================================
+  #  测试
+  # ============================================================
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          pip install coverage
+          coverage run -m unittest discover -s tests -v
+          coverage report
+
+  # ============================================================
+  #  Lint 检查
+  # ============================================================
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Run flake8
+        run: flake8
+
+  # ============================================================
+  #  Windows EXE 构建（tag 推送或 release 时）
+  # ============================================================
+  build-windows:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build EXE (onedir)
+        run: |
+          $env:PYI_MODE = "onedir"
+          python -m PyInstaller app.spec --noconfirm --clean
+
+      - name: Package EXE into zip
+        run: |
+          Compress-Archive -Path dist/* -DestinationPath mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-windows
+          path: mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+          retention-days: 30
+
+  # ============================================================
+  #  Docker 构建（tag 推送或 release 时）
+  # ============================================================
+  build-docker:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (CLI mode)
+        run: |
+          docker build -t mihoyo-toolkit:latest -t mihoyo-toolkit:${{ github.ref_name }} .
+
+      - name: Build Docker image (full mode)
+        run: |
+          docker build --build-arg MODE=full -t mihoyo-toolkit:full .
+
+      - name: Save Docker image
+        run: |
+          docker save mihoyo-toolkit:latest | gzip > mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-docker
+          path: mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+          retention-days: 30
+
+  # ============================================================
+  #  创建 GitHub Release 并上传产物（仅 tag 推送时）
+  # ============================================================
+  release:
+    needs: [build-windows, build-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-windows
+
+      - name: Download Docker artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-docker
+
+      - name: Extract CHANGELOG section for this version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting CHANGELOG section for version: $VERSION"
+          awk -v ver="## [$VERSION]" '
+            substr($0, 1, 4) == "## [" { if (found) exit; if (index($0, ver)) found=1; next }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          echo "--- release notes preview ---"
+          head -20 release_notes.md
+
+      - name: Delete existing release for this tag (if any)
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "Checking for existing release with tag: $TAG"
+          EXISTING_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG" | grep '"id"' | head -1 | grep -oE '[0-9]+' || true)
+          if [ -n "$EXISTING_ID" ]; then
+            echo "Deleting existing release ID: $EXISTING_ID"
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$EXISTING_ID"
+            echo "Deleted existing release."
+          else
+            echo "No existing release found."
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+            mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

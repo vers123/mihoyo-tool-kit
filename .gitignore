@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.egg-info/
+.Python
+
+# Virtual Environment
+venv/
+env/
+.env/
+.env.local
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build & Distribution
+build/
+dist/
+*.egg
+!app.spec
+
+# Playwright browsers (large, install at build time)
+browser/
+
+# Test
+.test/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Output Directories
+data/
+html_output/
+image_urls/
+
+# HAR files (may contain cookies / session data)
+har/
+# 但保留测试用 fixture
+!tests/fixtures/har/
+!tests/fixtures/har/*
+
+# Logs
+logs/
+*.log
+debug.log
+
+# Trae Work
+.trae-html-share-packages/
+
+# Legacy AI docs (superseded by doc/ai/)
+ai-docs/
+
+# Config (uncomment if contains sensitive data like cookies / tokens)
+# config.json
