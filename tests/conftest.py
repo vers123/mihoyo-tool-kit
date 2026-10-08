@@ -17,6 +17,7 @@ import logging
 import os
 import shutil
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -25,7 +26,7 @@ import pytest
 MINIMAL_CONFIG = """\
 [app]
 mode = "cli"
-version = "2.1.1"
+version = "2.1.2"
 
 [fetch]
 headless = true
@@ -179,12 +180,69 @@ def reset_logging() -> None:
 # ---------------------------------------------------------------------- #
 #  模块级安全网：任何导入期 IO 都落在会话临时目录，绝不触碰仓库目录
 # ---------------------------------------------------------------------- #
-_SESSION_HOME = Path(tempfile.mkdtemp(prefix="mihoyo_toolkit_tests_"))
+#: 会话临时目录前缀（清理历史遗留目录时按此前缀匹配）
+SESSION_PREFIX = "mihoyo_toolkit_tests_"
+
+#: 遗留会话目录的保留时长：超过此时长的同名目录会在新会话开始时清除
+STALE_SESSION_AGE_SECONDS = 3600.0
+
+_SESSION_HOME = Path(tempfile.mkdtemp(prefix=SESSION_PREFIX))
 _write_config(_SESSION_HOME)
 os.environ["MIHOYO_HOME"] = str(_SESSION_HOME)
 reset_caches()
 reset_logging()
-atexit.register(shutil.rmtree, _SESSION_HOME, ignore_errors=True)
+
+
+def _cleanup_session_home() -> None:
+    """删除本次会话的临时目录。
+
+    ``atexit`` 回调早于 ``logging`` 自身的 shutdown 执行，此时
+    ``logging.FileHandler`` 仍持有 ``logs/app.log``；Windows 下无法删除被占用的
+    文件，``ignore_errors=True`` 又会把失败吞掉，于是每次运行都残留一个空的会话
+    目录。因此先 ``logging.shutdown()`` 释放句柄，再删目录。
+    """
+    logging.shutdown()
+    shutil.rmtree(_SESSION_HOME, ignore_errors=True)
+
+
+def _sweep_stale_sessions(
+    base: Path | None = None,
+    keep: Path | None = None,
+    *,
+    max_age_seconds: float = STALE_SESSION_AGE_SECONDS,
+) -> int:
+    """清理历史遗留的会话目录，返回删除个数。
+
+    进程被强杀（``atexit`` 不会执行）时仍会残留目录，故在新会话开始时兜底清扫。
+    只删除最后修改时间早于 ``max_age_seconds`` 的目录，避免误删并发运行的会话。
+
+    Args:
+        base: 搜索目录，默认 ``_SESSION_HOME`` 的父目录。
+        keep: 需要保留的目录（本次会话），默认 ``_SESSION_HOME``。
+        max_age_seconds: 视为「遗留」的最小年龄（秒）。
+    """
+    search_dir = base if base is not None else _SESSION_HOME.parent
+    keep_dir = keep if keep is not None else _SESSION_HOME
+    deadline = time.time() - max_age_seconds
+    removed = 0
+    for path in search_dir.glob(f"{SESSION_PREFIX}*"):
+        if path == keep_dir or not path.is_dir():
+            continue
+        try:
+            if path.stat().st_mtime > deadline:
+                continue  # 可能是并发运行的会话，跳过
+            shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            continue
+        removed += 1
+    return removed
+
+
+_reaped = _sweep_stale_sessions()
+if _reaped:
+    print(f"[conftest] 已清理 {_reaped} 个遗留测试会话目录")
+
+atexit.register(_cleanup_session_home)
 
 
 @pytest.fixture(autouse=True)

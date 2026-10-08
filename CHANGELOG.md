@@ -11,6 +11,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 （暂无）
 
+## [2.1.2] - 2026-10-08
+
+清理行为的 PATCH 修复（Windows 文件占用）+ 测试基础设施收尾。
+
+### Fixed
+
+- **`system.clean` 删不掉日志（Windows 必现）**：`logs/app.log` 被本包 logger 的
+  `logging.FileHandler` 持有、`logs/console.log` 被 `_TeeStream` 的镜像文件持有，
+  清理时必然 `WinError 32`。现在删除前先释放这两类句柄，并复位 `_configured` 与
+  `sys._mihoyo_console_configured`，后续日志调用会重新创建日志文件。实测：
+  修复前「失败 1 个」，修复后「释放日志句柄 26 个，失败 0 个」。
+- **每次 pytest 都在仓库里残留一个会话目录**：`tests/conftest.py` 的 `atexit`
+  回调早于 `logging` 自身的 shutdown 执行，`logs/app.log` 仍被占用 → `rmtree`
+  失败，而 `ignore_errors=True` 又把失败吞掉，只留下一个空壳目录（系统临时目录
+  不可写时会落在仓库根）。现在先 `logging.shutdown()` 再删，并在会话开始时兜底
+  清扫超过 1 小时的同名遗留目录（带年龄阈值，避免误删并发会话）。
+
+### Changed
+
+- **清理口径与构建脚本对齐**：`BUILD_DIRS` 增加 `.ruff_cache` / `.mypy_cache` /
+  `htmlcov`，新增 `BUILD_FILES = (".coverage",)`，与 `build.ps1` / `build.sh` 的
+  `clean` 一致 —— 此前 Python 清理不会碰这些开发缓存，两处口径不一致。
+
+### Added
+
+- **回归护栏**（`tests/integration/test_cli_clean.py`）：校验清理目标覆盖开发缓存与
+  构建产物，并断言**被 logger 持有的 `logs/app.log` 仍会被删除**（该用例在 Windows
+  修复前必失败）。
+- `.gitignore` 增加 `mihoyo_toolkit_tests_*/`：会话临时目录此前只靠 `*.log` 规则
+  偶然挡住，一旦进程被强杀留下 `config.toml` 就会出现在 `git status` 里。
+
 ## [2.1.1] - 2026-10-08
 
 测试工具链与 CI 的补丁版本（**PATCH**）：无用户可见行为变化，无 API 变更。

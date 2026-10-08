@@ -43,6 +43,7 @@ from ..utils import (
     log_function_call,
     run_filter,
 )
+from ..utils.logger import _release_log_handles
 from .registry import registry
 
 logger = get_module_logger("commands")
@@ -368,8 +369,18 @@ PROTECTED_DIRS: frozenset[str] = frozenset(
     {".venv", ".git", "browser", "data", "logs", "har", "node_modules"}
 )
 
-#: 清理缓存时一并删除的构建目录
-BUILD_DIRS: tuple[str, ...] = ("build", "dist", ".pytest_cache")
+#: 清理缓存时一并删除的构建目录（与 build.ps1 / build.sh 的 clean 口径一致）
+BUILD_DIRS: tuple[str, ...] = (
+    "build",
+    "dist",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    "htmlcov",
+)
+
+#: 清理缓存时一并删除的根级构建产物文件（同上）
+BUILD_FILES: tuple[str, ...] = (".coverage",)
 
 
 def _backup_target(name: str) -> Path:
@@ -651,6 +662,10 @@ def _collect_cache_targets(root: Path) -> tuple[list[Path], list[Path]]:
         candidate = root / name
         if candidate.is_dir():
             dirs.append(candidate)
+    for name in BUILD_FILES:
+        candidate = root / name
+        if candidate.is_file():
+            files.append(candidate)
     return dirs, files
 
 
@@ -670,13 +685,16 @@ def system_clean() -> None:
     logs = sorted(logs_dir.glob("*.log")) if logs_dir.is_dir() else []
 
     print("\n将清理以下缓存:")
-    print(f"  目录: {len(dirs)} 个（__pycache__ / build / dist / .pytest_cache）")
-    print(f"  文件: {len(files)} 个（*.pyc / *.pyo）")
+    print(f"  目录: {len(dirs)} 个（__pycache__ 及 {'、'.join(BUILD_DIRS)}）")
+    print(f"  文件: {len(files)} 个（*.pyc / *.pyo / {' / '.join(BUILD_FILES)}）")
     print(f"  日志: {len(logs)} 个（logs/*.log）")
     print(f"  跳过: {', '.join(sorted(PROTECTED_DIRS))}")
     if input("确认清理? 输入 YES 继续: ").strip() != "YES":
         print("[取消] 已取消清理")
         return
+
+    # 先释放日志句柄：Windows 下被占用的 logs/*.log 无法删除（WinError 32）
+    released = _release_log_handles()
 
     removed_dirs = removed_files = failed = 0
     for path in dirs:
@@ -694,7 +712,10 @@ def system_clean() -> None:
             failed += 1
             logger.warning("删除文件失败 %s: %s", path, exc)
 
-    print(f"\n[完成] 删除目录 {removed_dirs} 个，文件 {removed_files} 个，失败 {failed} 个")
+    print(
+        f"\n[完成] 释放日志句柄 {released} 个，删除目录 {removed_dirs} 个，"
+        f"文件 {removed_files} 个，失败 {failed} 个"
+    )
 
 
 # ====================================================================== #

@@ -154,7 +154,6 @@ def append_gui_log(message: str) -> None:
 
 
 def log_function_call(func: F) -> F:
-    """装饰器：记录函数进入/退出/异常到模块 logger。"""
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -169,6 +168,49 @@ def log_function_call(func: F) -> F:
         return result
 
     return wrapper  # type: ignore[return-value]
+
+
+def _release_log_handles() -> int:
+    """关闭 ``app.log`` / ``console.log`` 的文件句柄，返回释放数量。
+
+    Windows 下无法删除被占用的文件，因此清理日志前必须先释放句柄：
+
+    * ``app.log`` 被本包 logger 的 ``logging.FileHandler`` 持有；
+    * ``console.log`` 被 :class:`_TeeStream` 的镜像文件对象持有。
+
+    释放后会把 ``_configured`` 与 ``sys._mihoyo_console_configured`` 复位，使后续
+    调用（``setup_logger()`` / ``setup_console_log()``）能重新创建日志文件；
+    ``sys.stdout`` / ``sys.stderr`` 会还原为真实终端流，保证继续打印不受影响。
+    """
+    global _configured
+
+    released = 0
+
+    # 1) app.log：关闭并移除本包 logger 的文件处理器
+    for name in list(logging.Logger.manager.loggerDict):
+        if not name.startswith("mihoyo_toolkit"):
+            continue
+        target = logging.getLogger(name)
+        for handler in list(target.handlers):
+            if isinstance(handler, logging.FileHandler):
+                with suppress(Exception):
+                    handler.close()
+                target.removeHandler(handler)
+                released += 1
+    _configured = False
+
+    # 2) console.log：还原真实终端流并关闭镜像文件
+    for attr in ("stdout", "stderr"):
+        stream = getattr(sys, attr)
+        if isinstance(stream, _TeeStream):
+            setattr(sys, attr, stream._primary)
+            with suppress(Exception):
+                stream._mirror.close()
+            released += 1
+    if getattr(sys, "_mihoyo_console_configured", False):
+        sys._mihoyo_console_configured = False  # type: ignore[attr-defined]
+
+    return released
 
 
 __all__ = [

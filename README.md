@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.1-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.2-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -150,7 +150,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 | 36 | 重新加载配置 | 清除缓存并重新读取 `config.toml` |
 | 37 | 系统信息 | 打印运行环境与数据库统计 |
 | 38 | 数据迁移工具 | 检查并按需迁移旧版 (v1) 数据目录 |
-| 39 | 清理缓存 | 删除 `__pycache__` / `*.pyc` / 日志 / 构建产物（需 YES 确认） |
+| 39 | 清理缓存 | 删除 `__pycache__` / `*.pyc` / 日志 / 构建与质量工具缓存（需 YES 确认） |
 
 #### 数据导出（4 项）
 
@@ -233,7 +233,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "2.1.1"
+version = "2.1.2"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -296,7 +296,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "2.1.1"）
+│       ├── __init__.py         # 版本元信息（__version__ = "2.1.2"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -558,4 +558,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V2.1.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V2.1.2** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
