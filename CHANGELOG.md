@@ -9,7 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-（暂无）
+### Fixed
+
+- **三层测试标记名不副实**：`pyproject.toml` 声明了 `unit` / `integration` / `e2e`，
+  但只有 `tests/e2e/` 手写了 `pytestmark`，`pytest -m unit` 与 `-m integration`
+  实际**一个用例都选不到**。现由 `tests/conftest.py` 的
+  `pytest_collection_modifyitems` 钩子按目录自动打标（`unit` 252 / `integration` 67 /
+  `e2e` 2，合计 321 全覆盖），并把根目录下的 `tests/test_cli.py` 移入
+  `tests/integration/`，使每个测试文件都归属某一层。
+
+### Added
+
+- **`E2E (manual)` workflow**（`.github/workflows/e2e.yml`）：`workflow_dispatch` 手动
+  触发真实网络端到端测试（`MIHOYO_E2E=1 pytest tests/e2e -m e2e`）。它不随 push 自动
+  运行，常规 CI 仍只由 `main` 与 `v*` 标签触发；e2e 用例只用 httpx，无需安装浏览器。
+
+### Docs
+
+- `docs/architecture.md` §10、`CONTRIBUTING.md`、README 的测试章节改为说明「标记按目录
+  自动添加」，并给出 `-m unit` / `-m integration` / `-m e2e` 的用法与手动 e2e 入口。
 
 ## [2.1.0] - 2026-10-08
 

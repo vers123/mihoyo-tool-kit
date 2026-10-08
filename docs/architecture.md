@@ -365,10 +365,22 @@ MihoyoError
 
 ## 10. 测试分层
 
-| 标记 | 范围 | 依赖 |
-| ------ | ------ | ------ |
-| `unit` | 单函数 / 类 | 无 |
-| `integration` | 本地 IO / SQLite | 文件系统 |
-| `e2e` | 网络 / 浏览器 | 默认跳过 |
+分层标记由 `tests/conftest.py` 的 `pytest_collection_modifyitems` 钩子**按目录自动添加**，
+用例里无需手写 `pytestmark`：
 
-覆盖率门槛 **≥80%**（`pyproject.toml` 的 `[tool.coverage.*]`）。
+| 目录 | 标记 | 范围 | 依赖 |
+| ------ | ------ | ------ | ------ |
+| `tests/unit/` | `unit` | 单函数 / 类 | 无 |
+| `tests/integration/` | `integration` | 本地 IO / SQLite / 子进程 | 文件系统 |
+| `tests/e2e/` | `e2e` | 真实网络 API | 默认跳过（需 `MIHOYO_E2E=1`） |
+
+```bash
+pytest                          # 全部（e2e 自动跳过）
+pytest -m unit                  # 仅单元测试
+pytest -m integration           # 仅集成测试
+MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端
+```
+
+覆盖率门槛 **≥80%**（`pyproject.toml` 的 `[tool.coverage.*]`，`gui/` 与 `__main__.py`
+不计入）。e2e 也可在 Actions 页面手动触发 `E2E (manual)` workflow —— 该 workflow 只有
+`workflow_dispatch`，不会随 push 自动运行。

@@ -85,15 +85,19 @@ type 可选值：
 
 ## 测试
 
+分层标记（`unit` / `integration` / `e2e`）由 `tests/conftest.py` **按目录自动添加**，
+因此放进对应目录即可，无需手写 `pytestmark`：
+
 ```bash
-pytest                              # 全部（e2e 默认跳过）
-pytest tests/unit -q                # 仅单元测试
-pytest tests/integration -q         # 仅集成测试
-MIHOYO_E2E=1 pytest tests/e2e       # 真实网络端到端（需联网）
+pytest                          # 全部（e2e 默认跳过）
+pytest -m unit                  # 仅单元测试
+pytest -m integration           # 仅集成测试
+MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端（需联网）
 ```
 
-新增功能请同时补充对应层级的测试：纯逻辑放 `tests/unit/`，涉及 SQLite / 文件
-读写放 `tests/integration/`，需要真实网络的放 `tests/e2e/` 并加 `e2e` 标记。
+新增功能请同时补充对应层级的测试：纯逻辑放 `tests/unit/`，涉及 SQLite / 文件读写或
+子进程的放 `tests/integration/`，需要真实网络的放 `tests/e2e/`。真实网络用例也可在
+Actions 页面手动触发 `E2E (manual)` workflow（不会随 push 自动运行）。
 
 ## 提交 PR
 

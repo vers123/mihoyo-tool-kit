@@ -114,6 +114,36 @@ expected_total = 2
 #: 测试样例文件目录
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
+#: 测试根目录（用于按目录判定分层标记）
+TESTS_DIR = Path(__file__).resolve().parent
+
+#: 目录名 → pytest 标记名（与 pyproject.toml 的 markers 声明一一对应）
+TIER_MARKERS: dict[str, str] = {
+    "unit": "unit",
+    "integration": "integration",
+    "e2e": "e2e",
+}
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """按所在目录自动打上 ``unit`` / ``integration`` / ``e2e`` 标记。
+
+    ``pyproject.toml`` 声明了这三个标记（``--strict-markers`` 下必须已注册），
+    本钩子让「目录分层」与「标记」严格对应，于是 ``pytest -m unit``、
+    ``pytest -m integration``、``pytest -m e2e`` 都能按预期筛选，
+    新增测试文件放进对应目录即可，无需手写 ``pytestmark``。
+    """
+    for item in items:
+        try:
+            relative = Path(item.path).resolve().relative_to(TESTS_DIR)
+        except ValueError:  # pragma: no cover - 测试文件不在 tests/ 下时跳过
+            continue
+        if len(relative.parts) < 2:
+            continue
+        marker_name = TIER_MARKERS.get(relative.parts[0])
+        if marker_name and item.get_closest_marker(marker_name) is None:
+            item.add_marker(getattr(pytest.mark, marker_name))
+
 
 def _write_config(home: Path) -> Path:
     """在给定目录写入最小 config.toml。"""

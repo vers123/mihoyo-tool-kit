@@ -455,9 +455,15 @@ GitHub Actions（`.github/workflows/build.yml`）：
 ```bash
 pip install -e ".[dev]"
 pytest --cov --cov-report=term-missing
+
+pytest -m unit                  # 只跑单元测试
+pytest -m integration           # 只跑集成测试
+MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端（默认跳过）
 ```
 
-测试分为 `unit` / `integration` / `e2e` 三层（`e2e` 默认跳过），覆盖率门槛 **≥80%**
+测试分为 `unit` / `integration` / `e2e` 三层（`e2e` 默认跳过），标记由
+`tests/conftest.py` **按目录自动添加**，因此 `-m` 筛选开箱可用；真实网络用例也可在
+Actions 页面手动触发 `E2E (manual)` workflow（不随 push 自动运行）。覆盖率门槛 **≥80%**
 （按 `pyproject.toml` 的 coverage 配置，`gui/` 与 `__main__.py` 不计入；GUI 由
 `tests/unit/test_gui_smoke.py` 做 offscreen 冒烟测试）。
 

@@ -1,0 +1,35 @@
+name: E2E (manual)
+
+# 仅手动触发（Actions 页面「Run workflow」或 `gh workflow run "E2E (manual)"`）。
+# 真实网络端到端测试不进常规 CI：push 流水线只由 main 与 v* 标签触发，且不联网
+# （见 build.yml）。e2e 用例仅用 httpx 直连米哈游 content_v2_user API，无需浏览器。
+on:
+  workflow_dispatch:
+    inputs:
+      python-version:
+        description: Python 版本
+        required: false
+        default: "3.11"
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run e2e tests (real network)
+        env:
+          MIHOYO_E2E: "1"
+        run: pytest tests/e2e -m e2e -v

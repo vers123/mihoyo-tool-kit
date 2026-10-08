@@ -10,7 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+#: 仓库根目录（本文件位于 tests/integration/ 下，故上溯三级）
+REPO_ROOT = Path(__file__).resolve().parents[2]
 ENTRY = REPO_ROOT / "run.py"
 
 
