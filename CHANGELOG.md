@@ -77,9 +77,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`config.json`**：由 `config.toml` 取代。
 - **分散的 TXT 写入路径**：抓取结果统一入 SQLite；TXT 仅由提取层从库导出，
   写入 `data/results/`。
+- **v1 顶层模块树**：移除仓库根目录残留的 v1 实现（`main.py` 以及 `core/`、
+  `utils/`、`extractors/`、`fetchers/`、`gui/`）与仅供其使用的旧测试，
+  仓库结构与 README「数据与目录结构」一致；v1 代码仍可从 `v1.1.2` 标签取得。
+- **`doc/ai/README.md`**：v1.0.0 时代的 AI 速查手册，已由 `docs/reference.md` 取代。
 
 ### Notes
 
 - 功能与 v1.1.2 完全对齐，CLI 菜单项由 41 项调整为 **43 项**
   （9 个分组，详见 README「功能列表」）。
 - 旧版 `data/` 目录可使用「系统工具 → 数据迁移工具」或 `--migrate` 迁移。
+- 清理 v1 残留后 `ruff check .` 与 `ruff format --check .` 全绿（此前根目录
+  60 个 v1 文件使 lint job 报 381 项）。

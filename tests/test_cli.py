@@ -1,45 +1,47 @@
-"""O13 CLI 参数测试（subprocess 冒烟）
+"""根级入口 ``run.py`` 的参数解析冒烟测试（subprocess）。
 
-验证 main.py 的 argparse 非交互参数：--fetch / --export-excel / --count。
-不实际抓取（避免网络），只测参数解析与约束。
+覆盖非交互参数 ``--help`` / ``--fetch`` / ``--export-excel`` / ``--count``：
+只验证 argparse 行为与约束，不联网、不实际抓取。
 """
+
+from __future__ import annotations
 
 import subprocess
 import sys
-import unittest
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+ENTRY = REPO_ROOT / "run.py"
 
 
-class TestCli(unittest.TestCase):
-    def _run(self, *args):
-        return subprocess.run(
-            [sys.executable, "main.py", *args],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-
-    def test_help_lists_cli_args(self):
-        """--help 应列出 --fetch / --export-excel / --count"""
-        result = self._run("--help")
-        self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertIn("--fetch", result.stdout)
-        self.assertIn("--export-excel", result.stdout)
-        self.assertIn("--count", result.stdout)
-
-    def test_invalid_fetch_choice_errors(self):
-        """--fetch 非法值应被 argparse choices 拒绝"""
-        result = self._run("--fetch", "invalid")
-        self.assertNotEqual(result.returncode, 0)
-        combined = (result.stderr + result.stdout).lower()
-        self.assertTrue("invalid" in combined or "choices" in combined)
-
-    def test_valid_fetch_choice_accepted(self):
-        """--fetch genshin 应进入 _run_cli（不会因参数错误退出）"""
-        # --count 单独跑最安全（不触网络，只读空 SQLite）
-        result = self._run("--count")
-        # CLI 模式不强制 playwright，应正常退出 0
-        self.assertEqual(result.returncode, 0, msg=result.stderr + result.stdout)
+def _run(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(ENTRY), *args],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        cwd=REPO_ROOT,
+    )
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_help_lists_cli_args() -> None:
+    """--help 应列出 --fetch / --export-excel / --count"""
+    result = _run("--help")
+    assert result.returncode == 0, result.stderr
+    assert "--fetch" in result.stdout
+    assert "--export-excel" in result.stdout
+    assert "--count" in result.stdout
+
+
+def test_invalid_fetch_choice_errors() -> None:
+    """--fetch 非法值应被 argparse choices 拒绝"""
+    result = _run("--fetch", "invalid")
+    assert result.returncode != 0
+    combined = (result.stderr + result.stdout).lower()
+    assert "invalid" in combined or "choices" in combined
+
+
+def test_count_runs_without_data() -> None:
+    """--count 只读 SQLite，无数据时也应正常退出"""
+    result = _run("--count")
+    assert result.returncode == 0, result.stderr + result.stdout
