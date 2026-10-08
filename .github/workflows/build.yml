@@ -1,12 +1,14 @@
 name: Build & Test
 
+# 触发策略：只有主分支 main 的推送会触发 CI（release/* 等分支推送不再起 run）；
+# 标签 v* 是唯一的发布入口（build-windows / build-docker / release job）。
 on:
   push:
-    branches: [main, master]
+    branches: [main]
     tags:
       - "v*"
   pull_request:
-    branches: [main, master]
+    branches: [main]
   release:
     types: [published]
 
