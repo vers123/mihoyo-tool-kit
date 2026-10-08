@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1] - 2026-10-08
+
+CI / 发布流程补丁版本。功能与 2.0.0 完全一致，无 API 变更。
+
+### Fixed
+
+- **发布分支推送漏跑 CI**：`push` 与 `pull_request` 的触发分支由 `main` / `master`
+  扩展为同时包含 `release/**`；此前只推 `release/*` 分支不会触发任何 workflow，
+  只有 `v*` 标签才会运行。
+- **版本号声明不一致**：`pyproject.toml`、`__init__.py`、`config.toml`、
+  `core.config` 默认值、`version_info.txt`、`app.spec` 与 README 统一升至 2.0.1；
+  HAR 欢迎语改为读取 `__version__`，不再硬编码版本号。
+
 ## [2.0.0] - 2026-10-08
 
 架构级重构版本。功能层面完全对齐 v1.1.2（CLI 由 41 项扩充至 **43 项**），
