@@ -1,0 +1,129 @@
+# ============================================================
+#  米游社工具箱 v2.0.0 配置文件
+#  由 pydantic-settings 加载，支持环境变量覆盖（前缀 MIHOYO_）
+#  例：MIHOYO_FETCH__HEADLESS=false
+# ============================================================
+
+[app]
+# 运行模式：cli（交互菜单）| gui（图形界面）
+mode = "cli"
+version = "2.0.0"
+
+[fetch]
+# 浏览器是否后台运行（无头）
+headless = true
+# 页面加载额外等待秒数
+wait_seconds = 3
+# 超时（毫秒）
+timeout = 120000
+# 虚拟滚动最大尝试次数
+max_scroll_attempts = 500
+# 滚动间隔（秒）
+scroll_delay = 2.0
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+browser_args = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+
+[retry]
+max_attempts = 3
+delay = 2.0
+
+[incremental]
+enabled = true
+# 遇到已存在数据提前终止
+stop_on_existing = true
+# 新数据与本地历史合并去重
+merge_data = true
+
+[backup]
+enabled = true
+max_backups = 10
+
+[cookies]
+# 从 Firefox cookies.sqlite 读取并注入（免登录）
+use_firefox = true
+
+# ============================================================
+#  米游社用户
+# ============================================================
+[sources.user]
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
+
+# ============================================================
+#  角色图鉴
+# ============================================================
+[sources.baike]
+url = "https://baike.mihoyo.com/ys/obc/channel/map/189/25"
+
+# ============================================================
+#  微博
+# ============================================================
+[sources.weibo]
+url = "https://weibo.com/u/6593199887"
+
+# ============================================================
+#  米哈游四站点新闻
+# ============================================================
+[sources.news.genshin]
+url = "https://ys.mihoyo.com/main/news"
+label = "原神"
+scraper = "news_genshin"
+api_base_url = "https://act-api-takumi-static.mihoyo.com/content_v2_user/app/16471662a82d418a/getContentList"
+api_chan_id = "719"
+api_page_param = "iPage"
+api_page_size_param = "iPageSize"
+api_page_size = 5
+api_lang_param = "sLangKey"
+api_lang_value = "zh-cn"
+detail_url_pattern = "/main/news/detail/{iInfoId}"
+poster_ext_key = "720_1"
+lang_subdir = "zh-cn"
+expected_total = 4637
+
+[sources.news.genshin_en]
+url = "https://genshin.hoyoverse.com/en/news"
+label = "原神(EN)"
+scraper = "news_genshin_en"
+api_base_url = "https://sg-public-api-static.hoyoverse.com/content_v2_user/app/a1b1f9d3315447cc/getContentList"
+api_app_id = "32"
+api_chan_id = "395"
+api_page_param = "iPage"
+api_page_size_param = "iPageSize"
+api_page_size = 5
+api_lang_param = "sLangKey"
+api_lang_value = "en-us"
+detail_url_pattern = "/en/news/detail/{iInfoId}"
+poster_ext_key = "banner"
+lang_subdir = "en-us"
+expected_total = 2163
+
+[sources.news.zzz]
+url = "https://zzz.mihoyo.com/news"
+label = "绝区零"
+scraper = "news_zzz"
+api_base_url = "https://api-takumi-static.mihoyo.com/content_v2_user/app/706fd13a87294881/getContentList"
+api_chan_id = "273"
+api_page_param = "iPage"
+api_page_size_param = "iPageSize"
+api_page_size = 9
+api_lang_param = "sLangKey"
+api_lang_value = "zh-cn"
+detail_url_pattern = "/news/{iInfoId}"
+poster_ext_key = "news-banner"
+lang_subdir = "zh-cn"
+expected_total = 1554
+
+[sources.news.starrail]
+url = "https://sr.mihoyo.com/news"
+label = "星穹铁道"
+scraper = "news_starrail"
+api_base_url = "https://act-api-takumi-static.mihoyo.com/content_v2_user/app/1963de8dc19e461c/getContentList"
+api_chan_id = "255"
+api_page_param = "iPage"
+api_page_size_param = "iPageSize"
+api_page_size = 5
+api_lang_param = "sLangKey"
+api_lang_value = "zh-cn"
+detail_url_pattern = "/news/{iInfoId}"
+poster_ext_key = "news-poster"
+lang_subdir = "zh-cn"
+expected_total = 792

@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python 缓存 / 构建产物
+__pycache__
+*.py[cod]
+*.egg-info
+build/
+dist/
+.venv/
+venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 本地数据与输出（容器内通过卷挂载，不打包进镜像）
+data/
+output/
+logs/
+har/
+browser/
+
+# 测试与文档（运行时不需要）
+tests/
+
+# IDE 与系统文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 其它
+*.log
+*.db
+*.xlsx

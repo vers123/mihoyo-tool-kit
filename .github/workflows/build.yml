@@ -1,0 +1,200 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main, master]
+  release:
+    types: [published]
+
+jobs:
+  # ============================================================
+  #  测试（矩阵：Python 3.11 / 3.12 / 3.13）
+  # ============================================================
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,pinyin,excel]"
+
+      # 说明：CI 不安装 Playwright 浏览器（下载体积大、耗时长）；
+      #       e2e 测试默认跳过，GUI 测试不运行。
+      - name: Run tests with coverage
+        run: |
+          pytest --cov --cov-report=term-missing
+
+  # ============================================================
+  #  Lint 检查（ruff check + format）
+  # ============================================================
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ruff
+        run: pip install "ruff>=0.5.0"
+
+      - name: ruff check
+        run: ruff check .
+
+      - name: ruff format --check
+        run: ruff format --check .
+
+  # ============================================================
+  #  类型检查（mypy）
+  # ============================================================
+  type:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run mypy
+        run: mypy --ignore-missing-imports
+
+  # ============================================================
+  #  Windows EXE 构建（tag 推送或 release 时）
+  # ============================================================
+  build-windows:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,pinyin,excel,icon]"
+
+      - name: Build EXE (onedir)
+        run: |
+          $env:PYI_MODE = "onedir"
+          python -m PyInstaller app.spec --noconfirm --clean
+
+      - name: Package EXE into zip
+        run: |
+          Compress-Archive -Path dist/* -DestinationPath mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-windows
+          path: mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+          retention-days: 30
+
+  # ============================================================
+  #  Docker 构建（tag 推送或 release 时）：cli + full 双模式
+  # ============================================================
+  build-docker:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (CLI mode)
+        run: |
+          docker build -t mihoyo-toolkit:latest -t mihoyo-toolkit:${{ github.ref_name }} .
+
+      - name: Build Docker image (full mode)
+        run: |
+          docker build --build-arg MODE=full -t mihoyo-toolkit:full .
+
+      - name: Save Docker image
+        run: |
+          docker save mihoyo-toolkit:latest | gzip > mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-docker
+          path: mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+          retention-days: 30
+
+  # ============================================================
+  #  创建 GitHub Release 并上传产物（仅 tag 推送时）
+  # ============================================================
+  release:
+    needs: [build-windows, build-docker]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows EXE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-windows
+
+      - name: Download Docker artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mihoyo-toolkit-${{ github.ref_name }}-docker
+
+      - name: Extract CHANGELOG section for this version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Extracting CHANGELOG section for version: $VERSION"
+          awk -v ver="## [$VERSION]" '
+            substr($0, 1, 4) == "## [" { if (found) exit; if (index($0, ver)) found=1; next }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          echo "--- release notes preview ---"
+          head -20 release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            mihoyo-toolkit-${{ github.ref_name }}-windows.zip
+            mihoyo-toolkit-${{ github.ref_name }}-docker.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
