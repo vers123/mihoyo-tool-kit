@@ -10,9 +10,10 @@ import sys
 
 from .fonts import load_game_fonts
 from .main_window import MainWindow
+from .nav import NavEntry, build_nav
 from .paths import load_app_icon
 
-__all__ = ["MainWindow", "launch_gui"]
+__all__ = ["MainWindow", "NavEntry", "build_nav", "launch_gui"]
 
 
 def _ensure_application():

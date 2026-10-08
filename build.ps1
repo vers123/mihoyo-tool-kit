@@ -4,7 +4,7 @@
     米游社工具箱 (miHoYo ToolKit) 构建脚本
 
 .DESCRIPTION
-    v2.0.1 构建脚本。支持依赖安装、测试、lint、类型检查、EXE 打包（PyInstaller）、
+    v2.1.0 构建脚本。支持依赖安装、测试、lint、类型检查、EXE 打包（PyInstaller）、
     Docker 构建与缓存清理。版本号从 version_info.txt 解析（单一数据源），
     解析失败时回退到 pyproject.toml。
 

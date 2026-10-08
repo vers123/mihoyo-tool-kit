@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mihoyo-toolkit"
-version = "2.0.1"
+version = "2.1.0"
 description = "米游社工具箱 - 米游社 / 微博 / 米哈游四站点新闻数据抓取与提取工具"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -159,6 +159,8 @@ omit = [
 ]
 
 [tool.coverage.report]
+# 覆盖率门槛：唯一生效位置（此前 .coveragerc 以 35% 覆盖了本文件，已合并删除）
+fail_under = 80
 show_missing = true
 skip_covered = true
 exclude_lines = [

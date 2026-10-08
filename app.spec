@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v2.0.1。
+"""PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v2.1.0。
 
 本项目为 **src/ layout**（包体位于 ``src/mihoyo_toolkit``），PyInstaller 以根级
 垫片 ``run.py`` 作为分析入口；``pathex`` 同时加入 ``src`` 与仓库根。

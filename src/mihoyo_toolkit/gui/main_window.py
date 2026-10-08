@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
-
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -20,15 +18,7 @@ from PySide6.QtWidgets import (
 from .. import __version__
 from . import theme
 from .fonts import get_title_font
-from .pages import (
-    ExportPage,
-    FilterPage,
-    NewsPage,
-    OtherPage,
-    SystemPage,
-    UserPostsPage,
-    WeiboPage,
-)
+from .nav import NavEntry, build_nav
 from .pages.base import BasePage
 from .paths import load_app_icon
 from .widgets import LogViewer
@@ -37,24 +27,13 @@ from .widgets import LogViewer
 class MainWindow(QMainWindow):
     """工具箱主窗口。
 
+    导航由 CLI 命令注册表派生（见 :mod:`mihoyo_toolkit.gui.nav`），因此界面与
+    交互菜单始终共用同一份命令清单。
+
     Args:
         fonts: ``load_game_fonts()`` 的返回值，用于导航项的游戏字体；
             为空字典时全部使用系统默认字体。
     """
-
-    #: (导航标题, 业务 key)
-    NAV_ITEMS: ClassVar[list[tuple[str, str]]] = [
-        ("米游社用户", "user"),
-        ("原神新闻", "genshin"),
-        ("原神英文版新闻", "genshin_en"),
-        ("绝区零新闻", "zzz"),
-        ("星穹铁道新闻", "starrail"),
-        ("其他抓取", "other"),
-        ("微博", "weibo"),
-        ("数据导出", "export"),
-        ("TXT 过滤", "filter"),
-        ("系统工具", "system"),
-    ]
 
     def __init__(self, fonts: dict[str, str] | None = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -92,16 +71,19 @@ class MainWindow(QMainWindow):
         self.nav_list.setObjectName("navList")
         self.nav_list.setFixedWidth(theme.NAV_WIDTH)
 
+        # 导航项来自 CLI 命令注册表：菜单与界面共用同一份命令清单
+        self.nav_entries: list[NavEntry] = build_nav()
+
         self.content_stack = QStackedWidget()
         self._pages = self._create_pages()
         for page in self._pages:
             self.content_stack.addWidget(page)
             page.log_message.connect(self._append_log)
 
-        for title, key in self.NAV_ITEMS:
-            item = QListWidgetItem(title)
-            if key in self.fonts:
-                item.setFont(get_title_font(key, self.fonts, 13))
+        for entry in self.nav_entries:
+            item = QListWidgetItem(entry.title)
+            if entry.key in self.fonts:
+                item.setFont(get_title_font(entry.key, self.fonts, 13))
             # 显式统一行高：游戏字体度量差异 + QSS padding 会让 Qt 忽略字体推导高度，
             # 导致行高不一致与文字重叠
             item.setSizeHint(QSize(0, theme.NAV_ITEM_HEIGHT))
@@ -133,18 +115,8 @@ class MainWindow(QMainWindow):
         return panel
 
     def _create_pages(self) -> list[BasePage]:
-        return [
-            UserPostsPage(),
-            NewsPage("genshin"),
-            NewsPage("genshin_en"),
-            NewsPage("zzz"),
-            NewsPage("starrail"),
-            OtherPage(),
-            WeiboPage(),
-            ExportPage(),
-            FilterPage(),
-            SystemPage(),
-        ]
+        """按导航项（即注册表派生结果）创建页面。"""
+        return [entry.factory() for entry in self.nav_entries]
 
     # ------------------------------------------------------------------ #
     #  槽函数
@@ -152,8 +124,7 @@ class MainWindow(QMainWindow):
     def _on_nav_changed(self, row: int) -> None:
         if 0 <= row < len(self._pages):
             self.content_stack.setCurrentIndex(row)
-            title = self.NAV_ITEMS[row][0]
-            self.statusBar().showMessage(f"当前：{title}")
+            self.statusBar().showMessage(f"当前：{self.nav_entries[row].title}")
 
     def _append_log(self, message: str) -> None:
         self.log_viewer.append_log(message)

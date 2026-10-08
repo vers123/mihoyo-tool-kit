@@ -6,6 +6,7 @@ from .config import ToolkitSettings, get_settings, reload_settings
 from .exceptions import (
     AuthError,
     ConfigError,
+    GuiError,
     MihoyoError,
     NetworkError,
     ParseError,
@@ -50,4 +51,5 @@ __all__ = [
     "ParseError",
     "StorageError",
     "ScraperError",
+    "GuiError",
 ]

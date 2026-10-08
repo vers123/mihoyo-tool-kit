@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.1-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -14,6 +14,7 @@
 **[GUI 界面](#gui-界面)** ·
 **[配置说明](#配置说明)** ·
 **[目录结构](#数据与目录结构)** ·
+**[公开 API](#公开-api-与版本策略)** ·
 **[构建打包](#构建与打包)**
 
 [中文](#中文文档) / [English](#english-docs)
@@ -232,7 +233,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "2.0.1"
+version = "2.1.0"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -295,7 +296,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "2.0.1"）
+│       ├── __init__.py         # 版本元信息（__version__ = "2.1.0"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -378,6 +379,24 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 `cookies.sqlite` 并注入 Playwright，无需每次手动登录（由 `config.toml` 的
 `[cookies].use_firefox` 控制）。
 
+### 公开 API 与版本策略
+
+本项目遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。按规范第 1 条，
+**公开 API 已在 [`docs/public-api.md`](docs/public-api.md) 显式声明**，只有以下五个
+面受版本号约束：
+
+| 面 | 内容 |
+| ------ | ------ |
+| CLI 命令与参数 | 43 项命令的 `key` 与分组、`--fetch` / `--export-feed` 等参数取值 |
+| Python 包 API | `core` / `scrapers` / `extractors` / `exporters` / `cli` / `gui` / `utils` 各自 `__all__` 列出的符号 |
+| 配置格式 | `config.toml` 小节与字段、`MIHOYO_*` 环境变量与加载优先级 |
+| 数据与目录约定 | `data/toolkit.db` 表结构、`data/html/{game}_news.html`、`data/results/*.txt`、`output/*`、`logs/*`、`har/*` |
+| GUI 导航结构 | 由命令注册表派生的导航分组与顺序 |
+
+未列入的模块与字段均视为内部实现。版本号规则：破坏上表任一面 → **MAJOR**；
+向后兼容地新增（新命令、新配置项、新公开符号，或内部架构重大改进）→ **MINOR**；
+向后兼容的修复与文档 → **PATCH**。已发布版本的内容不再修改。
+
 ### 构建与打包
 
 #### Windows EXE（PyInstaller）
@@ -423,9 +442,11 @@ docker build --build-arg MODE=full -t mihoyo-toolkit:full .
 
 GitHub Actions（`.github/workflows/build.yml`）：
 
+- **触发范围** — 仅 `main` 分支推送与 `v*` 标签触发；其他分支推送不会起流水线，
+  向 `main` 提 Pull Request 会触发检查
 - **test** — Python 3.11 / 3.12 / 3.13 矩阵测试 + 覆盖率
 - **lint** — ruff check + format 检查
-- **type** — mypy
+- **type** — mypy（失败即阻断流水线）
 - **build-windows / build-docker** — tag 或 release 时构建 EXE / 镜像并上传产物
 - **release** — 从 `CHANGELOG.md` 抽取对应版本段落，创建 GitHub Release 并附加产物
 
@@ -436,7 +457,9 @@ pip install -e ".[dev]"
 pytest --cov --cov-report=term-missing
 ```
 
-测试分为 `unit` / `integration` / `e2e` 三层（`e2e` 默认跳过），覆盖率门槛 **≥80%**。
+测试分为 `unit` / `integration` / `e2e` 三层（`e2e` 默认跳过），覆盖率门槛 **≥80%**
+（按 `pyproject.toml` 的 coverage 配置，`gui/` 与 `__main__.py` 不计入；GUI 由
+`tests/unit/test_gui_smoke.py` 做 offscreen 冒烟测试）。
 
 ---
 
@@ -527,4 +550,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V2.0.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V2.1.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

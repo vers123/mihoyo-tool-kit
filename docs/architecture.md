@@ -1,6 +1,6 @@
-# 架构文档 · 米游社工具箱 v2.0.0
+# 架构文档 · 米游社工具箱 v2.1.0
 
-本文档描述 v2.0.0 架构级重构后的**分层结构、数据流、关键机制与扩展方式**。
+本文档描述 v2.0.x 架构级重构后的**分层结构、数据流、关键机制与扩展方式**。
 面向维护者与 AI Agent。
 
 ---
@@ -320,8 +320,9 @@ def my_command() -> None: ...  # 调用 core / 领域层
 
 1. 在 `gui/pages/` 新建 `BasePage` 子类，`_setup_ui()` 构建控件；
 2. 用 `self.run_task(func, label, ...)` 触发耗时操作；
-3. 在 `gui/pages/__init__.py` 导出，并在 `gui/main_window.py` 的 `NAV_ITEMS` 与
-   `_create_pages()` 中登记。
+3. 在 `gui/pages/__init__.py` 导出，并在 `gui/nav.py` 的 `_GROUP_FACTORIES`
+   （或 `_SPLIT_COMMANDS`）中登记 —— 导航项由命令注册表派生，未登记的命令会在
+   装配阶段抛 `GuiError`。
 
 ---
 

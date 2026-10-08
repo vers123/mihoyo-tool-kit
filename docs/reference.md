@@ -1,6 +1,6 @@
-# AI Agent 参考手册 · 米游社工具箱 v2.0.0
+# AI Agent 参考手册 · 米游社工具箱 v2.1.0
 
-面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v2.0.0 公开 API。
+面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v2.1.0 公开 API。
 导入根：`mihoyo_toolkit`（已安装）或 `python -m mihoyo_toolkit`。
 
 ---
@@ -331,8 +331,12 @@ mihoyo_toolkit.__main__.gui_main() -> None                                # gui-
 ```python
 def launch_gui() -> None                     # 创建 QApplication + 主窗口 + 事件循环
 class MainWindow(QMainWindow):
-    NAV_ITEMS: ClassVar[list[tuple[str, str]]]
+    nav_entries: list[NavEntry]              # 由命令注册表派生的导航项
     def __init__(self, fonts: dict[str, str] | None = None, parent=None)
+
+def build_nav(reg: CommandRegistry | None = None) -> list[NavEntry]
+@dataclass(frozen=True)
+class NavEntry:                              # key / title / commands / factory
 
 class TaskController(QObject):
     started / progress(int) / message(str) / finished(object) / failed(str) / cancelled

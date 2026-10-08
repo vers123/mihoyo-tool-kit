@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+（暂无）
+
+## [2.1.0] - 2026-10-08
+
+向后兼容的功能新增 + v2.0.0 重构的工程质量收尾。按
+[SemVer 2.0.0](https://semver.org/lang/zh-CN/)：本版为 **MINOR**（新增功能与内部重大
+改进，无破坏性变更），并**首次显式声明公开 API**（见 [`docs/public-api.md`](docs/public-api.md)）。
+
+### Changed
+
+- **CI 触发范围收敛为主分支**：`on.push.branches` 由 `[main, master, "release/**"]`
+  收窄为 `[main]`，只有主分支推送会触发 workflow；标签 `v*` 仍是唯一发布入口
+  （2.0.1 中「扩展为 `release/**`」的做法已收回，见下方 Removed）。
+- **覆盖率门槛落到实处**：门槛由 35% 提升为 **80%**，并把 coverage 配置统一到
+  `pyproject.toml`（删除 `.coveragerc`）。此前 coverage 只读 `.coveragerc`，
+  `pyproject.toml` 里的 `[tool.coverage.*]` 实际是死配置。
+- **mypy 改为阻断 CI**：移除 type job 的 `continue-on-error: true`，类型错误会
+  直接让流水线失败。
+
+### Added
+
+- **公开 API 声明**（`docs/public-api.md`）：按 SemVer 规范第 1 条显式划定公开接口
+  ——CLI 命令与参数、Python 包公开符号、`config.toml` 与环境变量、数据与目录约定、
+  GUI 导航结构，并写明 MAJOR / MINOR / PATCH 的判定规则。
+- **GUI 导航改由命令注册表派生**（`gui/nav.py`）：`MainWindow` 不再硬编码导航清单，
+  导航标题、分组顺序、组内命令均取自 `cli/registry.py`，界面与交互菜单从此真正共用
+  同一份命令清单（v2.0.0 曾如此声称但未实现）；装配时校验每条命令**恰好**被一个
+  页面负责，缺漏或重复即抛出新异常 `GuiError`。导航顺序随之与 CLI 菜单一致
+  （`系统工具` 移到 `数据导出` 之前），页面集合与功能不变。
+- **`core.exceptions.GuiError`**：GUI 装配错误（命令未映射到页面等），已纳入公开符号。
+- **GUI 冒烟测试**（`tests/unit/test_gui_smoke.py`）：offscreen 下构建主窗口、校验导航
+  覆盖全部 43 条注册命令、主题调色板与样式表可用、`TaskController` 后台线程执行与
+  协作式取消可用；环境无 Qt 平台时自动跳过。
+
+### Removed
+
+- **v1 分支 / 标签 / Release**：删除 `release/v1.0.1`、`release/v1.1.0`、
+  `release/v1.1.1`、`release/v1.1.2`、`release/v2.0.0`、`release/v2.0.1` 分支，
+  以及 `v1.0.0`、`v1.0.1`、`v1.1.0`、`v1.1.1` 标签与 `v1.0.0`、`v1.0.1` 两个
+  Release。仓库仅保留 `main` 分支与 `v2.0.0`、`v2.0.1` 标签；v1 代码不再有
+  命名引用（仅存于本地 reflog 与其他克隆）。
+- **`.flake8`**：已被 ruff（`pyproject.toml`）取代的遗留配置。
+- **`requirements.txt`**：内容与 `pyproject.toml` 重复且缺少 `pydantic-settings`
+  （照它安装会得到无法启动的环境），依赖统一以 `pyproject.toml` 为单一来源。
+
+### Docs
+
+- **新增 `docs/public-api.md`**：公开 API 清单与版本号判定规则（本项目对 SemVer 的承诺）。
+- `CONTRIBUTING.md` 重写为 v2：src/ layout、`pip install -e ".[dev,pinyin,excel,icon]"`、
+  Python 3.11+、pytest 三层测试、`scrapers/` 与 `extractors/` 模块图、`config.toml`，
+  并写明「只有 `main` 与 `v*` 标签触发 CI」。
+- `docs/architecture.md`、`docs/reference.md` 版本号对齐到 2.1.0；「新增 GUI 页面」的
+  步骤由 `NAV_ITEMS` 改为在 `gui/nav.py` 登记。
+- README 增加「公开 API 与版本策略」章节与顶部索引链接，CI 章节补充触发范围与 mypy
+  阻断说明，并注明覆盖率统计范围。
+
 ## [2.0.1] - 2026-10-08
 
 CI / 发布流程补丁版本。功能与 2.0.0 完全一致，无 API 变更。

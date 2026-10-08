@@ -11,7 +11,8 @@
     │   └── AuthError       登录态 / Cookie 失效
     ├── ParseError          页面 / API 响应解析失败
     ├── StorageError        SQLite / 文件读写失败
-    └── ScraperError        抓取器通用错误
+    ├── ScraperError        抓取器通用错误
+    └── GuiError            GUI 装配错误（命令未映射到页面等）
 """
 
 from __future__ import annotations
@@ -60,9 +61,14 @@ class ScraperError(MihoyoError):
     """抓取器运行期间的一般错误。"""
 
 
+class GuiError(MihoyoError):
+    """GUI 装配错误（如注册表中的命令没有对应页面）。"""
+
+
 __all__ = [
     "AuthError",
     "ConfigError",
+    "GuiError",
     "MihoyoError",
     "NetworkError",
     "ParseError",

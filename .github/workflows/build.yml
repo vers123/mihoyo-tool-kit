@@ -36,8 +36,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,pinyin,excel]"
 
-      # 说明：CI 不安装 Playwright 浏览器（下载体积大、耗时长）；
-      #       e2e 测试默认跳过，GUI 测试不运行。
+      # 说明：CI 不安装 Playwright 浏览器（下载体积大、耗时长），e2e 测试默认跳过；
+      #       GUI 冒烟测试以 offscreen 平台运行，环境无 Qt 平台时自动跳过。
       - name: Run tests with coverage
         run: |
           pytest --cov --cov-report=term-missing
@@ -70,7 +70,6 @@ jobs:
   # ============================================================
   type:
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
