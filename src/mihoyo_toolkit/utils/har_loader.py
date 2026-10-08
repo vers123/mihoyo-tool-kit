@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from .. import __version__
 from ..core.paths import get_path_manager
 from .logger import get_module_logger
 
@@ -239,7 +240,7 @@ def get_har_welcome_text() -> str:
     ensure_har_dirs()
     lines = [
         "=" * 70,
-        "  欢迎使用 米游社工具箱 v2.0.0",
+        f"  欢迎使用 米游社工具箱 v{__version__}",
         "=" * 70,
         "",
         "【重要提示】首次使用或接口失效时，请先按以下步骤更新 HAR 文件：",
@@ -276,7 +277,7 @@ def get_har_welcome_html() -> str:
     """生成 GUI 欢迎语与 HAR 更新步骤（HTML）。"""
     ensure_har_dirs()
     parts = [
-        "<h3>欢迎使用 米游社工具箱 v2.0.0</h3>",
+        f"<h3>欢迎使用 米游社工具箱 v{__version__}</h3>",
         "<p><b>【重要提示】</b>首次使用或接口失效时，请先按以下步骤更新 HAR 文件：</p>",
         "<p><b>【首次使用准备】安装 Playwright 浏览器（只需执行一次）：</b></p>",
         "<pre>pip install playwright\nplaywright install chromium</pre>",
