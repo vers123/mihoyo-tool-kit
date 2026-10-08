@@ -8,8 +8,10 @@
 * ``TaskController`` 能把任务放到后台线程执行并回传结果；
 * 协作式取消可中断长任务。
 
-CI 环境没有显示设备，统一使用 Qt ``offscreen`` 平台插件；若运行环境连
-offscreen 都不可用（缺少 Qt 运行库），则整体跳过而不是失败。
+CI 环境没有显示设备，统一使用 Qt ``offscreen`` 平台插件；若运行环境缺少 Qt 依赖
+（例如 ubuntu 未装 ``libegl1``，``import PySide6`` 会抛 ImportError），整个模块跳过
+而不是失败 —— 注意 pytest 8.2 起 ``importorskip`` 不再吞掉这类 ImportError，故这里
+显式捕获。
 """
 
 from __future__ import annotations
@@ -23,9 +25,10 @@ import pytest
 # offscreen 必须在导入 PySide6 / 创建 QApplication 之前设置
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-pytest.importorskip("PySide6.QtWidgets", reason="未安装 PySide6")
-
-from PySide6.QtWidgets import QApplication
+try:
+    from PySide6.QtWidgets import QApplication
+except ImportError as exc:  # pragma: no cover - 取决于运行环境
+    pytest.skip(f"PySide6 不可用：{exc}", allow_module_level=True)
 
 from mihoyo_toolkit import __version__
 from mihoyo_toolkit.cli.registry import CommandRegistry, registry

@@ -41,7 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`core.exceptions.GuiError`**：GUI 装配错误（命令未映射到页面等），已纳入公开符号。
 - **GUI 冒烟测试**（`tests/unit/test_gui_smoke.py`）：offscreen 下构建主窗口、校验导航
   覆盖全部 43 条注册命令、主题调色板与样式表可用、`TaskController` 后台线程执行与
-  协作式取消可用；环境无 Qt 平台时自动跳过。
+  协作式取消可用。CI 的 test job 补装 Qt 无头运行库（`libegl1` / `libgl1` 等），
+  使测试在 ubuntu 运行器上真正执行；环境确实无法加载 Qt 时自动跳过（pytest 8.2
+  起 `importorskip` 不再吞掉此类 ImportError，故为显式捕获）。
 
 ### Removed
 
