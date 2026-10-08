@@ -1,4 +1,4 @@
-# 架构文档 · 米游社工具箱 v2.1.0
+# 架构文档 · 米游社工具箱 v2.1.1
 
 本文档描述 v2.0.x 架构级重构后的**分层结构、数据流、关键机制与扩展方式**。
 面向维护者与 AI Agent。
@@ -378,9 +378,10 @@ MihoyoError
 pytest                          # 全部（e2e 自动跳过）
 pytest -m unit                  # 仅单元测试
 pytest -m integration           # 仅集成测试
-MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端
+MIHOYO_E2E=1 pytest -m e2e      # e2e 默认档：一次请求走完 fetch_all（约 1s）
+MIHOYO_E2E=1 MIHOYO_E2E_FULL=1 pytest -m e2e   # 追加完整分页（约十几页）
 ```
 
 覆盖率门槛 **≥80%**（`pyproject.toml` 的 `[tool.coverage.*]`，`gui/` 与 `__main__.py`
-不计入）。e2e 也可在 Actions 页面手动触发 `E2E (manual)` workflow —— 该 workflow 只有
-`workflow_dispatch`，不会随 push 自动运行。
+不计入）。e2e 也可在 Actions 页面手动触发 `E2E (manual)` workflow（`scope` 选 `fast`
+或 `full`）—— 该 workflow 只有 `workflow_dispatch`，不会随 push 自动运行。

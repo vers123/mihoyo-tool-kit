@@ -6,6 +6,14 @@ name: E2E (manual)
 on:
   workflow_dispatch:
     inputs:
+      scope:
+        description: 抓取范围（fast = 单次请求覆盖 fetch_all；full = 完整分页）
+        required: false
+        default: fast
+        type: choice
+        options:
+          - fast
+          - full
       python-version:
         description: Python 版本
         required: false
@@ -32,4 +40,6 @@ jobs:
       - name: Run e2e tests (real network)
         env:
           MIHOYO_E2E: "1"
+          # scope=full 时解锁完整分页用例（tests/e2e 里的 MIHOYO_E2E_FULL 开关）
+          MIHOYO_E2E_FULL: ${{ inputs.scope == 'full' && '1' || '0' }}
         run: pytest tests/e2e -m e2e -v

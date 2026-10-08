@@ -1,6 +1,6 @@
-# AI Agent 参考手册 · 米游社工具箱 v2.1.0
+# AI Agent 参考手册 · 米游社工具箱 v2.1.1
 
-面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v2.1.0 公开 API。
+面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v2.1.1 公开 API。
 导入根：`mihoyo_toolkit`（已安装）或 `python -m mihoyo_toolkit`。
 
 ---

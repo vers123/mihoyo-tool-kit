@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.0-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.1-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -233,7 +233,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "2.1.0"
+version = "2.1.1"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -296,7 +296,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "2.1.0"）
+│       ├── __init__.py         # 版本元信息（__version__ = "2.1.1"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -458,13 +458,15 @@ pytest --cov --cov-report=term-missing
 
 pytest -m unit                  # 只跑单元测试
 pytest -m integration           # 只跑集成测试
-MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端（默认跳过）
+MIHOYO_E2E=1 pytest -m e2e      # 真实网络端到端（默认跳过，约 1s）
+MIHOYO_E2E=1 MIHOYO_E2E_FULL=1 pytest -m e2e   # 追加完整分页（约 10s）
 ```
 
 测试分为 `unit` / `integration` / `e2e` 三层（`e2e` 默认跳过），标记由
-`tests/conftest.py` **按目录自动添加**，因此 `-m` 筛选开箱可用；真实网络用例也可在
-Actions 页面手动触发 `E2E (manual)` workflow（不随 push 自动运行）。覆盖率门槛 **≥80%**
-（按 `pyproject.toml` 的 coverage 配置，`gui/` 与 `__main__.py` 不计入；GUI 由
+`tests/conftest.py` **按目录自动添加**，因此 `-m` 筛选开箱可用；e2e 默认档只发一次
+请求，完整分页档由 `MIHOYO_E2E_FULL=1` 解锁。真实网络用例也可在 Actions 页面手动触发
+`E2E (manual)` workflow（`scope` 选 `fast` / `full`，不随 push 自动运行）。覆盖率门槛
+**≥80%**（按 `pyproject.toml` 的 coverage 配置，`gui/` 与 `__main__.py` 不计入；GUI 由
 `tests/unit/test_gui_smoke.py` 做 offscreen 冒烟测试）。
 
 ---
@@ -556,4 +558,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V2.1.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V2.1.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

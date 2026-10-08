@@ -9,13 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+（暂无）
+
+## [2.1.1] - 2026-10-08
+
+测试工具链与 CI 的补丁版本（**PATCH**）：无用户可见行为变化，无 API 变更。
+
+### Changed
+
+- **e2e 耗时从 6 分 34 秒降到秒级**：默认用例把站点配置的 `api_page_size` 调大，
+  使 `fetch_all()` 的 `max_pages` 收敛为 1 —— **一次请求**即走完整条 `fetch_all()`
+  路径（重试包装 / `iTotal` 处理 / 解析 / 循环退出，仍返回真实数据）；完整分页用例
+  改为 `MIHOYO_E2E_FULL=1` 才执行，且每页取 API 实际上限 300，页数从上万级降到
+  十几页。实测：默认档 `2 passed, 1 skipped in 1.25s`，完整档 `3 passed in 8.30s`。
+- **`E2E (manual)` workflow 增加 `scope` 输入**（`fast` 默认 / `full`）：选 `full`
+  时注入 `MIHOYO_E2E_FULL=1`，用于手动验证完整分页。
+
 ### Fixed
 
 - **三层测试标记名不副实**：`pyproject.toml` 声明了 `unit` / `integration` / `e2e`，
   但只有 `tests/e2e/` 手写了 `pytestmark`，`pytest -m unit` 与 `-m integration`
   实际**一个用例都选不到**。现由 `tests/conftest.py` 的
   `pytest_collection_modifyitems` 钩子按目录自动打标（`unit` 252 / `integration` 67 /
-  `e2e` 2，合计 321 全覆盖），并把根目录下的 `tests/test_cli.py` 移入
+  `e2e` 3，合计 322 全覆盖），并把根目录下的 `tests/test_cli.py` 移入
   `tests/integration/`，使每个测试文件都归属某一层。
 
 ### Added
@@ -27,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Docs
 
 - `docs/architecture.md` §10、`CONTRIBUTING.md`、README 的测试章节改为说明「标记按目录
-  自动添加」，并给出 `-m unit` / `-m integration` / `-m e2e` 的用法与手动 e2e 入口。
+  自动添加」，给出 `-m unit` / `-m integration` / `-m e2e` 的用法，并写明 e2e 的
+  fast（默认，1 次请求）与 full（`MIHOYO_E2E_FULL=1`，完整分页）两档及手动入口。
 
 ## [2.1.0] - 2026-10-08
 
