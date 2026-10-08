@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 （暂无）
 
+## [2.1.3] - 2026-10-08
+
+仓库清理与结构对齐的 **PATCH** 版本：无功能变化、无 API 变更。
+
+### Fixed
+
+- **README 目录树与实际结构不一致**：补上 `docs/public-api.md`、`gui/nav.py`
+  （v2.1.0 新增的导航装配模块）、整个 `tests/` 三层结构，以及此前缺失的
+  `.github/`。
+
+### Changed
+
+- **清理开发缓存与构建元数据**：删除 `src/mihoyo_toolkit.egg-info/`（editable 安装
+  产生的构建元数据）、`__pycache__`、`.pytest_cache` / `.ruff_cache` / `.mypy_cache`
+  / `.coverage` 与 pytest 会话临时目录；`data/`（抓取数据）、`har/`（HAR 回退文件）、
+  `output/`（导出产物）、`.venv/`（本地环境）保持不动。
+
+### Notes
+
+- 全量功能体检通过：pytest `321 passed, 3 skipped`（覆盖率门槛 80% 通过）；包内
+  **68 个模块全部可导入**；CLI 非交互命令 `--version` / `--help` / `--count` /
+  `--migrate` / `--export-excel` / `--export-feed rss|json` 退出码均为 0 且导出产物
+  正常刷新；交互菜单可启动并正常退出；本地真实网络 e2e `2 passed, 1 skipped`。
+
 ## [2.1.2] - 2026-10-08
 
 清理行为的 PATCH 修复（Windows 文件占用）+ 测试基础设施收尾。

@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.2-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.3-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -233,7 +233,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "2.1.2"
+version = "2.1.3"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -290,13 +290,15 @@ mihoyo-tool-kit/
 ├── version_info.txt            # Windows 版本元数据
 ├── build.ps1 / build.bat / build.sh   # 构建脚本
 ├── Dockerfile                  # Docker（cli / full 双模式）
+├── .github/                    # CI：build.yml（主流水线）/ e2e.yml（手动端到端）
 ├── docs/
 │   ├── architecture.md         # 架构文档
 │   ├── reference.md            # AI Agent 模块/API 速查手册
+│   ├── public-api.md           # 公开 API 声明（SemVer）
 │   └── create-plan.md          # 角色模型抓取计划
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "2.1.2"）
+│       ├── __init__.py         # 版本元信息（__version__ = "2.1.3"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -324,7 +326,7 @@ mihoyo-tool-kit/
 │       │   ├── commands.py     #   43 项命令定义
 │       │   └── menu.py         #   交互式菜单
 │       ├── gui/                # PySide6 MVC 图形界面
-│       │   ├── main_window.py / models.py / controllers.py
+│       │   ├── main_window.py / models.py / controllers.py / nav.py
 │       │   ├── workers.py / widgets.py / theme.py / fonts.py / paths.py
 │       │   └── pages/          #   各功能页面
 │       └── utils/              # 工具层
@@ -334,6 +336,11 @@ mihoyo-tool-kit/
 │           ├── backup_manager.py
 │           ├── migration.py    #   旧版数据迁移
 │           └── txt_filter.py   #   TXT 过滤
+├── tests/                      # 三层测试（标记由 conftest 按目录自动添加）
+│   ├── unit/                   #   单元测试（无外部依赖）
+│   ├── integration/            #   集成测试（SQLite / 文件 IO / 子进程）
+│   ├── e2e/                    #   真实网络端到端（默认跳过，需 MIHOYO_E2E=1）
+│   └── fixtures/               #   样例 HAR / HTML / JSON
 ├── resources/                  # 游戏字体 + 应用图标（必须提交）
 │   ├── font/                   #   游戏字体（Genshin Impact / Star Rail / ZenlessZoneZero）
 │   └── icon/app.ico|app.png
@@ -558,4 +565,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V2.1.2** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V2.1.3** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
