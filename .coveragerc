@@ -1,0 +1,14 @@
+[run]
+omit =
+    tests/*
+    .venv/*
+    setup.py
+    app.spec
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 35
+
+[html]
+directory = htmlcov
