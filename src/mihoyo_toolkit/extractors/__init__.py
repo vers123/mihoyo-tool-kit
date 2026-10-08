@@ -1,7 +1,8 @@
 """数据提取模块。
 
-v2 架构下新闻 / 发帖 / 微博 / 图片均由抓取层直写 SQLite，提取层负责读库并
-导出为 ``data/results`` 下的 TXT；教程仍保留 HTML 解析（同时落库 + 导出）。
+v2 架构下新闻 / 发帖 / 微博 / 图片均由抓取层直写 SQLite，提取层负责读库并按
+来源导出到 ``data/results/<来源子目录>/`` 下的 TXT；教程仍保留 HTML 解析
+（同时落库 + 导出）。
 """
 
 from __future__ import annotations

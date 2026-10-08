@@ -19,6 +19,9 @@ from pathlib import Path
 
 _HOME_ENV = "MIHOYO_HOME"
 
+#: 教程 HTML 子目录名（位于 ``<root>/data/html`` 下）
+TUTORIAL_HTML_SUBDIR = "tutorial"
+
 
 def _detect_project_root() -> Path:
     """按优先级探测项目根目录。"""
@@ -53,10 +56,6 @@ class PathManager:
     @property
     def results(self) -> Path:
         return self.data / "results"
-
-    @property
-    def images(self) -> Path:
-        return self.data / "images"
 
     @property
     def models(self) -> Path:
@@ -113,7 +112,6 @@ class PathManager:
             self.data,
             self.html,
             self.results,
-            self.images,
             self.models,
             self.backups,
             self.logs,
@@ -141,4 +139,4 @@ def get_path_manager() -> PathManager:
     return PathManager(root=root, _data=data)
 
 
-__all__ = ["PathManager", "get_path_manager"]
+__all__ = ["PathManager", "TUTORIAL_HTML_SUBDIR", "get_path_manager"]

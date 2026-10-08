@@ -23,6 +23,9 @@ logger = get_module_logger("extractors.posts")
 
 _TOPIC = "posts"
 
+#: 导出子目录（相对 ``data/results``）
+SUBDIR = "user"
+
 
 class PostExtractor:
     """从 ``posts`` 表导出用户发帖 TXT。"""
@@ -33,8 +36,8 @@ class PostExtractor:
 
     @property
     def output_path(self) -> Path:
-        """导出目标：``data/results/{topic}.txt``。"""
-        return get_path_manager().results / f"{self.topic}.txt"
+        """导出目标：``data/results/{SUBDIR}/{topic}.txt``。"""
+        return get_path_manager().results / SUBDIR / f"{self.topic}.txt"
 
     def load_posts(self) -> list[PostItem]:
         """从 SQLite 读取全部帖子（按创建时间倒序）。"""
@@ -79,7 +82,7 @@ class PostExtractor:
     def save_post_data(self, items: list[PostItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        path_manager.results.mkdir(parents=True, exist_ok=True)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [
             f"{index:04d}-{item.title}-[{item.created_at}]({item.url})"
             for index, item in enumerate(items, 1)
@@ -90,7 +93,7 @@ class PostExtractor:
 
 
 def run_extract_posts(incremental: bool = False) -> None:
-    """读取 ``posts`` 表并导出 ``data/results/posts.txt``。"""
+    """读取 ``posts`` 表并导出 ``data/results/user/posts.txt``。"""
     extractor = PostExtractor()
     items = extractor.extract_posts(incremental=incremental)
     if not items:

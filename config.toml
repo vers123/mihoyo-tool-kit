@@ -1,5 +1,5 @@
 # ============================================================
-#  米游社工具箱 v2.1.3 配置文件
+#  米游社工具箱 v3.0.0 配置文件
 #  由 pydantic-settings 加载，支持环境变量覆盖（前缀 MIHOYO_）
 #  例：MIHOYO_FETCH__HEADLESS=false
 # ============================================================
@@ -7,7 +7,7 @@
 [app]
 # 运行模式：cli（交互菜单）| gui（图形界面）
 mode = "cli"
-version = "2.1.3"
+version = "3.0.0"
 
 [fetch]
 # 浏览器是否后台运行（无头）
@@ -76,7 +76,7 @@ api_lang_param = "sLangKey"
 api_lang_value = "zh-cn"
 detail_url_pattern = "/main/news/detail/{iInfoId}"
 poster_ext_key = "720_1"
-lang_subdir = "zh-cn"
+results_subdir = "genshin/zh-cn"
 expected_total = 4637
 
 [sources.news.genshin_en]
@@ -93,7 +93,7 @@ api_lang_param = "sLangKey"
 api_lang_value = "en-us"
 detail_url_pattern = "/en/news/detail/{iInfoId}"
 poster_ext_key = "banner"
-lang_subdir = "en-us"
+results_subdir = "genshin/en-us"
 expected_total = 2163
 
 [sources.news.zzz]
@@ -109,7 +109,7 @@ api_lang_param = "sLangKey"
 api_lang_value = "zh-cn"
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-banner"
-lang_subdir = "zh-cn"
+results_subdir = "zzz"
 expected_total = 1554
 
 [sources.news.starrail]
@@ -125,5 +125,5 @@ api_lang_param = "sLangKey"
 api_lang_value = "zh-cn"
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-poster"
-lang_subdir = "zh-cn"
+results_subdir = "starrail"
 expected_total = 792

@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.1.3-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.0.0-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -233,7 +233,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "2.1.3"
+version = "3.0.0"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -298,7 +298,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "2.1.3"）
+│       ├── __init__.py         # 版本元信息（__version__ = "3.0.0"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -347,8 +347,13 @@ mihoyo-tool-kit/
 ├── data/                       # 运行期数据（自动创建，gitignore）
 │   ├── toolkit.db              #   统一 SQLite 数据库
 │   ├── html/                   #   抓取的 HTML（如 genshin_news.html）
-│   ├── results/                #   提取导出的 TXT / 过滤结果
-│   ├── images/                 #   图片链接导出
+│   ├── results/                #   提取导出（按来源分目录）
+│   │   ├── genshin/zh-cn|en-us/   #   原神新闻（中文 / 英文）
+│   │   ├── zzz/ · starrail/       #   绝区零 / 星穹铁道新闻
+│   │   ├── user/ · weibo/         #   用户发帖 / 微博
+│   │   ├── images/                #   图鉴图片链接
+│   │   ├── tutorial/              #   教程角色数据 / 更新日志
+│   │   └── filtered/              #   TXT 过滤结果
 │   ├── models/                 #   下载的角色模型
 │   └── backups/                #   自动备份
 ├── logs/                       # 日志（自动创建，gitignore）
@@ -397,7 +402,7 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 | CLI 命令与参数 | 43 项命令的 `key` 与分组、`--fetch` / `--export-feed` 等参数取值 |
 | Python 包 API | `core` / `scrapers` / `extractors` / `exporters` / `cli` / `gui` / `utils` 各自 `__all__` 列出的符号 |
 | 配置格式 | `config.toml` 小节与字段、`MIHOYO_*` 环境变量与加载优先级 |
-| 数据与目录约定 | `data/toolkit.db` 表结构、`data/html/{game}_news.html`、`data/results/*.txt`、`output/*`、`logs/*`、`har/*` |
+| 数据与目录约定 | `data/toolkit.db` 表结构、`data/html/{game}_news.html`、`data/results/<来源>/*.txt`、`output/*`、`logs/*`、`har/*` |
 | GUI 导航结构 | 由命令注册表派生的导航分组与顺序 |
 
 未列入的模块与字段均视为内部实现。版本号规则：破坏上表任一面 → **MAJOR**；
@@ -565,4 +570,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V2.1.3** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V3.0.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

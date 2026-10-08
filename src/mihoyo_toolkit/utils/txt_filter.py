@@ -71,20 +71,17 @@ class TxtFilter:
     #  文件发现
     # ------------------------------------------------------------------ #
     def list_txt_files(self) -> list[tuple[str, Path, int]]:
-        """扫描 ``results/`` 与 ``images/`` 下所有 .txt 文件.
+        """扫描 ``results/`` 下所有 .txt 文件.
 
         Returns:
             ``[(相对路径, 绝对路径, 行数), ...]``, 按相对路径排序.
         """
         files: list[tuple[str, Path, int]] = []
-        seen: set[Path] = set()
-        for root in (self.paths.results, self.paths.images):
-            if not root.is_dir():
-                continue
+        root = self.paths.results
+        if root.is_dir():
             for path in sorted(root.rglob("*.txt")):
-                if not path.is_file() or path in seen:
+                if not path.is_file():
                     continue
-                seen.add(path)
                 try:
                     with path.open(encoding="utf-8") as fh:
                         count = sum(1 for line in fh if line.strip())
@@ -219,7 +216,7 @@ class TxtFilter:
     def _rel_subfolder(self, source_file: str) -> Path:
         """由源文件相对路径生成输出子文件夹 (保留目录结构, 去掉 .txt)."""
         rel = Path(source_file)
-        for root in (self.paths.results, self.paths.images, self.paths.data):
+        for root in (self.paths.results, self.paths.data):
             try:
                 sub = rel.relative_to(self.paths.relative(root))
             except ValueError:

@@ -32,7 +32,7 @@ class AppSettings(BaseModel):
     """应用级设置。"""
 
     mode: Literal["cli", "gui"] = "cli"
-    version: str = "2.1.3"
+    version: str = "3.0.0"
 
 
 class FetchSettings(BaseModel):
@@ -114,7 +114,8 @@ class NewsSiteSource(BaseModel):
     api_app_id: str | None = None
     detail_url_pattern: str
     poster_ext_key: str | None = None
-    lang_subdir: str | None = None
+    #: 新闻 TXT 在 data/results 下的相对子目录（如 genshin/zh-cn）
+    results_subdir: str = ""
     expected_total: int | None = None
 
     def detail_url(self, info_id: int | str) -> str:

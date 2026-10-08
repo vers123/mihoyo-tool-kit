@@ -1,4 +1,4 @@
-# 架构文档 · 米游社工具箱 v2.1.3
+# 架构文档 · 米游社工具箱 v3.0.0
 
 本文档描述 v2.0.x 架构级重构后的**分层结构、数据流、关键机制与扩展方式**。
 面向维护者与 AI Agent。
@@ -69,7 +69,7 @@ flowchart TB
 flowchart LR
     A["抓取 scrapers"] -->|NewsItem / PostItem / WeiboItem ...| B[("SQLite<br/>data/toolkit.db")]
     B --> C["提取 extractors"]
-    C -->|TXT| D["data/results/*.txt"]
+    C -->|TXT| D["data/results/<来源>/*.txt"]
     B --> E["导出 exporters"]
     E -->|xlsx / xml / json| F["output/"]
     A -->|原始 HTML| G["data/html/{game}_news.html"]
@@ -80,8 +80,10 @@ flowchart LR
 
 1. **抓取层直写 SQLite**：抓取器解析得到的模型对象经 `Storage.upsert_*` 落库，
    以唯一索引实现幂等去重（重复抓取不产生重复行）。
-2. **提取层读库导出**：`extractors/*` 不再解析 HTML，而是「读库 → 排序 → 写
-   `data/results/*.txt`」（教程除外，仍保留 HTML 解析并同时落库 + 导出）。
+2. **提取层读库导出**：`extractors/*` 不再解析 HTML，而是「读库 → 排序 → 按来源写入
+   `data/results/<来源>/*.txt`」（`genshin/{zh-cn,en-us}`、`zzz`、`starrail`、
+   `user`、`weibo`、`images`、`tutorial`；新闻子目录由站点配置 `results_subdir` 决定；
+   教程除外，仍保留 HTML 解析并同时落库 + 导出）。
 3. **导出层读库生成**：Excel / RSS / JSON 均从 SQLite 读取，写出到 `output/`。
 4. **HTML 仅作留档**：`data/html/{game}_news.html` 保存抓取时的页面快照，便于排查。
 
@@ -291,7 +293,7 @@ flowchart LR
 ### 8.1 新增一个新闻站点
 
 1. 在 `config.toml` 增加 `[sources.news.<key>]` 段（`url / label / scraper / api_base_url /
-   api_chan_id / detail_url_pattern / ...`）。
+   api_chan_id / detail_url_pattern / results_subdir / ...`）。
 2. 在 `core/config.py: NewsSources` 增补对应字段（保持声明即顺序）。
 3. 在 `scrapers/news/` 新建子类并用 `@register_news("<key>")` 注册，声明 `game`。
 4. 在 `extractors/news/` 新建 `GameNewsBaseExtractor` 子类，声明 `game`。

@@ -48,9 +48,14 @@ class GameNewsBaseExtractor:
     #  路径
     # ------------------------------------------------------------------ #
     @property
+    def output_dir(self) -> Path:
+        """导出目录：``data/results/{results_subdir}``（按站点 / 语言分层）。"""
+        return get_path_manager().results / self.site.results_subdir
+
+    @property
     def output_path(self) -> Path:
-        """导出目标：``data/results/{game}_news.txt``。"""
-        return get_path_manager().results / f"{self.game}_news.txt"
+        """导出目标：``data/results/{results_subdir}/{game}_news.txt``。"""
+        return self.output_dir / f"{self.game}_news.txt"
 
     # ------------------------------------------------------------------ #
     #  读取
@@ -92,7 +97,7 @@ class GameNewsBaseExtractor:
     def save_news_data(self, items: list[NewsItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        path_manager.results.mkdir(parents=True, exist_ok=True)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [self.format_line(index, item) for index, item in enumerate(items, 1)]
         self.output_path.write_text("\n".join(lines), encoding="utf-8")
         logger.info(

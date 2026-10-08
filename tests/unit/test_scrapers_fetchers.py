@@ -492,7 +492,7 @@ def test_run_tutorial_batch(monkeypatch, store) -> None:
 
 
 def test_run_tutorial_batch_skips_existing(monkeypatch, store, tmp_home: Path) -> None:
-    html_dir = get_path_manager().html
+    html_dir = get_path_manager().html / "tutorial"
     html_dir.mkdir(parents=True, exist_ok=True)
     (html_dir / "tutorial_abc123_default.html").write_text("exists", encoding="utf-8")
 

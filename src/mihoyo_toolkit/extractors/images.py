@@ -20,6 +20,9 @@ logger = get_module_logger("extractors.images")
 
 _TOPIC = "image_urls"
 
+#: 导出子目录（相对 ``data/results``）
+SUBDIR = "images"
+
 
 class ImageExtractor:
     """从 ``images`` 表导出图片链接 TXT。"""
@@ -30,8 +33,8 @@ class ImageExtractor:
 
     @property
     def output_path(self) -> Path:
-        """导出目标：``data/results/image_urls.txt``。"""
-        return get_path_manager().results / f"{self.topic}.txt"
+        """导出目标：``data/results/{SUBDIR}/{topic}.txt``。"""
+        return get_path_manager().results / SUBDIR / f"{self.topic}.txt"
 
     def load_images(self) -> list[ImageItem]:
         """从 SQLite 读取全部图片链接。"""
@@ -64,7 +67,7 @@ class ImageExtractor:
     def save_image_data(self, items: list[ImageItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        path_manager.results.mkdir(parents=True, exist_ok=True)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [
             f"{index:04d}-{item.name}-[{item.image_url}]" for index, item in enumerate(items, 1)
         ]
@@ -76,7 +79,7 @@ class ImageExtractor:
 
 
 def run_extract_images() -> None:
-    """读取 ``images`` 表并导出 ``data/results/image_urls.txt``。"""
+    """读取 ``images`` 表并导出 ``data/results/images/image_urls.txt``。"""
     extractor = ImageExtractor()
     items = extractor.extract_image_urls()
     if not items:

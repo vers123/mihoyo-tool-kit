@@ -27,7 +27,7 @@ NEWS_EXTRACTORS: dict[str, type[GameNewsBaseExtractor]] = {
 
 
 def run_extract_news(game: str, incremental: bool = False) -> None:
-    """导出指定游戏的新闻 TXT 到 ``data/results/{game}_news.txt``。"""
+    """导出指定游戏的新闻 TXT 到 ``data/results/{results_subdir}/{game}_news.txt``。"""
     extractor_cls = NEWS_EXTRACTORS.get(game)
     if extractor_cls is None:
         logger.error("未知新闻站点: %s（可用: %s）", game, sorted(NEWS_EXTRACTORS))

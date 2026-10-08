@@ -12,7 +12,6 @@ def test_path_manager_default_layout(tmp_path: Path) -> None:
     assert pm.data == tmp_path / "data"
     assert pm.html == tmp_path / "data" / "html"
     assert pm.results == tmp_path / "data" / "results"
-    assert pm.images == tmp_path / "data" / "images"
     assert pm.models == tmp_path / "data" / "models"
     assert pm.db == tmp_path / "data" / "toolkit.db"
     assert pm.backups == tmp_path / "data" / "backups"
@@ -45,7 +44,6 @@ def test_ensure_dirs_creates_layout(tmp_path: Path) -> None:
         pm.data,
         pm.html,
         pm.results,
-        pm.images,
         pm.models,
         pm.backups,
         pm.logs,

@@ -67,7 +67,9 @@ def test_news_extractor_export(store, sample_news_items, tmp_home: Path) -> None
 
     extractor = GenshinNewsExtractor()
     assert extractor.game == "genshin"
-    assert extractor.output_path == tmp_home / "data" / "results" / "genshin_news.txt"
+    assert extractor.output_path == (
+        tmp_home / "data" / "results" / "genshin" / "zh-cn" / "genshin_news.txt"
+    )
 
     items = extractor.extract_news()
     assert len(items) == 2
@@ -96,7 +98,7 @@ def test_news_extractor_subclasses() -> None:
 def test_run_extract_news(store, sample_news_items, tmp_home: Path) -> None:
     store.upsert_news("genshin", sample_news_items)
     run_extract_news("genshin")
-    assert (tmp_home / "data" / "results" / "genshin_news.txt").is_file()
+    assert (tmp_home / "data" / "results" / "genshin" / "zh-cn" / "genshin_news.txt").is_file()
 
     run_extract_news("unknown")  # 未知站点：记录错误后返回
 
@@ -117,7 +119,7 @@ def test_post_extractor(store, tmp_home: Path) -> None:
     assert items[0].post_id == "p1"
 
     out = extractor.save_post_data(items)
-    assert out == tmp_home / "data" / "results" / "posts.txt"
+    assert out == tmp_home / "data" / "results" / "user" / "posts.txt"
 
     run_extract_posts()
 
@@ -134,7 +136,7 @@ def test_weibo_extractor(store, tmp_home: Path) -> None:
     assert len(items) == 1
 
     out = extractor.save_weibo_data(items)
-    assert out == tmp_home / "data" / "results" / "weibo.txt"
+    assert out == tmp_home / "data" / "results" / "weibo" / "weibo.txt"
     run_extract_weibo()
 
 
@@ -150,7 +152,7 @@ def test_image_extractor(store, tmp_home: Path) -> None:
     assert len(items) == 1
 
     out = extractor.save_image_data(items)
-    assert out == tmp_home / "data" / "results" / "image_urls.txt"
+    assert out == tmp_home / "data" / "results" / "images" / "image_urls.txt"
     run_extract_images()
 
 
@@ -176,7 +178,7 @@ def test_tutorial_extractor_characters(store, tmp_home: Path) -> None:
 
     assert extractor.store(items) == 1
     out = extractor.save_character_data(items)
-    assert out == tmp_home / "data" / "results" / "characters_tid1.txt"
+    assert out == tmp_home / "data" / "results" / "tutorial" / "characters_tid1.txt"
     assert out.is_file()
 
 
@@ -240,7 +242,7 @@ def test_run_extract_tutorial_changelog(tmp_home: Path) -> None:
     (html_dir / "tutorial_cl1.html").write_text(CHANGELOG_HTML, encoding="utf-8")
 
     run_extract_tutorial("cl1")
-    assert (get_path_manager().results / "changelog_cl1.json").is_file()
+    assert (get_path_manager().results / "tutorial" / "changelog_cl1.json").is_file()
 
 
 # ---------------------------------------------------------------------- #

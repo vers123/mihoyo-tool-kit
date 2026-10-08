@@ -78,8 +78,7 @@ def test_list_txt_files() -> None:
     results_dir = get_path_manager().results
     (results_dir / "sub").mkdir(parents=True, exist_ok=True)
     (results_dir / "sub" / "a.txt").write_text("line1\nline2\n", encoding="utf-8")
-    images_dir = get_path_manager().images
-    (images_dir / "b.txt").write_text("x\n", encoding="utf-8")
+    (results_dir / "sub" / "b.txt").write_text("x\n", encoding="utf-8")
 
     files = TxtFilter().list_txt_files()
     rels = [rel for rel, _, _ in files]

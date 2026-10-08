@@ -70,7 +70,7 @@ def test_migration_flow(tmp_path: Path, tmp_home: Path) -> None:
     assert (tmp_home / "data" / "html" / "genshin_news.html").is_file()
     assert (tmp_home / "data" / "html" / "hero_news.html").is_file()
     assert (tmp_home / "data" / "results" / "plain.txt").is_file()
-    assert (tmp_home / "data" / "images" / "pics.txt").is_file()
+    assert (tmp_home / "data" / "results" / "images" / "pics.txt").is_file()
 
     # 幂等：目标已存在则不再迁移
     assert manager.needs_migration() is False

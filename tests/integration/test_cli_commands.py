@@ -62,7 +62,7 @@ def test_backup_target(tmp_home: Path) -> None:
 
     paths = get_path_manager()
     assert commands._backup_target("toolkit.db") == paths.db
-    assert commands._backup_target("posts.txt") == paths.results / "posts.txt"
+    assert commands._backup_target("posts.txt") == paths.results / "user" / "posts.txt"
 
 
 def test_set_toml_value(tmp_home: Path) -> None:

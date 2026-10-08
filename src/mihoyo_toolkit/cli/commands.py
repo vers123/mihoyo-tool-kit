@@ -25,6 +25,10 @@ from ..extractors import (
     run_extract_tutorial,
     run_extract_weibo,
 )
+from ..extractors.images import SUBDIR as IMAGES_SUBDIR
+from ..extractors.news import NEWS_EXTRACTORS
+from ..extractors.posts import SUBDIR as POSTS_SUBDIR
+from ..extractors.weibo import SUBDIR as WEIBO_SUBDIR
 from ..scrapers import (
     run_baike,
     run_custom,
@@ -382,13 +386,25 @@ BUILD_DIRS: tuple[str, ...] = (
 #: 清理缓存时一并删除的根级构建产物文件（同上）
 BUILD_FILES: tuple[str, ...] = (".coverage",)
 
+#: 非新闻来源的提取 TXT 文件名 → ``data/results`` 下的来源子目录
+TXT_SOURCE_SUBDIRS: dict[str, str] = {
+    "posts.txt": POSTS_SUBDIR,
+    "weibo.txt": WEIBO_SUBDIR,
+    "image_urls.txt": IMAGES_SUBDIR,
+}
+
 
 def _backup_target(name: str) -> Path:
     """备份源文件名 → 恢复目标路径。"""
     paths = get_path_manager()
     if name.endswith(".db"):
         return paths.db
-    return paths.results / name
+    subdir = TXT_SOURCE_SUBDIRS.get(name, "")
+    if not subdir and name.endswith("_news.txt"):
+        game = name[: -len("_news.txt")]
+        if game in NEWS_EXTRACTORS:
+            subdir = get_settings().sources.news.get_site(game).results_subdir
+    return paths.results / subdir / name
 
 
 def _playwright_version() -> str:

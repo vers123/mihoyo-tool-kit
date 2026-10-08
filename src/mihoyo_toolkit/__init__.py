@@ -13,7 +13,7 @@ v2.0.0 架构级重构：
 
 from __future__ import annotations
 
-__version__ = "2.1.3"
+__version__ = "3.0.0"
 __author__ = "LingLan"
 __license__ = "MIT"
 

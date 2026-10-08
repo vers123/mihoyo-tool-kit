@@ -15,7 +15,7 @@ from pathlib import Path
 
 from ..core.exceptions import ParseError
 from ..core.models import TutorialItem
-from ..core.paths import get_path_manager
+from ..core.paths import TUTORIAL_HTML_SUBDIR, get_path_manager
 from ..core.storage import Storage
 from ..utils.logger import get_module_logger
 
@@ -23,6 +23,9 @@ logger = get_module_logger("extractors.tutorial")
 
 _DEFAULT_TUTORIAL_ID = "mh4imrrhzdzi"
 _DEFAULT_CHANGELOG_ID = "mhs2w008wf14"
+
+#: 导出子目录（相对 ``data/results``）
+SUBDIR = "tutorial"
 
 # 角色编号表：<tr class="table-row"> 内两列（编号 / 角色名）
 _TABLE_PATTERN = re.compile(
@@ -43,7 +46,7 @@ _LOOSE_PATTERN = re.compile(
 def _html_path(tutorial_id: str, lang: str | None) -> Path:
     """教程 HTML 路径：``data/html/tutorial/tutorial_{id}{_lang}.html``。"""
     suffix = f"_{lang}" if lang else ""
-    return get_path_manager().html / "tutorial" / f"tutorial_{tutorial_id}{suffix}.html"
+    return get_path_manager().html / TUTORIAL_HTML_SUBDIR / f"tutorial_{tutorial_id}{suffix}.html"
 
 
 class TutorialExtractor:
@@ -66,9 +69,9 @@ class TutorialExtractor:
 
     @property
     def output_path(self) -> Path:
-        """导出目标：``data/results/characters_{id}{_lang}.txt``。"""
+        """导出目标：``data/results/{SUBDIR}/characters_{id}{_lang}.txt``。"""
         suffix = f"_{self.lang}" if self.lang else ""
-        return get_path_manager().results / f"characters_{self.tutorial_id}{suffix}.txt"
+        return get_path_manager().results / SUBDIR / f"characters_{self.tutorial_id}{suffix}.txt"
 
     def read_html(self) -> str:
         """读取教程 HTML，缺失时抛 :class:`ParseError`。"""
@@ -116,7 +119,7 @@ class TutorialExtractor:
     def save_character_data(self, items: list[TutorialItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        path_manager.results.mkdir(parents=True, exist_ok=True)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [
             f"{index:04d}-{item.character_id}-{item.name}" for index, item in enumerate(items, 1)
         ]
@@ -144,7 +147,9 @@ class ChangelogExtractor:
         self.lang = lang
         self.html_path = _html_path(self.tutorial_id, self.lang)
         suffix = f"_{self.lang}" if self.lang else ""
-        self.output_path = get_path_manager().results / f"changelog_{self.tutorial_id}{suffix}.json"
+        self.output_path = (
+            get_path_manager().results / SUBDIR / f"changelog_{self.tutorial_id}{suffix}.json"
+        )
         self.url = f"https://act.mihoyo.com/ys/ugc/tutorial/detail/{self.tutorial_id}"
 
     @staticmethod
@@ -319,7 +324,7 @@ class ChangelogExtractor:
     def save(self, data: dict) -> Path:
         """写出 JSON，返回输出路径。"""
         path_manager = get_path_manager()
-        path_manager.results.mkdir(parents=True, exist_ok=True)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         self.output_path.write_text(
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )

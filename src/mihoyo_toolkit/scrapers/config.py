@@ -16,6 +16,8 @@ class ScrapeConfig(BaseModel):
 
     url: str
     output_filename: str
+    #: HTML 保存子目录（相对 ``<root>/data/html``；空串表示直接放在 ``html`` 下）
+    html_subdir: str = ""
     #: 抓取器名（用于 HAR 目录与日志前缀）
     scraper_name: str = ""
 

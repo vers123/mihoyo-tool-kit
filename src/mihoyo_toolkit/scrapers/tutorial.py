@@ -2,7 +2,7 @@
 
 移植自 v1 ``fetchers/tutorial.py`` + ``extractors/tutorial.py``：
 
-* 抓取教程详情页（HTML 保存为 ``tutorial_{id}_{lang}.html``，强制后台运行）；
+* 抓取教程详情页（HTML 保存为 ``data/html/tutorial/tutorial_{id}_{lang}.html``，强制后台运行）；
 * 从教程表格解析角色编号 / 名称，落库到 ``tutorial`` 表（不再写 TXT）；
 * 批量模式从更新日志/目录页提取所有教程链接并逐个抓取。
 """
@@ -16,7 +16,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from ..core.config import get_settings
 from ..core.models import TutorialItem
-from ..core.paths import get_path_manager
+from ..core.paths import TUTORIAL_HTML_SUBDIR
 from ..core.storage import Storage
 from ..utils.logger import get_module_logger
 from .base import BaseScraper
@@ -121,6 +121,7 @@ class TutorialScraper(BaseScraper[TutorialItem]):
         config = ScrapeConfig.from_settings(
             url=url,
             output_filename=f"tutorial_{tutorial_id}_{_lang_suffix(lang)}.html",
+            html_subdir=TUTORIAL_HTML_SUBDIR,
             scraper_name="tutorial",
             headless=True,  # 教程抓取强制后台运行
         )
@@ -184,7 +185,7 @@ def run_tutorial_batch(index_id: str, lang: str | None = None) -> int:
     logger.info("共发现 %d 个教程页面", len(links))
 
     suffix = _lang_suffix(lang)
-    html_dir = get_path_manager().html
+    html_dir = scraper.html_path.parent  # data/html/tutorial
     total = len(links)
     success = 0
 

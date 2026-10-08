@@ -6,14 +6,14 @@ SemVer 规范第 1 条要求「使用语义化版本的软件**必须声明公�
 **只有下列内容属于受版本号约束的公开接口**。未列入的模块、类、函数、字段一律视为
 内部实现，可随时调整而不提升 MAJOR 版本。
 
-当前版本：**2.1.3**
+当前版本：**3.0.0**
 
 | 面 | 载体 | 破坏性变动示例 |
 | ------ | ------ | ------ |
 | CLI 命令与参数 | `cli/registry.py` 的命令 key 与分组、`__main__.py` 的 argparse | 删除 / 重命名命令 key、改分组归属、改参数名或取值集合 |
 | Python 包 API | 各子包 `__all__` 列出的符号 | 删除 / 重命名公开符号、改函数签名 |
 | 配置格式 | `config.toml` 小节与字段、`MIHOYO_*` 环境变量 | 改字段名 / 语义、改加载优先级 |
-| 数据与目录约定 | `data/`、`logs/`、`har/`、`output/` 的文件名与结构 | 改数据库表 / 列、改 HTML / 导出文件名 |
+| 数据与目录约定 | `data/`、`logs/`、`har/`、`output/` 的文件名与结构 | 改数据库表 / 列、改 HTML / 导出文件名或结果子目录结构 |
 | GUI 导航结构 | 由命令注册表派生的导航分组与顺序 | 删除功能入口（新增或重排不算破坏） |
 
 ---
@@ -95,9 +95,10 @@ mihoyo-toolkit [--gui]
 | ------ | ------ |
 | `data/toolkit.db` | 统一 SQLite 库，表：`news`、`posts`、`weibo`、`tutorial`、`images` |
 | `data/html/{game}_news.html` | 四站点新闻 HTML（`genshin` / `genshin_en` / `zzz` / `starrail`） |
-| `data/html/` 其他 | `user_posts.html`、`weibo_posts.html`、`baike_characters.html`、`tutorial_*.html` |
-| `data/results/*.txt` | 提取层导出的 TXT（如 `genshin_news.txt`、`posts.txt`） |
-| `data/images/`、`data/models/`、`data/backups/` | 图片链接、角色模型、自动备份 |
+| `data/html/` 其他 | `user_posts.html`、`weibo_posts.html`、`baike_characters.html`；教程 `data/html/tutorial/tutorial_*.html` |
+| `data/results/<来源>/` | 提取层导出的 TXT 按来源分目录：`genshin/zh-cn/`、`genshin/en-us/`、`zzz/`、`starrail/`、`user/`、`weibo/`、`images/`、`tutorial/` |
+| `data/results/filtered/` | TXT 过滤结果（保留源文件相对目录结构） |
+| `data/models/`、`data/backups/` | 角色模型、自动备份 |
 | `logs/console.log`、`logs/gui.log`、`logs/app.log` | 三类日志（终端镜像 / GUI 面板 / 结构化日志） |
 | `har/{scraper_name}/` | HAR 回退文件目录 |
 | `output/news.xlsx`、`output/news_feed.xml`、`output/news_feed.json` | 导出产物 |

@@ -11,6 +11,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 （暂无）
 
+## [3.0.0] - 2026-10-08
+
+提取结果目录结构的 **MAJOR** 版本：`data/results/` 下的 TXT 由平铺改为按来源分目录，
+属「数据与目录约定」的破坏性变更（详见 `docs/public-api.md`）。
+
+### Changed
+
+- **提取 TXT 按来源分目录**（破坏性）：`data/results/` 下不再平铺，改为 ——
+  - 新闻 → `genshin/zh-cn/genshin_news.txt`、`genshin/en-us/genshin_en_news.txt`、
+    `zzz/zzz_news.txt`、`starrail/starrail_news.txt`
+  - 发帖 → `user/posts.txt`；微博 → `weibo/weibo.txt`；图鉴图片链接 →
+    `images/image_urls.txt`；教程 → `tutorial/characters_{id}.txt`、
+    `tutorial/changelog_{id}.json`
+  - TXT 过滤结果仍在 `results/filtered/`（保留源文件相对目录结构）
+- **配置字段 `lang_subdir` → `results_subdir`**（破坏性）：由「语言子目录名」改为
+  「`data/results` 下的相对子目录」，取值如 `genshin/zh-cn`、`genshin/en-us`、
+  `zzz`、`starrail`。旧字段此前从未被实际使用（死配置）。
+- **备份恢复目标随目录调整**：`_backup_target()` 按新的来源子目录解析
+  （`posts.txt` → `results/user/posts.txt`，`genshin_news.txt` →
+  `results/genshin/zh-cn/genshin_news.txt` 等）。
+
+### Fixed
+
+- **教程 HTML 存取路径两端不一致**：抓取端写入平铺的 `data/html/tutorial_*.html`，
+  提取端却读取 `data/html/tutorial/tutorial_*.html`，导致刚抓取的教程无法提取。
+  现统一为 `data/html/tutorial/`（抓取端经新增的 `ScrapeConfig.html_subdir` 落盘，
+  提取端与批抓取跳过检查共用 `TUTORIAL_HTML_SUBDIR` 常量）。
+
+### Removed
+
+- **`data/images/` 目录与 `PathManager.images`**：该目录此前从未被写入（图片链接一直
+  导出到 `results/`），属冗余目录。图片链接现统一为
+  `data/results/images/image_urls.txt`；旧数据迁移中 `images/` 下的文件改由迁移工具
+  落到 `results/images/`。
+- **`TxtFilter` 对 `images/` 的扫描**：现仅扫描 `results/`。
+
+### Notes
+
+- 版本号由 2.1.3 升至 **3.0.0**（SemVer MAJOR，破坏「数据与目录约定」）。
+- **升级提示**：旧版 `data/results/*.txt` 不会自动迁移，请重新执行「提取」命令
+  （读库重导出）或按上表手动移入对应子目录。
+
 ## [2.1.3] - 2026-10-08
 
 仓库清理与结构对齐的 **PATCH** 版本：无功能变化、无 API 变更。

@@ -36,7 +36,6 @@ _DIR_MAP: dict[str, str] = {
     "html": "html",
     "data": "results",
     "results": "results",
-    "images": "images",
     "models": "models",
 }
 
@@ -115,7 +114,6 @@ class DataMigrationManager:
         roots: dict[str, Path] = {
             "html": self.paths.html,
             "results": self.paths.results,
-            "images": self.paths.images,
             "models": self.paths.models,
         }
 

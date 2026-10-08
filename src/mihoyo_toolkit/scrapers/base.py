@@ -35,7 +35,7 @@ class BaseScraper(ABC, Generic[T]):
 
     def __init__(self, config: ScrapeConfig) -> None:
         self.config = config
-        self.html_path = get_path_manager().html / config.output_filename
+        self.html_path = get_path_manager().html / config.html_subdir / config.output_filename
         self._api_items: list[Any] = []
         self._stop_requested = False
 
@@ -130,7 +130,7 @@ class BaseScraper(ABC, Generic[T]):
         return session.content()
 
     def save_html(self, html: str) -> None:
-        """保存 HTML 至 ``data/html/<output_filename>``。"""
+        """保存 HTML 至 ``data/html/<html_subdir>/<output_filename>``。"""
         self.html_path.parent.mkdir(parents=True, exist_ok=True)
         self.html_path.write_text(html, encoding="utf-8")
         logger.info("已保存 HTML: %s", get_path_manager().relative(self.html_path))

@@ -1,6 +1,6 @@
-# AI Agent 参考手册 · 米游社工具箱 v2.1.3
+# AI Agent 参考手册 · 米游社工具箱 v3.0.0
 
-面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v2.1.3 公开 API。
+面向 AI Agent 的**模块 / API 速查表**。所有条目均指向 v3.0.0 公开 API。
 导入根：`mihoyo_toolkit`（已安装）或 `python -m mihoyo_toolkit`。
 
 ---
@@ -52,7 +52,7 @@ def load_settings(config_file: Path | None = None) -> ToolkitSettings
 | `BackupSettings` | `enabled`, `max_backups` |
 | `CookieSettings` | `use_firefox` |
 | `UserSource`/`BaikeSource`/`WeiboSource` | `url` |
-| `NewsSiteSource` | `url,label,scraper,api_base_url,api_chan_id,api_page_param,api_page_size_param,api_page_size,api_lang_param,api_lang_value,api_app_id,detail_url_pattern,poster_ext_key,lang_subdir,expected_total` + `detail_url(info_id)` |
+| `NewsSiteSource` | `url,label,scraper,api_base_url,api_chan_id,api_page_param,api_page_size_param,api_page_size,api_lang_param,api_lang_value,api_app_id,detail_url_pattern,poster_ext_key,results_subdir,expected_total` + `detail_url(info_id)` |
 | `NewsSources` | `genshin,genshin_en,zzz,starrail: NewsSiteSource` + `keys()`, `get_site(game)` |
 | `SourcesSettings` | `user,baike,weibo,news` |
 
@@ -182,7 +182,7 @@ class BrowserSession:
 def open_browser(config: ScrapeConfig) -> Iterator[BrowserSession]
 
 class ScrapeConfig(BaseModel):
-    url, output_filename, scraper_name="", headless=True, wait_seconds=3.0,
+    url, output_filename, html_subdir="", scraper_name="", headless=True, wait_seconds=3.0,
     timeout=120000, user_agent="", browser_args=[], scroll_delay=2.0,
     incremental_mode=False, existing_urls=set(), api_url_keywords=[],
     api_domain_filter="", use_firefox_cookies=False, url_selector_template=...
@@ -246,7 +246,7 @@ def download_file(url: str, save_path: Path, timeout: float = 300.0) -> bool
 class GameNewsBaseExtractor:
     game: str = ""
     def __init__(self, game: str | None = None, *, db_path=None)
-    @property output_path -> Path                # data/results/{game}_news.txt
+    @property output_path -> Path                # data/results/{results_subdir}/{game}_news.txt
     def load_news(self, *, limit=None) -> list[NewsItem]
     def extract_news(self, incremental=False, *, limit=None) -> list[NewsItem]
     @staticmethod
@@ -259,7 +259,7 @@ def run_extract_news(game: str, incremental: bool = False) -> None
 # posts / weibo / images
 class PostExtractor:  def __init__(self, topic="posts", *, db_path=None)
 class WeiboExtractor: def __init__(self, topic="weibo", *, db_path=None)
-class ImageExtractor: def __init__(self, topic="images", *, db_path=None)
+class ImageExtractor: def __init__(self, topic="image_urls", *, db_path=None)
 def run_extract_posts(incremental: bool = False) -> None
 def run_extract_weibo(incremental: bool = False) -> None
 def run_extract_images() -> None
@@ -270,7 +270,10 @@ class ChangelogExtractor: def __init__(self, tutorial_id, lang=None, ...)
 def run_extract_tutorial(tutorial_id: str, lang: str | None = None) -> None
 ```
 
-> `output_path` 约定：新闻 `{game}_news.txt`；发帖 `posts.txt`；微博 `weibo.txt`。
+> `output_path` 约定（均位于 `data/results/<来源子目录>/`）：新闻
+> `{results_subdir}/{game}_news.txt`（`genshin/zh-cn`、`genshin/en-us`、`zzz`、`starrail`）；
+> 发帖 `user/posts.txt`；微博 `weibo/weibo.txt`；图片 `images/image_urls.txt`；
+> 教程 `tutorial/characters_{id}.txt`。
 
 ---
 
@@ -489,7 +492,7 @@ generate_json_feed()  # output/news_feed.json
 ```python
 from mihoyo_toolkit.extractors import run_extract_news
 
-run_extract_news("genshin")  # data/results/genshin_news.txt
+run_extract_news("genshin")  # data/results/genshin/zh-cn/genshin_news.txt
 run_extract_news("starrail")
 ```
 

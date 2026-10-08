@@ -26,7 +26,7 @@ import pytest
 MINIMAL_CONFIG = """\
 [app]
 mode = "cli"
-version = "2.1.3"
+version = "3.0.0"
 
 [fetch]
 headless = true
@@ -71,7 +71,7 @@ api_chan_id = "719"
 api_page_size = 2
 detail_url_pattern = "/main/news/detail/{iInfoId}"
 poster_ext_key = "720_1"
-lang_subdir = "zh-cn"
+results_subdir = "genshin/zh-cn"
 expected_total = 4
 
 [sources.news.genshin_en]
@@ -84,7 +84,7 @@ api_chan_id = "395"
 api_page_size = 2
 detail_url_pattern = "/en/news/detail/{iInfoId}"
 poster_ext_key = "banner"
-lang_subdir = "en-us"
+results_subdir = "genshin/en-us"
 expected_total = 2
 
 [sources.news.zzz]
@@ -96,7 +96,7 @@ api_chan_id = "273"
 api_page_size = 2
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-banner"
-lang_subdir = "zh-cn"
+results_subdir = "zzz"
 expected_total = 2
 
 [sources.news.starrail]
@@ -108,7 +108,7 @@ api_chan_id = "255"
 api_page_size = 2
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-poster"
-lang_subdir = "zh-cn"
+results_subdir = "starrail"
 expected_total = 2
 """
 
