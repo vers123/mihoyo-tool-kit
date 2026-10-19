@@ -19,6 +19,8 @@
 
 [中文](#中文文档) / [English](#english-docs)
 
+> **免责声明**：本项目仅用于学习与技术研究，不包含、不分发任何游戏资源或数据；与米哈游（miHoYo / HoYoverse）及其关联公司无任何关系。
+
 ---
 
 ## ✨ 核心特性
@@ -257,7 +259,8 @@ max_backups = 10
 use_firefox = true    # 读取 Firefox cookie 免登录
 
 [sources.user]
-url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
+# 米游社用户 UID，按需替换；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=YOUR_UID"
 
 [sources.weibo]
 url = "https://weibo.com/u/6593199887"

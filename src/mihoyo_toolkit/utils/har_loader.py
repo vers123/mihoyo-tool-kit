@@ -16,12 +16,23 @@ from .logger import get_module_logger
 
 logger = get_module_logger("har_loader")
 
+
+def _site_url(site: dict[str, str]) -> str:
+    """返回站点的展示 URL；米游社用户页取自配置，避免仓库内硬编码 UID。"""
+    if site["scraper_name"] == "user":
+        from ..core.config import get_settings
+
+        return get_settings().sources.user.url
+    return site["url"]
+
+
 #: 需要 HAR 回退的抓取器清单（启动提示用）
 HAR_SITES: list[dict[str, str]] = [
     {
         "name": "米游社用户发帖",
         "scraper_name": "user",
-        "url": "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539",
+        # 运行时取自 config.toml / MIHOYO_SOURCES__USER__URL，避免在仓库中硬编码 UID
+        "url": "",
     },
     {
         "name": "原神新闻",
@@ -262,7 +273,7 @@ def get_har_welcome_text() -> str:
     ]
     for site in HAR_SITES:
         lines.append(f"  [{site['name']}]")
-        lines.append(f"    页面: {site['url']}")
+        lines.append(f"    页面: {_site_url(site)}")
         lines.append(f"    目录: {get_har_dir(site['scraper_name'])}")
     lines += [
         "",
@@ -295,9 +306,10 @@ def get_har_welcome_html() -> str:
         "<ul>",
     ]
     for site in HAR_SITES:
+        url = _site_url(site)
         parts.append(
             f"<li><b>{site['name']}</b><br>"
-            f'页面: <a href="{site["url"]}">{site["url"]}</a><br>'
+            f'页面: <a href="{url}">{url}</a><br>'
             f"目录: <code>{get_har_dir(site['scraper_name'])}</code></li>"
         )
     parts.append(

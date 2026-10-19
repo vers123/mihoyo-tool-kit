@@ -46,7 +46,9 @@ use_firefox = true
 #  米游社用户
 # ============================================================
 [sources.user]
-url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
+# 替换为你要抓取的米游社用户 UID；也可不改此文件，用环境变量覆盖：
+#   MIHOYO_SOURCES__USER__URL="https://www.miyoushe.com/ys/accountCenter/postList?id=<UID>"
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=YOUR_UID"
 
 # ============================================================
 #  角色图鉴

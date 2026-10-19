@@ -54,7 +54,7 @@ max_backups = 3
 use_firefox = false
 
 [sources.user]
-url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=10000000"
 
 [sources.baike]
 url = "https://baike.mihoyo.com/ys/obc/channel/map/189/25"
