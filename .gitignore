@@ -57,8 +57,9 @@ browser/
 coverage.xml
 htmlcov/
 .test/
-# pytest 临时目录（系统临时目录不可写时会落在仓库根）
-pytest-of-*/
+# pytest / pip 临时目录（系统临时目录不可写时会落在仓库根）
+/pytest-of-*/
+/pip-*/
 mihoyo_toolkit_tests_*/
 
 # ============================================================
