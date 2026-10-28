@@ -32,7 +32,7 @@ class AppSettings(BaseModel):
     """应用级设置。"""
 
     mode: Literal["cli", "gui"] = "cli"
-    version: str = "3.0.0"
+    version: str = "3.1.0"
 
 
 class FetchSettings(BaseModel):
@@ -78,6 +78,14 @@ class CookieSettings(BaseModel):
     """Cookie 免登录设置。"""
 
     use_firefox: bool = True
+
+
+class HarSettings(BaseModel):
+    """HAR 自动录制设置。"""
+
+    auto_update: bool = True
+    #: 每个抓取器保留的自动录制 HAR 文件数量
+    max_files: int = Field(default=3, ge=1)
 
 
 class UserSource(BaseModel):
@@ -168,6 +176,7 @@ class ToolkitSettings(BaseSettings):
     incremental: IncrementalSettings = Field(default_factory=IncrementalSettings)
     backup: BackupSettings = Field(default_factory=BackupSettings)
     cookies: CookieSettings = Field(default_factory=CookieSettings)
+    har: HarSettings = Field(default_factory=HarSettings)
     sources: SourcesSettings
 
     @field_validator("sources")
@@ -224,6 +233,7 @@ __all__ = [
     "BaikeSource",
     "CookieSettings",
     "FetchSettings",
+    "HarSettings",
     "IncrementalSettings",
     "NewsSiteSource",
     "NewsSources",

@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+import os
+from datetime import datetime
 from pathlib import Path
 
 from mihoyo_toolkit.utils.har_loader import (
     HAR_SITES,
+    auto_har_path,
     ensure_har_dirs,
     extract_api_patterns,
     find_har_file,
@@ -16,6 +20,7 @@ from mihoyo_toolkit.utils.har_loader import (
     load_har_entries,
     parse_har_file,
     print_har_instructions,
+    prune_auto_har_files,
 )
 
 
@@ -42,6 +47,41 @@ def test_find_har_file_missing(tmp_home: Path) -> None:
 def test_find_har_file_present(har_factory) -> None:
     target = har_factory("news_genshin")
     assert find_har_file("news_genshin") == target
+
+
+def test_auto_har_path(tmp_home: Path) -> None:
+    path = auto_har_path("news_genshin", datetime(2026, 10, 28, 12, 34, 56))
+    assert path == tmp_home / "har" / "news_genshin" / "auto-20261028-123456.har"
+    assert path.parent.is_dir()
+
+
+def test_find_har_file_prefers_newest_json_payload(har_factory, tmp_home: Path) -> None:
+    manual = har_factory("news_genshin")
+    os.utime(manual, (1_700_000_000, 1_700_000_000))
+
+    empty_dir = get_har_dir("news_genshin")
+    empty = empty_dir / "auto-20261028-000000.har"
+    empty.write_text(json.dumps({"log": {"version": "1.2", "entries": []}}), encoding="utf-8")
+    os.utime(empty, (1_700_000_100, 1_700_000_100))
+
+    # 空录制文件更新，但应优先选择含 JSON 响应体的手动 HAR
+    assert find_har_file("news_genshin") == manual
+
+
+def test_prune_auto_har_files_keeps_newest(har_factory, tmp_home: Path) -> None:
+    manual = har_factory("news_genshin")
+    target_dir = get_har_dir("news_genshin")
+    for index in range(4):
+        path = target_dir / f"auto-2026100{index + 1}-000000.har"
+        path.write_text("{}", encoding="utf-8")
+        stamp = 1_700_000_000 + index
+        os.utime(path, (stamp, stamp))
+
+    prune_auto_har_files("news_genshin", 2)
+
+    assert manual.exists()
+    names = sorted(path.name for path in target_dir.iterdir())
+    assert names == ["auto-20261003-000000.har", "auto-20261004-000000.har", "sample.har"]
 
 
 def test_parse_har_file(sample_har_path: Path) -> None:

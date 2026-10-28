@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import json
+from contextlib import suppress
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -15,6 +17,9 @@ from ..core.paths import get_path_manager
 from .logger import get_module_logger
 
 logger = get_module_logger("har_loader")
+
+#: 自动录制的 HAR 文件前缀
+AUTO_HAR_PREFIX = "auto-"
 
 
 def _site_url(site: dict[str, str]) -> str:
@@ -83,15 +88,76 @@ def ensure_har_dirs() -> None:
         get_har_dir(site["scraper_name"]).mkdir(parents=True, exist_ok=True)
 
 
-def find_har_file(scraper_name: str) -> Path | None:
-    """在 ``har/{scraper_name}/`` 下查找第一个 HAR / TXT 文件。"""
+def list_har_files(scraper_name: str) -> list[Path]:
+    """按修改时间倒序列出 HAR 目录下的候选文件（``.har`` / ``.txt``）。"""
     har_dir = get_har_dir(scraper_name)
     if not har_dir.is_dir():
-        return None
-    for entry in sorted(har_dir.iterdir()):
-        if entry.suffix.lower() in {".har", ".txt"}:
-            return entry
-    return None
+        return []
+    files = [
+        entry
+        for entry in har_dir.iterdir()
+        if entry.is_file() and entry.suffix.lower() in {".har", ".txt"}
+    ]
+    return sorted(files, key=lambda entry: entry.stat().st_mtime, reverse=True)
+
+
+def _json_payloads(har_path: Path) -> list[dict[str, Any]]:
+    """提取 HAR 中所有 JSON 响应体。"""
+    payloads: list[dict[str, Any]] = []
+    for entry in parse_har_file(har_path):
+        content = entry.get("response", {}).get("content", {})
+        text = content.get("text")
+        if not text:
+            continue
+        mime = content.get("mimeType", "")
+        if "json" not in mime and not text.lstrip().startswith("{"):
+            continue
+        try:
+            payload = json.loads(text)
+        except (ValueError, TypeError):
+            continue
+        if isinstance(payload, dict):
+            payloads.append(payload)
+    return payloads
+
+
+def _has_json_payload(har_path: Path) -> bool:
+    return any(
+        (entry.get("response", {}).get("content", {}).get("text") or "").lstrip().startswith("{")
+        for entry in parse_har_file(har_path)
+    )
+
+
+def find_har_file(scraper_name: str) -> Path | None:
+    """返回最合适的 HAR 文件：优先最新且含 JSON 响应体，其次最新文件。
+
+    自动录制的空 HAR（页面未触发 API）不会遮蔽此前手动导出的有效 HAR。
+    """
+    files = list_har_files(scraper_name)
+    for path in files:
+        if _has_json_payload(path):
+            return path
+    return files[0] if files else None
+
+
+def auto_har_path(scraper_name: str, now: datetime | None = None) -> Path:
+    """生成自动录制 HAR 的目标路径（``har/<scraper>/auto-YYYYmmdd-HHMMSS.har``）。"""
+    har_dir = get_har_dir(scraper_name)
+    har_dir.mkdir(parents=True, exist_ok=True)
+    stamp = (now or datetime.now()).strftime("%Y%m%d-%H%M%S")
+    return har_dir / f"{AUTO_HAR_PREFIX}{stamp}.har"
+
+
+def prune_auto_har_files(scraper_name: str, keep: int) -> None:
+    """仅保留最新的 ``keep`` 个自动录制 HAR 文件，手动导出的文件不受影响。"""
+    if keep < 1:
+        return
+    auto_files = [
+        path for path in list_har_files(scraper_name) if path.name.startswith(AUTO_HAR_PREFIX)
+    ]
+    for stale in auto_files[keep:]:
+        with suppress(OSError):
+            stale.unlink()
 
 
 def parse_har_file(har_path: Path | str) -> list[dict[str, Any]]:
@@ -122,23 +188,7 @@ def load_har_entries(scraper_name: str) -> list[dict[str, Any]]:
     har_path = find_har_file(scraper_name)
     if not har_path:
         return []
-
-    payloads: list[dict[str, Any]] = []
-    for entry in parse_har_file(har_path):
-        content = entry.get("response", {}).get("content", {})
-        text = content.get("text")
-        if not text:
-            continue
-        mime = content.get("mimeType", "")
-        if "json" not in mime and not text.lstrip().startswith("{"):
-            continue
-        try:
-            payload = json.loads(text)
-        except (ValueError, TypeError):
-            continue
-        if isinstance(payload, dict):
-            payloads.append(payload)
-    return payloads
+    return _json_payloads(har_path)
 
 
 def extract_api_patterns(
@@ -278,6 +328,7 @@ def get_har_welcome_text() -> str:
     lines += [
         "",
         "  提示：HAR 文件用于自动识别 API 接口，无需手动分析。",
+        "  说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。",
         "  如 HAR 已存在且接口正常，可直接使用。",
         "=" * 70,
     ]
@@ -314,21 +365,26 @@ def get_har_welcome_html() -> str:
         )
     parts.append(
         "</ul><p>提示：HAR 文件用于自动识别 API 接口，无需手动分析。<br>"
+        "说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。<br>"
         "如 HAR 已存在且接口正常，可直接使用。</p>"
     )
     return "".join(parts)
 
 
 __all__ = [
+    "AUTO_HAR_PREFIX",
     "HAR_SITES",
+    "auto_har_path",
     "ensure_har_dirs",
     "extract_api_patterns",
     "find_har_file",
     "get_har_dir",
     "get_har_welcome_html",
     "get_har_welcome_text",
+    "list_har_files",
     "load_api_pattern_from_har",
     "load_har_entries",
     "parse_har_file",
     "print_har_instructions",
+    "prune_auto_har_files",
 ]

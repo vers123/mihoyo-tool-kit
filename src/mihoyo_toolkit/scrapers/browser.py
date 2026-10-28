@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
@@ -16,15 +17,21 @@ from typing import TYPE_CHECKING, Any
 
 from ..core.exceptions import ScraperError
 from ..utils.cookie_loader import load_firefox_cookies
+from ..utils.har_loader import auto_har_path, prune_auto_har_files
 from ..utils.logger import get_module_logger
 from .config import ScrapeConfig
 
 if TYPE_CHECKING:  # pragma: no cover
-    from playwright.sync_api import Browser, Page, Playwright
+    from playwright.sync_api import Browser, BrowserContext, Page, Playwright
 
 logger = get_module_logger("browser")
 
 DEFAULT_BROWSER_ARGS = ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+
+
+def _har_url_filter(keywords: list[str]) -> re.Pattern[str]:
+    """把 API 关键字编译成正则，仅录制命中关键字的请求。"""
+    return re.compile("|".join(re.escape(keyword) for keyword in keywords))
 
 
 class BrowserSession:
@@ -34,6 +41,7 @@ class BrowserSession:
         self.config = config
         self._playwright: Playwright | None = None
         self._browser: Browser | None = None
+        self._context: BrowserContext | None = None
         self._page: Page | None = None
 
     # ------------------------------------------------------------------ #
@@ -64,15 +72,35 @@ class BrowserSession:
             args.append("--start-maximized")
 
         self._browser = self._playwright.chromium.launch(headless=self.config.headless, args=args)
-        context = self._browser.new_context(
-            user_agent=self.config.user_agent or None, no_viewport=True
-        )
+        context_kwargs: dict[str, Any] = {
+            "user_agent": self.config.user_agent or None,
+            "no_viewport": True,
+        }
+        context_kwargs.update(self._har_record_kwargs())
+        context = self._browser.new_context(**context_kwargs)
+        self._context = context
 
         if self.config.use_firefox_cookies and self.config.api_domain_filter:
             self._inject_firefox_cookies(context)
 
         self._page = context.new_page()
         return self
+
+    def _har_record_kwargs(self) -> dict[str, Any]:
+        """自动录制 API HAR 的 ``new_context`` 参数（无 API 拦截的抓取器不录制）。"""
+        if not self.config.har_auto_update or not self.config.scraper_name:
+            return {}
+        if not self.config.api_url_keywords:
+            return {}
+
+        har_path = auto_har_path(self.config.scraper_name)
+        logger.info("自动录制 HAR: %s", har_path)
+        return {
+            "record_har_path": str(har_path),
+            "record_har_url_filter": _har_url_filter(self.config.api_url_keywords),
+            "record_har_content": "embed",
+            "record_har_mode": "full",
+        }
 
     def _inject_firefox_cookies(self, context: Any) -> None:
         cookies = load_firefox_cookies(domain_filter=self.config.api_domain_filter)
@@ -89,7 +117,14 @@ class BrowserSession:
             logger.warning("加载 Cookie 失败: %s", exc)
 
     def stop(self) -> None:
-        """关闭浏览器与 Playwright。"""
+        """关闭上下文（落盘 HAR）、浏览器与 Playwright。"""
+        if self._context is not None:
+            try:
+                self._context.close()
+            except Exception as exc:  # pragma: no cover - 依赖浏览器实现
+                logger.warning("关闭浏览器上下文失败: %s", exc)
+            finally:
+                self._context = None
         if self._browser is not None:
             try:
                 self._browser.close()
@@ -101,6 +136,8 @@ class BrowserSession:
             finally:
                 self._playwright = None
         self._page = None
+        if self.config.har_auto_update and self.config.scraper_name:
+            prune_auto_har_files(self.config.scraper_name, self.config.har_max_files)
 
     def __enter__(self) -> BrowserSession:
         return self.start()

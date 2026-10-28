@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.0.0-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.1.0-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -38,7 +38,8 @@
 - **工程质量** — ruff（lint + format）、mypy 渐进式类型检查、pytest 三层测试（覆盖率 ≥80%）
 - **构建打包** — PyInstaller EXE / Docker 双模式 / GitHub Actions CI
 - **增量更新** — 数据库唯一索引天然去重，`stop_on_existing` 命中即提前终止
-- **Firefox 免登录 & HAR 回退** — 读取 Firefox Cookie 自动注入；接口失效时指引/加载 HAR
+- **Firefox 免登录 & HAR 回退** — 读取 Firefox Cookie 自动注入；接口失效时指引/加载，
+  浏览器回退时自动录制 HAR
 
 ---
 
@@ -235,7 +236,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "3.0.0"
+version = "3.1.0"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -257,6 +258,10 @@ max_backups = 10
 
 [cookies]
 use_firefox = true    # 读取 Firefox cookie 免登录
+
+[har]
+auto_update = true    # 浏览器回退时自动录制 HAR
+max_files = 3         # 每个抓取器保留的自动 HAR 数量
 
 [sources.user]
 # 米游社用户 UID，按需替换；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
@@ -295,13 +300,10 @@ mihoyo-tool-kit/
 ├── Dockerfile                  # Docker（cli / full 双模式）
 ├── .github/                    # CI：build.yml（主流水线）/ e2e.yml（手动端到端）
 ├── docs/
-│   ├── architecture.md         # 架构文档
-│   ├── reference.md            # AI Agent 模块/API 速查手册
-│   ├── public-api.md           # 公开 API 声明（SemVer）
-│   └── create-plan.md          # 角色模型抓取计划
+│   └── create-plan.md          # 角色模型抓取计划（模型下载运行时输入）
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "3.0.0"）
+│       ├── __init__.py         # 版本元信息（__version__ = "3.1.0"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -383,6 +385,12 @@ mihoyo-tool-kit/
 **HAR 回退** — 当 API 直连与 Playwright 拦截均无数据时，程序打印分步指引，引导从
 Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行即可解析复用。
 
+**HAR 自动更新** — Playwright 回退抓取时会自动把命中的 API 响应录制到对应目录
+（`auto-YYYYmmdd-HHMMSS.har`），仅保留最新 `[har].max_files` 个；选择回退文件时优先
+「最新且含 JSON 响应体」的 HAR，避免空录制遮蔽手动导出的有效文件。该行为由
+`config.toml` 的 `[har].auto_update` 控制，且只对配置了 API 拦截的抓取器生效
+（用户发帖 / 微博 / 四站点新闻），图鉴等纯 HTML 抓取器不录制。
+
 | 抓取器 | HAR 目录 |
 | ------ | ------ |
 | 米游社用户发帖 | `har/user/` |
@@ -397,8 +405,7 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 ### 公开 API 与版本策略
 
 本项目遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。按规范第 1 条，
-**公开 API 已在 [`docs/public-api.md`](docs/public-api.md) 显式声明**，只有以下五个
-面受版本号约束：
+**公开 API 以本节声明为准**，只有以下五个面受版本号约束：
 
 | 面 | 内容 |
 | ------ | ------ |
@@ -573,4 +580,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V3.0.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V3.1.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

@@ -9,7 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-（暂无）
+## [3.1.0] - 2026-10-28
+
+HAR 回退从「手动导出静态文件」升级为「浏览器回退时自动录制」，属向后兼容的新功能（SemVer MINOR）。
+
+### Added
+
+- **HAR 自动更新**：浏览器回退抓取时自动把 API 响应录制到
+  `har/<scraper_name>/auto-*.har`，可用 `[har].auto_update` 关闭、
+  `[har].max_files` 控制保留数量。
+- HAR 回退选择优先取最新且含 JSON 响应体的文件，避免空录制遮蔽旧的有效 HAR。
+
+### Changed
+
+- 公开 API 声明迁移至 README「公开 API 与版本策略」一节。
+
+### Removed
+
+- 精简仓库文档：删除 `CONTRIBUTING.md`、`.github/PULL_REQUEST_TEMPLATE.md` 及
+  `docs/architecture.md`、`docs/public-api.md`、`docs/reference.md`；
+  `docs/create-plan.md` 为模型下载运行时输入，予以保留。
 
 ## [3.0.0] - 2026-10-08
 

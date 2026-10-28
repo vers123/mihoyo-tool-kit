@@ -26,12 +26,16 @@ class _FakeLocator:
 class _FakeContext:
     def __init__(self) -> None:
         self.added_cookies: list[list[dict]] = []
+        self.closed = False
 
     def new_page(self) -> _FakePage:
         return _FakePage()
 
     def add_cookies(self, cookies) -> None:
         self.added_cookies.append(list(cookies))
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class _FakePage:
@@ -142,7 +146,60 @@ def test_start_and_stop(monkeypatch) -> None:
     session.stop()
     assert fake.pw.stopped is True
     assert fake.pw.chromium.browser.closed is True
+    assert fake.pw.chromium.browser.context.closed is True
     assert session._page is None
+
+
+def test_start_records_har(monkeypatch, tmp_home: Path) -> None:
+    fake = _FakeSyncPlaywright()
+    monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: fake)
+
+    config = _config(
+        scraper_name="news_genshin",
+        api_url_keywords=["getContentList", "content_v2_user"],
+        har_auto_update=True,
+    )
+    session = BrowserSession(config).start()
+
+    kwargs = fake.pw.chromium.browser.new_context_kwargs
+    assert kwargs is not None
+    assert kwargs["record_har_content"] == "embed"
+    assert kwargs["record_har_mode"] == "full"
+    assert kwargs["record_har_url_filter"].pattern == "getContentList|content_v2_user"
+    har_path = Path(kwargs["record_har_path"])
+    assert har_path.parent == tmp_home / "har" / "news_genshin"
+    assert har_path.parent.is_dir()
+    assert har_path.name.startswith("auto-") and har_path.suffix == ".har"
+
+    session.stop()
+
+
+def test_start_skips_har_without_api_keywords(monkeypatch) -> None:
+    fake = _FakeSyncPlaywright()
+    monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: fake)
+
+    config = _config(scraper_name="baike", api_url_keywords=[], har_auto_update=True)
+    BrowserSession(config).start()
+
+    kwargs = fake.pw.chromium.browser.new_context_kwargs
+    assert kwargs is not None
+    assert "record_har_path" not in kwargs
+
+
+def test_start_skips_har_when_disabled(monkeypatch) -> None:
+    fake = _FakeSyncPlaywright()
+    monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: fake)
+
+    config = _config(
+        scraper_name="weibo",
+        api_url_keywords=["mymblog"],
+        har_auto_update=False,
+    )
+    BrowserSession(config).start()
+
+    kwargs = fake.pw.chromium.browser.new_context_kwargs
+    assert kwargs is not None
+    assert "record_har_path" not in kwargs
 
 
 def test_inject_firefox_cookies(monkeypatch) -> None:

@@ -1,5 +1,5 @@
 # ============================================================
-#  米游社工具箱 v3.0.0 配置文件
+#  米游社工具箱 v3.1.0 配置文件
 #  由 pydantic-settings 加载，支持环境变量覆盖（前缀 MIHOYO_）
 #  例：MIHOYO_FETCH__HEADLESS=false
 # ============================================================
@@ -7,7 +7,7 @@
 [app]
 # 运行模式：cli（交互菜单）| gui（图形界面）
 mode = "cli"
-version = "3.0.0"
+version = "3.1.0"
 
 [fetch]
 # 浏览器是否后台运行（无头）
@@ -41,6 +41,12 @@ max_backups = 10
 [cookies]
 # 从 Firefox cookies.sqlite 读取并注入（免登录）
 use_firefox = true
+
+[har]
+# 浏览器回退抓取时自动录制 API 的 HAR（仅对 user/weibo/新闻等有 API 拦截的抓取器生效）
+auto_update = true
+# 每个抓取器保留的自动录制 HAR 文件数量（手动导出的 HAR 不受影响）
+max_files = 3
 
 # ============================================================
 #  米游社用户
@@ -79,7 +85,7 @@ api_lang_value = "zh-cn"
 detail_url_pattern = "/main/news/detail/{iInfoId}"
 poster_ext_key = "720_1"
 results_subdir = "genshin/zh-cn"
-expected_total = 4637
+expected_total = 4754
 
 [sources.news.genshin_en]
 url = "https://genshin.hoyoverse.com/en/news"
@@ -96,7 +102,7 @@ api_lang_value = "en-us"
 detail_url_pattern = "/en/news/detail/{iInfoId}"
 poster_ext_key = "banner"
 results_subdir = "genshin/en-us"
-expected_total = 2163
+expected_total = 2209
 
 [sources.news.zzz]
 url = "https://zzz.mihoyo.com/news"
@@ -112,7 +118,7 @@ api_lang_value = "zh-cn"
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-banner"
 results_subdir = "zzz"
-expected_total = 1554
+expected_total = 1652
 
 [sources.news.starrail]
 url = "https://sr.mihoyo.com/news"
@@ -128,4 +134,4 @@ api_lang_value = "zh-cn"
 detail_url_pattern = "/news/{iInfoId}"
 poster_ext_key = "news-poster"
 results_subdir = "starrail"
-expected_total = 792
+expected_total = 822

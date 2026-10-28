@@ -37,6 +37,10 @@ class ScrapeConfig(BaseModel):
     api_domain_filter: str = ""
     use_firefox_cookies: bool = False
 
+    #: 浏览器回退抓取时自动录制 HAR（仅设置了 api_url_keywords 的抓取器生效）
+    har_auto_update: bool = False
+    har_max_files: int = 3
+
     #: 用于检测新 URL 的选择器（滚动时增量判断）
     url_selector_template: str = "a[href*='/article/'], a[href*='/news/']"
 
@@ -55,6 +59,8 @@ class ScrapeConfig(BaseModel):
             "scroll_delay": s.fetch.scroll_delay,
             "incremental_mode": s.incremental.enabled,
             "use_firefox_cookies": s.cookies.use_firefox,
+            "har_auto_update": s.har.auto_update,
+            "har_max_files": s.har.max_files,
         }
         base.update(overrides)
         return cls(**base)  # type: ignore[arg-type]
