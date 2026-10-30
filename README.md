@@ -270,8 +270,8 @@ auto_update = true    # 浏览器回退时自动录制 HAR
 max_files = 3         # 每个抓取器保留的自动 HAR 数量
 
 [sources.user]
-# 米游社用户 UID，按需替换；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
-url = "https://www.miyoushe.com/ys/accountCenter/postList?id=YOUR_UID"
+# 米游社用户 UID，默认为原神官方账号；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
 
 [sources.weibo]
 url = "https://weibo.com/u/6593199887"

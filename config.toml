@@ -52,9 +52,9 @@ max_files = 3
 #  米游社用户
 # ============================================================
 [sources.user]
-# 替换为你要抓取的米游社用户 UID；也可不改此文件，用环境变量覆盖：
+# 替换为你要抓取的米游社用户 UID（默认值为原神官方账号）；也可不改此文件，用环境变量覆盖：
 #   MIHOYO_SOURCES__USER__URL="https://www.miyoushe.com/ys/accountCenter/postList?id=<UID>"
-url = "https://www.miyoushe.com/ys/accountCenter/postList?id=YOUR_UID"
+url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
 
 # ============================================================
 #  角色图鉴

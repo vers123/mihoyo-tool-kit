@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **主中文字体统一为思源黑体 CN**（`resources/font/SourceHanSansCN/`，Regular / Bold）：
   GUI 启动时注册并应用为全局字体，字体缺失时自动回退系统字体；移除未使用的
   思源黑体多语言 / 多格式字体包。
+- **`[sources.user].url` 默认值改为原神官方账号**（米游社 UID `75276539`），
+  开箱即用；仍可用环境变量覆盖。
 
 ## [3.1.0] - 2026-10-28
 
