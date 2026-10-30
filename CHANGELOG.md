@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-10-31
+
+界面字体与默认配置的补丁版本（SemVer PATCH），不影响 CLI 行为与数据格式。
+
 ### Changed
 
 - **主中文字体统一为思源黑体 CN**（`resources/font/SourceHanSansCN/`，Regular / Bold）：
@@ -16,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   思源黑体多语言 / 多格式字体包。
 - **`[sources.user].url` 默认值改为原神官方账号**（米游社 UID `75276539`），
   开箱即用；仍可用环境变量覆盖。
+
+### Added
+
+- `.gitattributes`：字体 / 图标标记为二进制，`resources/font/**` 标记为
+  `linguist-vendored`；`.gitignore` 忽略字体原始压缩包 `resources/font/**/*.zip`。
 
 ## [3.1.0] - 2026-10-28
 
