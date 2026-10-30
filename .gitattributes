@@ -1,0 +1,10 @@
+# 字体 / 图标为二进制资源，不做文本 diff 与换行符转换
+*.otf binary
+*.ttf binary
+*.ttc binary
+*.woff2 binary
+*.ico binary
+*.png binary
+
+# 字体目录视为第三方资源，不计入语言统计
+resources/font/** linguist-vendored

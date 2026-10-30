@@ -203,6 +203,7 @@ GUI 采用 **PySide6** 框架，遵循 **MVC** 分层：
   在系统切换主题时实时更新界面与日志配色
 - **10 个导航项**：米游社用户、原神新闻、原神英文版新闻、绝区零新闻、星穹铁道新闻、
   其他抓取、微博、数据导出、TXT 过滤、系统工具
+- **思源黑体主字体**：全局界面字体使用思源黑体 CN（Source Han Sans CN），中文字形统一
 - **游戏字体主题化**：导航项使用各游戏专属字体（原神 Teyvat-Black、绝区零 ZZZ-System、
   星穹铁道 Star-Rail-Neue）
 - **异步任务执行**：抓取 / 提取 / 导出 / 过滤在后台线程运行，界面不卡顿
@@ -214,9 +215,13 @@ GUI 采用 **PySide6** 框架，遵循 **MVC** 分层：
 mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```
 
-#### 游戏字体资源
+#### 字体资源
 
-`resources/font/` 包含三款游戏的专属字体（每款提供 ttf / otf / woff2）：
+全局界面字体为思源黑体 CN（Source Han Sans CN，Regular / Bold），位于
+`resources/font/SourceHanSansCN/`，启动时注册并应用为 `QApplication` 字体；
+文件缺失时自动回退到系统字体。
+
+`resources/font/` 另包含三款游戏的专属字体（每款提供 ttf / otf / woff2）：
 
 | 游戏 | 字体 | GUI 用途 |
 | ------ | ------ | ------ |
@@ -227,7 +232,8 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 | 星穹铁道 | Star-Rail-Neue | 星穹铁道导航项标题字体 |
 | 星穹铁道 | Xianzhou-Seal | 装饰文字 |
 
-> 字体来源：[HoYo-Glyphs](https://github.com/SpeedyOrc-C/HoYo-Glyphs) · 仅供非商业用途，字体文件未做修改。完整许可见 `resources/font/LICENSE`。
+> 游戏字体来源：[HoYo-Glyphs](https://github.com/SpeedyOrc-C/HoYo-Glyphs) · 仅供非商业用途，字体文件未做修改。完整许可见 `resources/font/LICENSE`。
+> 思源黑体采用 SIL Open Font License 1.1，许可见 `resources/font/SourceHanSansCN/LICENSE.txt`。
 
 ### 配置说明
 
@@ -346,8 +352,8 @@ mihoyo-tool-kit/
 │   ├── integration/            #   集成测试（SQLite / 文件 IO / 子进程）
 │   ├── e2e/                    #   真实网络端到端（默认跳过，需 MIHOYO_E2E=1）
 │   └── fixtures/               #   样例 HAR / HTML / JSON
-├── resources/                  # 游戏字体 + 应用图标（必须提交）
-│   ├── font/                   #   游戏字体（Genshin Impact / Star Rail / ZenlessZoneZero）
+├── resources/                  # 字体 + 应用图标（必须提交）
+│   ├── font/                   #   主中文字体（SourceHanSansCN）+ 游戏字体
 │   └── icon/app.ico|app.png
 ├── data/                       # 运行期数据（自动创建，gitignore）
 │   ├── toolkit.db              #   统一 SQLite 数据库
@@ -567,6 +573,7 @@ by an environment variable with the `MIHOYO_` prefix and `__` nesting, e.g.
 See [构建与打包](#构建与打包). Supports PyInstaller EXE (Windows), Docker (cli/full modes)
 and GitHub Actions CI/CD.
 
+> The UI font is Source Han Sans CN (SIL OFL 1.1; see `resources/font/SourceHanSansCN/LICENSE.txt`).
 > Game fonts are from [HoYo-Glyphs](https://github.com/SpeedyOrc-C/HoYo-Glyphs).
 > For non-commercial use only. Font files are unmodified. See `resources/font/LICENSE`.
 

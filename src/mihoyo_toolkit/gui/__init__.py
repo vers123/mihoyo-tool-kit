@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sys
 
-from .fonts import load_game_fonts
+from .fonts import apply_app_font, load_game_fonts, load_main_font
 from .main_window import MainWindow
 from .nav import NavEntry, build_nav
 from .paths import load_app_icon
@@ -109,6 +109,7 @@ def launch_gui() -> None:
     不会中断启动。
     """
     app = _ensure_application()
+    apply_app_font(app, load_main_font())
     fonts = load_game_fonts()
     _show_welcome_dialog()
 

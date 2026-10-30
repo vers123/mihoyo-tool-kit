@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **主中文字体统一为思源黑体 CN**（`resources/font/SourceHanSansCN/`，Regular / Bold）：
+  GUI 启动时注册并应用为全局字体，字体缺失时自动回退系统字体；移除未使用的
+  思源黑体多语言 / 多格式字体包。
+
 ## [3.1.0] - 2026-10-28
 
 HAR 回退从「手动导出静态文件」升级为「浏览器回退时自动录制」，属向后兼容的新功能（SemVer MINOR）。
