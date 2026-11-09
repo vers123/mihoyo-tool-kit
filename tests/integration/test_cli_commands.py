@@ -8,7 +8,7 @@ import mihoyo_toolkit.cli.commands as commands
 from mihoyo_toolkit.cli.commands import NEWS_GROUPS
 from mihoyo_toolkit.cli.registry import registry
 
-EXPECTED_COMMAND_COUNT = 43
+EXPECTED_COMMAND_COUNT = 44
 
 
 def test_commands_are_registered() -> None:
@@ -30,6 +30,7 @@ def test_expected_keys_present() -> None:
         "system.backups",
         "system.info",
         "system.clean",
+        "system.har",
         "export.excel",
         "export.rss",
         "export.json",
@@ -177,6 +178,13 @@ def test_export_handlers(monkeypatch, capsys) -> None:
     assert "已导出 Excel" in out
     assert "已导出 RSS" in out
     assert "已导出 JSON" in out
+
+
+def test_system_har_update(capsys, tmp_home: Path) -> None:
+    registry.get("system.har").handler()
+    out = capsys.readouterr().out
+    assert "已清理旧文件" in out
+    assert "各站点当前生效文件" in out
 
 
 def test_system_backups_empty(capsys) -> None:

@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.1.1-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.2.0-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -39,7 +39,7 @@
 - **构建打包** — PyInstaller EXE / Docker 双模式 / GitHub Actions CI
 - **增量更新** — 数据库唯一索引天然去重，`stop_on_existing` 命中即提前终止
 - **Firefox 免登录 & HAR 回退** — 读取 Firefox Cookie 自动注入；接口失效时指引/加载，
-  浏览器回退时自动录制 HAR
+  浏览器回退时自动录制 HAR；启动时按日期自动清理旧 HAR（`--har` / GUI 页面可手动更新）
 
 ---
 
@@ -74,7 +74,7 @@ mihoyo-toolkit --gui          # GUI 图形界面（或 python -m mihoyo_toolkit 
 ### 功能列表
 
 CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模式通过左侧导航栏选择功能组。
-共 **9 个分组、43 项功能**。
+共 **9 个分组、44 项功能**。
 
 #### 米游社用户（4 项）
 
@@ -142,7 +142,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 | 30 | 提取微博数据 | 从数据库导出微博数据到 TXT |
 | 31 | 增量提取微博数据 | 增量导出微博数据到 TXT |
 
-#### 系统工具（8 项）
+#### 系统工具（9 项）
 
 | 序号 | 功能 | 说明 |
 | :---: | ------ | ------ |
@@ -154,15 +154,16 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 | 37 | 系统信息 | 打印运行环境与数据库统计 |
 | 38 | 数据迁移工具 | 检查并按需迁移旧版 (v1) 数据目录 |
 | 39 | 清理缓存 | 删除 `__pycache__` / `*.pyc` / 日志 / 构建与质量工具缓存（需 YES 确认） |
+| 40 | 更新 HAR 文件 | 清理 `har/` 中日期较旧的 HAR，列出各站点当前生效文件 |
 
 #### 数据导出（4 项）
 
 | 序号 | 功能 | 说明 |
 | :---: | ------ | ------ |
-| 40 | 导出新闻到 Excel | 从 SQLite 导出四站点新闻到 `output/news.xlsx`（每站点一 sheet） |
-| 41 | 导出 RSS Feed | 从 SQLite 生成 RSS 2.0 到 `output/news_feed.xml` |
-| 42 | 导出 JSON Feed | 从 SQLite 生成 JSON Feed v1.2 到 `output/news_feed.json` |
-| 43 | TXT 过滤 | 按关键词匹配提取行，支持精准/模糊匹配与时间排序 |
+| 41 | 导出新闻到 Excel | 从 SQLite 导出四站点新闻到 `output/news.xlsx`（每站点一 sheet） |
+| 42 | 导出 RSS Feed | 从 SQLite 生成 RSS 2.0 到 `output/news_feed.xml` |
+| 43 | 导出 JSON Feed | 从 SQLite 生成 JSON Feed v1.2 到 `output/news_feed.json` |
+| 44 | TXT 过滤 | 按关键词匹配提取行，支持精准/模糊匹配与时间排序 |
 
 ### CLI 非交互参数
 
@@ -176,6 +177,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 | `--count` | 开关 | 显示 SQLite 中各游戏新闻条数 |
 | `--filter` | 开关 | 运行 TXT 过滤（交互式选择文件与关键词） |
 | `--migrate` | 开关 | 运行旧版数据迁移检查 |
+| `--har` | 开关 | 检查并更新 HAR：清理旧 HAR 并列出各站点当前生效文件 |
 | `--gui` | 开关 | 启动图形界面 |
 | `--version` | 开关 | 打印版本号 |
 
@@ -183,6 +185,7 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 # 示例
 mihoyo-toolkit --fetch all --export-excel --count
 mihoyo-toolkit --export-feed rss
+mihoyo-toolkit --har
 mihoyo-toolkit --version
 ```
 
@@ -201,14 +204,16 @@ GUI 采用 **PySide6** 框架，遵循 **MVC** 分层：
 - **自动跟随系统深浅色主题**：启动时探测系统色彩方案（Qt `QStyleHints.colorScheme()`，
   Windows 下回退注册表 `AppsUseLightTheme`），并监听 `colorSchemeChanged`
   在系统切换主题时实时更新界面与日志配色
-- **10 个导航项**：米游社用户、原神新闻、原神英文版新闻、绝区零新闻、星穹铁道新闻、
-  其他抓取、微博、数据导出、TXT 过滤、系统工具
+- **11 个导航项**：米游社用户、原神新闻、原神英文版新闻、绝区零新闻、星穹铁道新闻、
+  其他抓取、微博、数据导出、TXT 过滤、系统工具、更新 HAR 文件
 - **思源黑体主字体**：全局界面字体使用思源黑体 CN（Source Han Sans CN），中文字形统一
 - **游戏字体主题化**：导航项使用各游戏专属字体（原神 Teyvat-Black、绝区零 ZZZ-System、
   星穹铁道 Star-Rail-Neue）
 - **异步任务执行**：抓取 / 提取 / 导出 / 过滤在后台线程运行，界面不卡顿
 - **进度条 + 停止按钮**：支持协作式取消（下次输出即中断）
 - **全局日志**：页面输出统一汇总到底部面板，并同步写入 `logs/gui.log`
+- **HAR 文件管理页**：表格展示各站点 HAR 目录、当前生效文件、保存时间与大小，
+  支持一键清理旧文件（「更新 HAR」）与打开 HAR 目录
 - **配置编辑**：系统工具页支持文本编辑 `config.toml`
 
 ```bash
@@ -242,7 +247,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "3.1.1"
+version = "3.2.0"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -266,8 +271,10 @@ max_backups = 10
 use_firefox = true    # 读取 Firefox cookie 免登录
 
 [har]
-auto_update = true    # 浏览器回退时自动录制 HAR
-max_files = 3         # 每个抓取器保留的自动 HAR 数量
+auto_update = true          # 浏览器回退时自动录制 HAR
+max_files = 3               # 每个抓取器保留的自动 HAR 数量
+cleanup_on_startup = true   # 启动时自动清理旧 HAR（保留日期最新的）
+keep_files = 1              # 每个 HAR 目录保留的文件数量（最新优先）
 
 [sources.user]
 # 米游社用户 UID，默认为原神官方账号；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
@@ -309,7 +316,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划（模型下载运行时输入）
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "3.1.1"）
+│       ├── __init__.py         # 版本元信息（__version__ = "3.2.0"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -334,7 +341,7 @@ mihoyo-tool-kit/
 │       │   └── feed.py         #   RSS / JSON Feed
 │       ├── cli/                # 命令行
 │       │   ├── registry.py     #   命令注册器
-│       │   ├── commands.py     #   43 项命令定义
+│       │   ├── commands.py     #   44 项命令定义
 │       │   └── menu.py         #   交互式菜单
 │       ├── gui/                # PySide6 MVC 图形界面
 │       │   ├── main_window.py / models.py / controllers.py / nav.py
@@ -397,6 +404,14 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 `config.toml` 的 `[har].auto_update` 控制，且只对配置了 API 拦截的抓取器生效
 （用户发帖 / 微博 / 四站点新闻），图鉴等纯 HTML 抓取器不录制。
 
+**HAR 自动清理** — 启动时（CLI / GUI 均生效）检查 `har/`，按保存时间**每个目录只保留最新
+`[har].keep_files` 个文件**（默认 1 个），日期取自文件名内时间戳
+（`auto-YYYYmmdd-HHMMSS` / `站点_Archive [yy-MM-dd HH-mm-ss]`），取不到时回退文件修改时间；
+目录中**最新的手动导出 HAR 始终保留**，避免自动录制的空 HAR 把它顶掉。该行为由
+`[har].cleanup_on_startup` 控制。用户随时可以把新导出的 HAR 放进对应目录，然后执行
+`mihoyo-toolkit --har`（或菜单「系统工具 → 更新 HAR 文件」、GUI「更新 HAR 文件」页）
+即可清理旧文件并查看各站点当前生效的 HAR。
+
 | 抓取器 | HAR 目录 |
 | ------ | ------ |
 | 米游社用户发帖 | `har/user/` |
@@ -415,7 +430,7 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 
 | 面 | 内容 |
 | ------ | ------ |
-| CLI 命令与参数 | 43 项命令的 `key` 与分组、`--fetch` / `--export-feed` 等参数取值 |
+| CLI 命令与参数 | 44 项命令的 `key` 与分组、`--fetch` / `--export-feed` / `--har` 等参数取值 |
 | Python 包 API | `core` / `scrapers` / `extractors` / `exporters` / `cli` / `gui` / `utils` 各自 `__all__` 列出的符号 |
 | 配置格式 | `config.toml` 小节与字段、`MIHOYO_*` 环境变量与加载优先级 |
 | 数据与目录约定 | `data/toolkit.db` 表结构、`data/html/{game}_news.html`、`data/results/<来源>/*.txt`、`output/*`、`logs/*`、`har/*` |
@@ -522,6 +537,8 @@ mihoyo-toolkit --gui            # PySide6 GUI
 
 - **API-first with browser fallback** — news uses the `content_v2_user` API over httpx;
   falls back to Playwright interception, then HAR files.
+- **Automatic HAR housekeeping** — old HAR files are pruned on startup (newest per
+  directory kept); refresh manually via `--har` or the GUI "HAR 文件管理" page.
 - **Unified SQLite storage** — all results (news/posts/weibo/tutorial/images) stored in
   `data/toolkit.db` with unique-index upserts and WAL mode.
 - **pydantic-settings configuration** — typed `config.toml`, overridable via
@@ -536,9 +553,10 @@ mihoyo-toolkit --gui            # PySide6 GUI
 
 ### Features
 
-The toolkit ships **43 functions across 9 groups**: miyoushe user posts, Genshin (CN/EN) /
+The toolkit ships **44 functions across 9 groups**: miyoushe user posts, Genshin (CN/EN) /
 ZZZ / Star Rail news fetching & extraction, other scraping (baike / tutorial / custom /
-model download), Weibo, system tools, and data export (Excel / RSS / JSON / TXT filter).
+model download), Weibo, system tools (incl. HAR cleanup), and data export
+(Excel / RSS / JSON / TXT filter).
 
 **News coverage** (unified `content_v2_user` API):
 
@@ -558,6 +576,7 @@ mihoyo-toolkit --export-feed {rss,json}
 mihoyo-toolkit --count
 mihoyo-toolkit --filter
 mihoyo-toolkit --migrate
+mihoyo-toolkit --har
 mihoyo-toolkit --gui
 mihoyo-toolkit --version
 ```
@@ -587,4 +606,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V3.1.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V3.2.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

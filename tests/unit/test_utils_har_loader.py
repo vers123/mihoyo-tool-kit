@@ -10,17 +10,23 @@ from pathlib import Path
 from mihoyo_toolkit.utils.har_loader import (
     HAR_SITES,
     auto_har_path,
+    cleanup_har_files,
+    describe_har_files,
     ensure_har_dirs,
     extract_api_patterns,
     find_har_file,
+    format_har_report,
     get_har_dir,
     get_har_welcome_html,
     get_har_welcome_text,
+    har_saved_at,
+    har_site_status,
     load_api_pattern_from_har,
     load_har_entries,
     parse_har_file,
     print_har_instructions,
     prune_auto_har_files,
+    update_har_files,
 )
 
 
@@ -141,9 +147,142 @@ def test_get_har_welcome_text() -> None:
     text = get_har_welcome_text()
     assert "米游社工具箱" in text
     assert "原神新闻" in text
+    assert "--har" in text
 
 
 def test_get_har_welcome_html() -> None:
     html = get_har_welcome_html()
     assert html.startswith("<h3>")
     assert "米游社工具箱" in html
+    assert "--har" in html
+
+
+# ---------------------------------------------------------------------- #
+#  HAR 保存时间 / 目录状态 / 清理
+# ---------------------------------------------------------------------- #
+def _write_har(path: Path, *, mtime: float | None = None) -> Path:
+    """写入一个最小 HAR 文件（可选指定 mtime），返回路径。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("{}", encoding="utf-8")
+    if mtime is not None:
+        os.utime(path, (mtime, mtime))
+    return path
+
+
+def test_har_saved_at_reads_auto_filename(tmp_home: Path) -> None:
+    path = _write_har(get_har_dir("user") / "auto-20261031-002005.har", mtime=1_700_000_000)
+    assert har_saved_at(path) == datetime(2026, 10, 31, 0, 20, 5)
+
+
+def test_har_saved_at_reads_browser_filename(tmp_home: Path) -> None:
+    path = _write_har(
+        get_har_dir("user") / "www.miyoushe.com_Archive [26-11-09 16-10-58].har",
+        mtime=1_700_000_000,
+    )
+    assert har_saved_at(path) == datetime(2026, 11, 9, 16, 10, 58)
+
+
+def test_har_saved_at_falls_back_to_mtime(tmp_home: Path) -> None:
+    path = _write_har(get_har_dir("user") / "sample.har", mtime=1_700_000_000)
+    assert har_saved_at(path) == datetime.fromtimestamp(1_700_000_000)
+
+
+def test_describe_har_files_sorts_by_saved_at(har_factory, tmp_home: Path) -> None:
+    manual = har_factory("news_genshin")
+    os.utime(manual, (1_700_000_000, 1_700_000_000))
+    _write_har(get_har_dir("news_genshin") / "auto-20261101-000000.har")
+
+    infos = describe_har_files("news_genshin")
+
+    assert [info.name for info in infos] == ["auto-20261101-000000.har", "sample.har"]
+    assert infos[0].auto is True
+    assert infos[1].kind == "手动导出"
+
+
+def test_describe_har_files_missing_dir(tmp_home: Path) -> None:
+    assert describe_har_files("does_not_exist") == []
+
+
+def test_cleanup_har_files_keeps_newest_and_manual(har_factory, tmp_home: Path) -> None:
+    target_dir = get_har_dir("user")
+    manual = _write_har(target_dir / "www.miyoushe.com_Archive [26-10-28 13-15-31].har")
+    stale = _write_har(target_dir / "auto-20261030-000000.har")
+    newest = _write_har(target_dir / "auto-20261101-000000.har")
+
+    result = cleanup_har_files(keep=1)
+
+    assert stale.exists() is False
+    # 最新的自动录制优先保留，但最新的手动导出也不会被删除
+    assert newest.exists() is True
+    assert manual.exists() is True
+    assert result.removed == [stale]
+
+
+def test_cleanup_har_files_respects_keep_count(tmp_home: Path) -> None:
+    target_dir = get_har_dir("weibo")
+    files = [_write_har(target_dir / f"auto-2026100{index + 1}-000000.har") for index in range(3)]
+
+    result = cleanup_har_files(keep=2)
+
+    assert result.removed == [files[0]]
+    assert files[1].exists() is True
+    assert files[2].exists() is True
+
+
+def test_cleanup_har_files_nested_dirs(tmp_home: Path) -> None:
+    nested = get_har_dir("tutorial/zh_cn")
+    stale = _write_har(nested / "auto-20261030-000000.har")
+    newest = _write_har(nested / "auto-20261031-000000.har")
+
+    result = cleanup_har_files(keep=1)
+
+    assert stale.exists() is False
+    assert newest.exists() is True
+    assert result.removed == [stale]
+
+
+def test_cleanup_har_files_empty_har_dir(tmp_home: Path) -> None:
+    ensure_har_dirs()
+    result = cleanup_har_files(keep=1)
+    assert result.removed == []
+    assert result.kept == []
+
+
+def test_har_site_status(har_factory, tmp_home: Path) -> None:
+    har_factory("news_genshin")
+
+    statuses = har_site_status()
+
+    assert len(statuses) == len(HAR_SITES)
+    genshin = next(item for item in statuses if item.scraper_name == "news_genshin")
+    assert genshin.current is not None
+    assert genshin.current.name == "sample.har"
+    weibo = next(item for item in statuses if item.scraper_name == "weibo")
+    assert weibo.current is None
+    assert weibo.extra_count == 0
+
+
+def test_update_har_files_reports_sites(har_factory, tmp_home: Path) -> None:
+    target_dir = get_har_dir("news_genshin")
+    manual = har_factory("news_genshin")
+    stale = _write_har(target_dir / "auto-20261030-000000.har")
+    newest = _write_har(target_dir / "auto-20261101-000000.har")
+
+    report = update_har_files(keep=1)
+
+    assert report.removed == [stale]
+    assert report.kept and set(report.kept) >= {manual, newest}
+    status = next(item for item in report.sites if item.scraper_name == "news_genshin")
+    assert status.current is not None
+    assert status.current.name == "auto-20261101-000000.har"
+
+
+def test_format_har_report(har_factory, tmp_home: Path) -> None:
+    har_factory("news_genshin")
+
+    text = "\n".join(format_har_report(update_har_files(keep=1)))
+
+    assert "已清理旧文件 0 个" in text
+    assert "原神新闻" in text
+    assert "sample.har" in text
+    assert "缺失" in text  # 未放 HAR 的站点给出缺失提示

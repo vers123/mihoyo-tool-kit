@@ -26,6 +26,7 @@ from ..core.exceptions import GuiError
 from .pages import (
     ExportPage,
     FilterPage,
+    HarPage,
     NewsPage,
     OtherPage,
     SystemPage,
@@ -53,6 +54,7 @@ _GROUP_FACTORIES: dict[str, PageFactory] = {
 #: 需要单独成页的命令：命令 key → 页面工厂（标题取命令 label）
 _SPLIT_COMMANDS: dict[str, PageFactory] = {
     "export.filter": FilterPage,
+    "system.har": HarPage,
 }
 
 

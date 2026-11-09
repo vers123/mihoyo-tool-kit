@@ -6,7 +6,9 @@
 from __future__ import annotations
 
 import json
+import re
 from contextlib import suppress
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +22,15 @@ logger = get_module_logger("har_loader")
 
 #: 自动录制的 HAR 文件前缀
 AUTO_HAR_PREFIX = "auto-"
+
+#: HAR 目录中可被加载的文件后缀
+HAR_SUFFIXES = frozenset({".har", ".txt"})
+
+#: 自动录制文件名内的时间戳：``auto-YYYYmmdd-HHMMSS``
+_AUTO_STAMP_RE = re.compile(r"auto-(\d{8})-(\d{6})")
+
+#: Firefox 导出文件名内的时间戳：``站点_Archive [yy-MM-dd HH-mm-ss]``
+_BROWSER_STAMP_RE = re.compile(r"\[(\d{2})-(\d{2})-(\d{2}) (\d{2})-(\d{2})-(\d{2})\]")
 
 
 def _site_url(site: dict[str, str]) -> str:
@@ -96,9 +107,231 @@ def list_har_files(scraper_name: str) -> list[Path]:
     files = [
         entry
         for entry in har_dir.iterdir()
-        if entry.is_file() and entry.suffix.lower() in {".har", ".txt"}
+        if entry.is_file() and entry.suffix.lower() in HAR_SUFFIXES
     ]
     return sorted(files, key=lambda entry: entry.stat().st_mtime, reverse=True)
+
+
+def har_saved_at(path: Path) -> datetime:
+    """HAR 的保存时间：优先文件名内时间戳，其次文件修改时间。
+
+    只读文件名与元数据（不解析 HAR 内容），因此可以放心用于启动时的批量扫描。
+    """
+    name = Path(path).name
+    match = _AUTO_STAMP_RE.search(name)
+    if match:
+        with suppress(ValueError):
+            return datetime.strptime("".join(match.groups()), "%Y%m%d%H%M%S")
+    match = _BROWSER_STAMP_RE.search(name)
+    if match:
+        with suppress(ValueError):
+            return datetime.strptime("-".join(match.groups()), "%y-%m-%d-%H-%M-%S")
+    return datetime.fromtimestamp(Path(path).stat().st_mtime)
+
+
+def _format_size(size: int) -> str:
+    """把字节数渲染为人类可读文本。"""
+    if size >= 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f} MB"
+    if size >= 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size} B"
+
+
+@dataclass(frozen=True, slots=True)
+class HarFileInfo:
+    """HAR 目录中的一个文件。"""
+
+    scraper_name: str
+    path: Path
+    saved_at: datetime
+    size: int
+    #: 是否为浏览器回退时自动录制的文件
+    auto: bool
+
+    @property
+    def name(self) -> str:
+        return self.path.name
+
+    @property
+    def kind(self) -> str:
+        """文件来源（展示用）。"""
+        return "自动录制" if self.auto else "手动导出"
+
+    @property
+    def saved_at_text(self) -> str:
+        return self.saved_at.strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def size_text(self) -> str:
+        return _format_size(self.size)
+
+
+@dataclass(frozen=True, slots=True)
+class HarSiteStatus:
+    """单个抓取器的 HAR 目录状态。"""
+
+    name: str
+    scraper_name: str
+    directory: Path
+    #: 目录内全部 HAR 文件（按保存时间倒序）
+    files: list[HarFileInfo]
+
+    @property
+    def current(self) -> HarFileInfo | None:
+        """当前生效的 HAR（最新文件；加载时仍会优先选含 JSON 响应体的文件）。"""
+        return self.files[0] if self.files else None
+
+    @property
+    def extra_count(self) -> int:
+        """除当前文件外的其他文件数量。"""
+        return max(len(self.files) - 1, 0)
+
+
+@dataclass(frozen=True, slots=True)
+class HarCleanupResult:
+    """一次 HAR 清理的结果。"""
+
+    removed: list[Path]
+    #: 仍保留在磁盘上的文件（含删除失败的文件）
+    kept: list[Path]
+
+
+@dataclass(frozen=True, slots=True)
+class HarUpdateReport:
+    """一次 HAR 更新（清理 + 状态汇总）的结果。"""
+
+    cleanup: HarCleanupResult
+    sites: list[HarSiteStatus]
+
+    @property
+    def removed(self) -> list[Path]:
+        """本次删除的文件。"""
+        return self.cleanup.removed
+
+    @property
+    def kept(self) -> list[Path]:
+        """本次保留下来的文件。"""
+        return self.cleanup.kept
+
+
+def _har_file_info(path: Path, scraper_name: str = "") -> HarFileInfo:
+    return HarFileInfo(
+        scraper_name=scraper_name,
+        path=path,
+        saved_at=har_saved_at(path),
+        size=path.stat().st_size,
+        auto=path.name.startswith(AUTO_HAR_PREFIX),
+    )
+
+
+def describe_har_files(scraper_name: str) -> list[HarFileInfo]:
+    """列出某抓取器 HAR 目录内的文件（按保存时间倒序）。"""
+    har_dir = get_har_dir(scraper_name)
+    if not har_dir.is_dir():
+        return []
+    infos = [
+        _har_file_info(entry, scraper_name)
+        for entry in har_dir.iterdir()
+        if entry.is_file() and entry.suffix.lower() in HAR_SUFFIXES
+    ]
+    return sorted(infos, key=lambda info: info.saved_at, reverse=True)
+
+
+def har_site_status() -> list[HarSiteStatus]:
+    """汇总 :data:`HAR_SITES` 中每个抓取器的 HAR 目录状态。"""
+    return [
+        HarSiteStatus(
+            name=site["name"],
+            scraper_name=site["scraper_name"],
+            directory=get_har_dir(site["scraper_name"]),
+            files=describe_har_files(site["scraper_name"]),
+        )
+        for site in HAR_SITES
+    ]
+
+
+def _iter_har_files(root: Path) -> list[Path]:
+    if not root.is_dir():
+        return []
+    return [
+        path for path in root.rglob("*") if path.is_file() and path.suffix.lower() in HAR_SUFFIXES
+    ]
+
+
+def cleanup_har_files(keep: int = 1) -> HarCleanupResult:
+    """按保存时间清理 ``har/``：每个目录只保留最新 ``keep`` 个文件。
+
+    额外保护：目录中**最新的手动导出 HAR**（非 ``auto-``）始终保留，避免自动录制的
+    空 HAR 遮蔽此前手动导出的有效文件。删除失败（文件被占用）时保留该文件。
+    """
+    keep = max(1, keep)
+    root = get_path_manager().har
+    groups: dict[Path, list[Path]] = {}
+    for path in _iter_har_files(root):
+        groups.setdefault(path.parent, []).append(path)
+
+    removed: list[Path] = []
+    kept: list[Path] = []
+    for directory in sorted(groups):
+        infos = sorted(
+            (_har_file_info(path) for path in groups[directory]),
+            key=lambda info: info.saved_at,
+            reverse=True,
+        )
+        protected = {info.path for info in infos[:keep]}
+        manual = next((info for info in infos if not info.auto), None)
+        if manual is not None:
+            protected.add(manual.path)
+
+        dir_kept = 0
+        for info in infos:
+            if info.path in protected:
+                kept.append(info.path)
+                dir_kept += 1
+                continue
+            try:
+                info.path.unlink()
+            except OSError as exc:
+                logger.warning("删除旧 HAR 失败 %s: %s", info.path, exc)
+                kept.append(info.path)
+                dir_kept += 1
+            else:
+                removed.append(info.path)
+        logger.info("HAR 目录 %s：共 %d 个文件，保留 %d 个", directory, len(infos), dir_kept)
+
+    return HarCleanupResult(removed=removed, kept=kept)
+
+
+def update_har_files(keep: int = 1) -> HarUpdateReport:
+    """确保 HAR 目录存在 → 清理旧文件 → 汇总各站点状态。"""
+    ensure_har_dirs()
+    return HarUpdateReport(cleanup=cleanup_har_files(keep), sites=har_site_status())
+
+
+def format_har_report(report: HarUpdateReport) -> list[str]:
+    """把 HAR 更新结果渲染为 CLI 文本行。"""
+    paths = get_path_manager()
+    lines = [
+        f"[HAR] 已清理旧文件 {len(report.removed)} 个，共保留 {len(report.kept)} 个",
+    ]
+    for path in report.removed:
+        lines.append(f"  - 删除 {paths.relative(path)}")
+
+    lines.append("")
+    lines.append("[HAR] 各站点当前生效文件：")
+    for status in report.sites:
+        current = status.current
+        if current is None:
+            lines.append(f"  [{status.name}] 缺失 —— 请导出 HAR 放入 {status.directory}")
+            continue
+        lines.append(
+            f"  [{status.name}] {current.name}"
+            f"（{current.saved_at_text}，{current.size_text}，{current.kind}）"
+        )
+        if status.extra_count:
+            lines.append(f"      目录内另有 {status.extra_count} 个文件")
+    return lines
 
 
 def _json_payloads(har_path: Path) -> list[dict[str, Any]]:
@@ -329,6 +562,8 @@ def get_har_welcome_text() -> str:
         "",
         "  提示：HAR 文件用于自动识别 API 接口，无需手动分析。",
         "  说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。",
+        "  清理：启动时自动只保留每个目录最新的 HAR（[har].cleanup_on_startup / keep_files 控制）。",
+        "  更新：放入新的 HAR 后执行菜单「系统工具 → 更新 HAR 文件」或 mihoyo-toolkit --har。",
         "  如 HAR 已存在且接口正常，可直接使用。",
         "=" * 70,
     ]
@@ -366,6 +601,10 @@ def get_har_welcome_html() -> str:
     parts.append(
         "</ul><p>提示：HAR 文件用于自动识别 API 接口，无需手动分析。<br>"
         "说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。<br>"
+        "清理：启动时自动只保留每个目录最新的 HAR"
+        "（[har].cleanup_on_startup / keep_files 控制）。<br>"
+        "更新：放入新的 HAR 后执行菜单「系统工具 → 更新 HAR 文件」或 "
+        "<code>mihoyo-toolkit --har</code>。<br>"
         "如 HAR 已存在且接口正常，可直接使用。</p>"
     )
     return "".join(parts)
@@ -374,17 +613,28 @@ def get_har_welcome_html() -> str:
 __all__ = [
     "AUTO_HAR_PREFIX",
     "HAR_SITES",
+    "HAR_SUFFIXES",
+    "HarCleanupResult",
+    "HarFileInfo",
+    "HarSiteStatus",
+    "HarUpdateReport",
     "auto_har_path",
+    "cleanup_har_files",
+    "describe_har_files",
     "ensure_har_dirs",
     "extract_api_patterns",
     "find_har_file",
+    "format_har_report",
     "get_har_dir",
     "get_har_welcome_html",
     "get_har_welcome_text",
+    "har_saved_at",
+    "har_site_status",
     "list_har_files",
     "load_api_pattern_from_har",
     "load_har_entries",
     "parse_har_file",
     "print_har_instructions",
     "prune_auto_har_files",
+    "update_har_files",
 ]

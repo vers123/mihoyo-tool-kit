@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-09
+
+HAR 文件生命周期管理的向后兼容新功能（SemVer MINOR）：无破坏性变更，新增配置项均有默认值。
+
+### Added
+
+- **HAR 自动清理**：启动时（CLI / GUI）检查 `har/`，按保存时间每个目录只保留最新
+  `[har].keep_files` 个文件（默认 1 个），最新的手动导出 HAR 始终保留；由
+  `[har].cleanup_on_startup` 控制开关。
+- **`--har` 参数与「更新 HAR 文件」命令**（系统工具分组）：清理旧 HAR 并列出各站点
+  当前生效文件；用户放入新导出的 HAR 后执行一次即可生效。
+- **GUI「更新 HAR 文件」页面**：表格展示各站点 HAR 目录 / 当前文件 / 保存时间 / 大小 /
+  类型 / 文件数，支持刷新、清理旧文件与打开 HAR 目录；启动清理结果写入欢迎弹窗。
+- `utils.har_loader` 新增 `har_saved_at` / `describe_har_files` / `har_site_status` /
+  `cleanup_har_files` / `update_har_files` / `format_har_report` 及
+  `HarFileInfo` / `HarSiteStatus` / `HarCleanupResult` / `HarUpdateReport`。
+
+### Changed
+
+- `[har]` 配置新增 `cleanup_on_startup`（默认 `true`）与 `keep_files`（默认 `1`）。
+- `--har` 与 GUI 启动路径不重复执行启动清理（各自清理一次）。
+
 ## [3.1.1] - 2026-10-31
 
 界面字体与默认配置的补丁版本（SemVer PATCH），不影响 CLI 行为与数据格式。

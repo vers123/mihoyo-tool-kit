@@ -32,7 +32,7 @@ class AppSettings(BaseModel):
     """应用级设置。"""
 
     mode: Literal["cli", "gui"] = "cli"
-    version: str = "3.1.1"
+    version: str = "3.2.0"
 
 
 class FetchSettings(BaseModel):
@@ -86,6 +86,10 @@ class HarSettings(BaseModel):
     auto_update: bool = True
     #: 每个抓取器保留的自动录制 HAR 文件数量
     max_files: int = Field(default=3, ge=1)
+    #: 启动时自动清理 har/ 下的旧 HAR 文件
+    cleanup_on_startup: bool = True
+    #: 每个 HAR 目录保留的文件数量（按保存时间保留最新）
+    keep_files: int = Field(default=1, ge=1)
 
 
 class UserSource(BaseModel):

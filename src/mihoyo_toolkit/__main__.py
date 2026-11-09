@@ -16,10 +16,12 @@ from .exporters import export_news_excel, generate_json_feed, generate_rss_feed
 from .scrapers import run_news
 from .utils import (
     check_and_migrate,
+    format_har_report,
     get_har_welcome_text,
     run_filter,
     setup_console_log,
     setup_logger,
+    update_har_files,
 )
 
 
@@ -44,8 +46,32 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--count", action="store_true", help="显示 SQLite 各游戏条数")
     parser.add_argument("--filter", action="store_true", help="运行 TXT 过滤")
     parser.add_argument("--migrate", action="store_true", help="运行数据迁移")
+    parser.add_argument(
+        "--har",
+        action="store_true",
+        help="检查并更新 HAR 文件（清理旧 HAR，列出各站点当前生效文件）",
+    )
     parser.add_argument("--version", action="store_true", help="打印版本号")
     return parser
+
+
+def _cleanup_har_on_startup() -> None:
+    """启动时按 ``[har].cleanup_on_startup`` 清理 har/ 下的旧 HAR 文件。"""
+    settings = get_settings()
+    if not settings.har.cleanup_on_startup:
+        return
+    report = update_har_files(keep=settings.har.keep_files)
+    if report.removed:
+        print(
+            f"[HAR] 已清理旧 HAR 文件 {len(report.removed)} 个"
+            f"（每个目录保留最新 {settings.har.keep_files} 个）"
+        )
+
+
+def _run_har_update() -> None:
+    """清理旧 HAR 并打印各站点当前生效文件。"""
+    report = update_har_files(keep=get_settings().har.keep_files)
+    print("\n".join(format_har_report(report)))
 
 
 def _run_fetch(target: str) -> None:
@@ -107,6 +133,10 @@ def _dispatch(args: argparse.Namespace) -> int:
         print("[完成] 数据迁移检查结束（详情见日志）")
         return 0
 
+    if args.har:
+        _run_har_update()
+        return 0
+
     return 0
 
 
@@ -118,6 +148,11 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     args = _build_parser().parse_args(argv)
 
+    # GUI 启动时由 gui.launch_gui() 清理（结果写入欢迎弹窗），--har 也会清理一次，
+    # 故这两种模式跳过启动清理，避免重复扫描
+    if not (args.version or args.gui or args.har):
+        _cleanup_har_on_startup()
+
     has_action = bool(
         args.version
         or args.gui
@@ -127,6 +162,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         or args.count
         or args.filter
         or args.migrate
+        or args.har
     )
     if has_action:
         return _dispatch(args)

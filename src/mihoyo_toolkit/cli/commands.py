@@ -43,9 +43,11 @@ from ..utils import (
     BackupInfo,
     backup_manager,
     check_and_migrate,
+    format_har_report,
     get_module_logger,
     log_function_call,
     run_filter,
+    update_har_files,
 )
 from ..utils.logger import _release_log_handles
 from .registry import registry
@@ -732,6 +734,21 @@ def system_clean() -> None:
         f"\n[完成] 释放日志句柄 {released} 个，删除目录 {removed_dirs} 个，"
         f"文件 {removed_files} 个，失败 {failed} 个"
     )
+
+
+@registry.register(
+    key="system.har",
+    label="更新 HAR 文件",
+    description="清理 har 目录中的旧 HAR，并列出各站点当前生效文件",
+    group="系统工具",
+    order=8,
+)
+@log_function_call
+def system_har_update() -> None:
+    """更新 HAR：清理旧文件并输出各站点状态。"""
+    report = update_har_files(keep=get_settings().har.keep_files)
+    print("\n".join(format_har_report(report)))
+    print(f"\n[提示] 新的 HAR 可直接放入 {get_path_manager().har}，再运行本命令即可生效")
 
 
 # ====================================================================== #

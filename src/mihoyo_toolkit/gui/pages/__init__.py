@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .base import BasePage
 from .filter import FilterPage
+from .har import HarPage
 from .news import NewsPage
 from .other import OtherPage
 from .preview_dialog import PreviewDialog
@@ -15,6 +16,7 @@ __all__ = [
     "BasePage",
     "ExportPage",
     "FilterPage",
+    "HarPage",
     "NewsPage",
     "OtherPage",
     "PreviewDialog",

@@ -60,7 +60,23 @@ def _watch_system_theme(app, window: MainWindow) -> None:
     signal.connect(_on_scheme_changed)
 
 
-def _show_welcome_dialog() -> None:
+def _cleanup_har_on_startup() -> int:
+    """启动时清理旧 HAR（受 ``[har].cleanup_on_startup`` 控制），返回删除数量。"""
+    from ..core import get_settings
+    from ..utils import get_module_logger, update_har_files
+
+    try:
+        settings = get_settings()
+        if not settings.har.cleanup_on_startup:
+            return 0
+        report = update_har_files(keep=settings.har.keep_files)
+    except Exception as exc:  # 清理失败不应阻塞界面启动
+        get_module_logger("gui").warning("启动清理 HAR 失败: %s", exc)
+        return 0
+    return len(report.removed)
+
+
+def _show_welcome_dialog(removed_har: int = 0) -> None:
     """显示 HAR 更新提示欢迎弹窗（文本可复制、链接可点击）。"""
     from PySide6.QtWidgets import (
         QDialog,
@@ -76,6 +92,11 @@ def _show_welcome_dialog() -> None:
         html = get_har_welcome_html()
     except Exception as exc:
         html = f"<p>无法加载欢迎信息：{exc}</p>"
+
+    if removed_har:
+        html = (
+            f"<p><b>已自动清理 {removed_har} 个旧 HAR 文件</b>（每个目录保留最新文件）。</p>" + html
+        )
 
     dialog = QDialog()
     dialog.setWindowTitle("欢迎使用 米游社工具箱")
@@ -111,7 +132,7 @@ def launch_gui() -> None:
     app = _ensure_application()
     apply_app_font(app, load_main_font())
     fonts = load_game_fonts()
-    _show_welcome_dialog()
+    _show_welcome_dialog(_cleanup_har_on_startup())
 
     window = MainWindow(fonts=fonts)
     _watch_system_theme(app, window)
