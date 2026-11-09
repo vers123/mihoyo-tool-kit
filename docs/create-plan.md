@@ -502,9 +502,9 @@ https://www.bilibili.com/blackboard/era/OTzkrUDsetXBGeo4.html
 
 V7.2 [版本名称]
 
-[*序号] [*角色名称]
+米提亚、芙宁娜、莉奈娅、瓦列里、兹白
 
-[*链接]
+https://www.bilibili.com/blackboard/era/eyooXg7UdQilWup6.html
 
 ---
 
