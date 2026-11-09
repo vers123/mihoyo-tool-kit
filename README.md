@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.2.0-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.2.1-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -248,7 +248,7 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "3.2.0"
+version = "3.2.1"
 
 [fetch]
 headless = true       # 浏览器后台运行
@@ -275,7 +275,7 @@ use_firefox = true    # 读取 Firefox cookie 免登录
 auto_update = true          # 浏览器回退时自动录制 HAR
 max_files = 3               # 每个抓取器保留的自动 HAR 数量
 cleanup_on_startup = true   # 启动时自动清理旧 HAR（保留日期最新的）
-keep_files = 1              # 每个 HAR 目录保留的文件数量（最新优先）
+keep_files = 1              # 每个 HAR 目录保留的自动 HAR 数量（最新优先；另保留最新手动 HAR）
 
 [sources.user]
 # 米游社用户 UID，默认为原神官方账号；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
@@ -317,7 +317,7 @@ mihoyo-tool-kit/
 │   └── create-plan.md          # 角色模型抓取计划（模型下载运行时输入）
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "3.2.0"）
+│       ├── __init__.py         # 版本元信息（__version__ = "3.2.1"）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
@@ -405,10 +405,10 @@ Firefox 导出 HAR 文件；将 HAR 放入 `har/{scraper_name}/` 后重新运行
 `config.toml` 的 `[har].auto_update` 控制，且只对配置了 API 拦截的抓取器生效
 （用户发帖 / 微博 / 四站点新闻），图鉴等纯 HTML 抓取器不录制。
 
-**HAR 自动清理** — 启动时（CLI / GUI 均生效）检查 `har/`，按保存时间**每个目录只保留最新
-`[har].keep_files` 个文件**（默认 1 个），日期取自文件名内时间戳
+**HAR 自动清理** — 启动时（CLI / GUI 均生效）检查 `har/`，按保存时间**每个目录保留最新
+`[har].keep_files` 个自动录制文件**（默认 1 个），日期取自文件名内时间戳
 （`auto-YYYYmmdd-HHMMSS` / `站点_Archive [yy-MM-dd HH-mm-ss]`），取不到时回退文件修改时间；
-目录中**最新的手动导出 HAR 始终保留**，避免自动录制的空 HAR 把它顶掉。该行为由
+目录中**最新的手动导出 HAR 也始终保留**，避免自动录制的空 HAR 把它顶掉。该行为由
 `[har].cleanup_on_startup` 控制。用户随时可以把新导出的 HAR 放进对应目录，然后执行
 `mihoyo-toolkit --har`（或菜单「系统工具 → 更新 HAR 文件」、GUI「更新 HAR 文件」页）
 即可清理旧文件并查看各站点当前生效的 HAR。
@@ -612,4 +612,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V3.2.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V3.2.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

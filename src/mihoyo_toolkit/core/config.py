@@ -32,7 +32,7 @@ class AppSettings(BaseModel):
     """应用级设置。"""
 
     mode: Literal["cli", "gui"] = "cli"
-    version: str = "3.2.0"
+    version: str = "3.2.1"
 
 
 class FetchSettings(BaseModel):

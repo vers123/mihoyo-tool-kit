@@ -95,7 +95,8 @@ def _show_welcome_dialog(removed_har: int = 0) -> None:
 
     if removed_har:
         html = (
-            f"<p><b>已自动清理 {removed_har} 个旧 HAR 文件</b>（每个目录保留最新文件）。</p>" + html
+            f"<p><b>已自动清理 {removed_har} 个旧 HAR 文件</b>"
+            "（每个目录保留最新自动文件及最新手动文件）。</p>" + html
         )
 
     dialog = QDialog()

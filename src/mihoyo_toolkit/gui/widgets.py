@@ -65,7 +65,9 @@ class LogViewer(QPlainTextEdit):
             cursor.movePosition(QTextCursor.MoveOperation.End)
         else:
             cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.movePosition(
+                QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
+            )
         cursor.insertText(text, self._text_format(text))
         self._progress_message = text
         self.setTextCursor(cursor)

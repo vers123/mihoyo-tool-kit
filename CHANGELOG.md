@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-11-09
+
+补丁版本（SemVer PATCH）：修复 HAR 清理误删最新自动录制文件的问题，并确保代码格式检查通过。
+
+### Fixed
+
+- HAR 清理现在保留每个目录最新的 `[har].keep_files` 个自动录制文件，以及最新的手动导出文件；
+  不再因手动文件时间较新而误删全部自动文件。
+- 格式化 GUI 实时进度更新代码，修复 Ruff 格式检查失败。
+
 ## [3.2.0] - 2026-11-09
 
 HAR 文件生命周期管理的向后兼容新功能（SemVer MINOR）：无破坏性变更，新增配置项均有默认值。

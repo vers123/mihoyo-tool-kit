@@ -271,10 +271,10 @@ def _iter_har_files(root: Path) -> list[Path]:
 
 
 def cleanup_har_files(keep: int = 1) -> HarCleanupResult:
-    """按保存时间清理 ``har/``：每个目录只保留最新 ``keep`` 个文件。
+    """按保存时间清理 ``har/``：每个目录保留最新 ``keep`` 个自动文件。
 
-    额外保护：目录中**最新的手动导出 HAR**（非 ``auto-``）始终保留，避免自动录制的
-    空 HAR 遮蔽此前手动导出的有效文件。删除失败（文件被占用）时保留该文件。
+    额外保护：目录中最新的手动导出 HAR（非 ``auto-``）始终保留，避免自动录制的空
+    HAR 遮蔽此前手动导出的有效文件。删除失败（文件被占用）时保留该文件。
     """
     keep = max(1, keep)
     root = get_path_manager().har
@@ -290,7 +290,8 @@ def cleanup_har_files(keep: int = 1) -> HarCleanupResult:
             key=lambda info: info.saved_at,
             reverse=True,
         )
-        protected = {info.path for info in infos[:keep]}
+        automatic = [info for info in infos if info.auto]
+        protected = {info.path for info in automatic[:keep]}
         manual = next((info for info in infos if not info.auto), None)
         if manual is not None:
             protected.add(manual.path)
@@ -575,7 +576,8 @@ def get_har_welcome_text() -> str:
         "",
         "  提示：HAR 文件用于自动识别 API 接口，无需手动分析。",
         "  说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。",
-        "  清理：启动时自动只保留每个目录最新的 HAR（[har].cleanup_on_startup / keep_files 控制）。",
+        "  清理：启动时每个目录仅保留最新的自动 HAR 与最新的手动 HAR"
+        "（[har].cleanup_on_startup / keep_files 控制）。",
         "  更新：放入新的 HAR 后执行菜单「系统工具 → 更新 HAR 文件」或 mihoyo-toolkit --har。",
         "  如 HAR 已存在且接口正常，可直接使用。",
         "=" * 70,
@@ -614,7 +616,7 @@ def get_har_welcome_html() -> str:
     parts.append(
         "</ul><p>提示：HAR 文件用于自动识别 API 接口，无需手动分析。<br>"
         "说明：浏览器回退抓取时会自动录制 HAR 到上述目录（[har].auto_update 控制）。<br>"
-        "清理：启动时自动只保留每个目录最新的 HAR"
+        "清理：启动时每个目录仅保留最新的自动 HAR 与最新的手动 HAR"
         "（[har].cleanup_on_startup / keep_files 控制）。<br>"
         "更新：放入新的 HAR 后执行菜单「系统工具 → 更新 HAR 文件」或 "
         "<code>mihoyo-toolkit --har</code>。<br>"

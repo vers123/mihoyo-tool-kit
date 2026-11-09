@@ -64,7 +64,7 @@ def _cleanup_har_on_startup() -> None:
     if report.removed:
         print(
             f"[HAR] 已清理旧 HAR 文件 {len(report.removed)} 个"
-            f"（每个目录保留最新 {settings.har.keep_files} 个）"
+            f"（每个目录保留最新 {settings.har.keep_files} 个自动文件及最新手动文件）"
         )
 
 
