@@ -500,7 +500,7 @@ https://www.bilibili.com/blackboard/era/OTzkrUDsetXBGeo4.html
 
 ---
 
-V7.2 [版本名称]
+V7.2 「坏灭肇始之时」
 
 米提亚、芙宁娜、莉奈娅、瓦列里、兹白
 
