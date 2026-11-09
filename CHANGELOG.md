@@ -19,9 +19,10 @@ HAR 文件生命周期管理的向后兼容新功能（SemVer MINOR）：无破�
   `[har].keep_files` 个文件（默认 1 个），最新的手动导出 HAR 始终保留；由
   `[har].cleanup_on_startup` 控制开关。
 - **`--har` 参数与「更新 HAR 文件」命令**（系统工具分组）：清理旧 HAR 并列出各站点
-  当前生效文件；用户放入新导出的 HAR 后执行一次即可生效。
+  当前生效文件**及导出 HAR 所需的页面地址**；用户放入新导出的 HAR 后执行一次即可生效。
 - **GUI「更新 HAR 文件」页面**：表格展示各站点 HAR 目录 / 当前文件 / 保存时间 / 大小 /
-  类型 / 文件数，支持刷新、清理旧文件与打开 HAR 目录；启动清理结果写入欢迎弹窗。
+  类型 / 文件数 / **页面网址**，支持刷新、清理旧文件、打开 HAR 目录与
+  「打开站点页面」（双击行同样可打开）；启动清理结果写入欢迎弹窗。
 - `utils.har_loader` 新增 `har_saved_at` / `describe_har_files` / `har_site_status` /
   `cleanup_har_files` / `update_har_files` / `format_har_report` 及
   `HarFileInfo` / `HarSiteStatus` / `HarCleanupResult` / `HarUpdateReport`。

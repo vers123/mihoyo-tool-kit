@@ -257,9 +257,16 @@ def test_har_site_status(har_factory, tmp_home: Path) -> None:
     genshin = next(item for item in statuses if item.scraper_name == "news_genshin")
     assert genshin.current is not None
     assert genshin.current.name == "sample.har"
+    assert genshin.url == "https://ys.mihoyo.com/main/news"
     weibo = next(item for item in statuses if item.scraper_name == "weibo")
     assert weibo.current is None
     assert weibo.extra_count == 0
+    assert weibo.url.startswith("https://weibo.com/")
+
+
+def test_har_site_status_uses_configured_user_url(tmp_home: Path) -> None:
+    user = next(item for item in har_site_status() if item.scraper_name == "user")
+    assert user.url == "https://www.miyoushe.com/ys/accountCenter/postList?id=10000000"
 
 
 def test_update_har_files_reports_sites(har_factory, tmp_home: Path) -> None:
@@ -286,3 +293,5 @@ def test_format_har_report(har_factory, tmp_home: Path) -> None:
     assert "原神新闻" in text
     assert "sample.har" in text
     assert "缺失" in text  # 未放 HAR 的站点给出缺失提示
+    assert "页面: https://ys.mihoyo.com/main/news" in text
+    assert "页面: https://weibo.com/" in text

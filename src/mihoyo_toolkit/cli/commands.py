@@ -748,7 +748,6 @@ def system_har_update() -> None:
     """更新 HAR：清理旧文件并输出各站点状态。"""
     report = update_har_files(keep=get_settings().har.keep_files)
     print("\n".join(format_har_report(report)))
-    print(f"\n[提示] 新的 HAR 可直接放入 {get_path_manager().har}，再运行本命令即可生效")
 
 
 # ====================================================================== #

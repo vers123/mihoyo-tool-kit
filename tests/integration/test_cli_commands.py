@@ -185,6 +185,7 @@ def test_system_har_update(capsys, tmp_home: Path) -> None:
     out = capsys.readouterr().out
     assert "已清理旧文件" in out
     assert "各站点当前生效文件" in out
+    assert "页面: https://" in out
 
 
 def test_system_backups_empty(capsys) -> None:

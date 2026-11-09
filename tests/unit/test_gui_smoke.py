@@ -36,6 +36,7 @@ from mihoyo_toolkit.core.exceptions import GuiError
 from mihoyo_toolkit.gui import MainWindow, theme
 from mihoyo_toolkit.gui.controllers import TaskController
 from mihoyo_toolkit.gui.nav import build_nav
+from mihoyo_toolkit.utils import har_site_status
 
 #: 等待后台线程信号的最长秒数
 TIMEOUT_SECONDS = 20.0
@@ -122,6 +123,30 @@ def test_theme_palettes_and_stylesheet(qt_app: QApplication) -> None:
         window.apply_theme()
     finally:
         window.close()
+
+
+def test_har_page_shows_site_urls_and_opens_page(qt_app: QApplication, monkeypatch) -> None:
+    """HAR 页面展示各站点页面地址，选中行后可打开该地址。"""
+    from mihoyo_toolkit.gui.pages import har as har_page
+
+    opened: list[str] = []
+
+    class _FakeDesktopServices:
+        @staticmethod
+        def openUrl(url) -> None:
+            opened.append(url.toString())
+
+    monkeypatch.setattr(har_page, "QDesktopServices", _FakeDesktopServices)
+
+    page = har_page.HarPage()
+    try:
+        assert page.table_model.rowCount() == len(har_site_status())
+        page.table.setCurrentIndex(page.table_model.index(0, 0))
+        page._open_site_page()
+    finally:
+        page.deleteLater()
+
+    assert opened and opened[0].startswith("https://")
 
 
 def test_worker_runs_task_in_background(qt_app: QApplication) -> None:

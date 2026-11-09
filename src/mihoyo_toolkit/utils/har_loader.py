@@ -174,6 +174,8 @@ class HarSiteStatus:
     name: str
     scraper_name: str
     directory: Path
+    #: 需要导出 HAR 的页面地址
+    url: str
     #: 目录内全部 HAR 文件（按保存时间倒序）
     files: list[HarFileInfo]
 
@@ -238,13 +240,22 @@ def describe_har_files(scraper_name: str) -> list[HarFileInfo]:
     return sorted(infos, key=lambda info: info.saved_at, reverse=True)
 
 
+def _safe_site_url(site: dict[str, str]) -> str:
+    """返回站点页面地址；配置缺失时回退静态地址（调用方仅用于展示）。"""
+    try:
+        return _site_url(site)
+    except Exception:  # 展示用信息，读取配置失败不应中断 HAR 清理
+        return site["url"]
+
+
 def har_site_status() -> list[HarSiteStatus]:
-    """汇总 :data:`HAR_SITES` 中每个抓取器的 HAR 目录状态。"""
+    """汇总 :data:`HAR_SITES` 中每个抓取器的 HAR 目录状态（含页面地址）。"""
     return [
         HarSiteStatus(
             name=site["name"],
             scraper_name=site["scraper_name"],
             directory=get_har_dir(site["scraper_name"]),
+            url=_safe_site_url(site),
             files=describe_har_files(site["scraper_name"]),
         )
         for site in HAR_SITES
@@ -310,27 +321,29 @@ def update_har_files(keep: int = 1) -> HarUpdateReport:
 
 
 def format_har_report(report: HarUpdateReport) -> list[str]:
-    """把 HAR 更新结果渲染为 CLI 文本行。"""
+    """把 HAR 更新结果渲染为 CLI 文本行（含各站点导出 HAR 的页面地址）。"""
     paths = get_path_manager()
     lines = [
-        f"[HAR] 已清理旧文件 {len(report.removed)} 个，共保留 {len(report.kept)} 个",
+        f"[HAR] 已清理旧文件 {len(report.removed)} 个，共保留 {len(report.kept)} 个"
+        f"（根目录: {paths.relative(paths.har)}）",
     ]
     for path in report.removed:
         lines.append(f"  - 删除 {paths.relative(path)}")
 
     lines.append("")
-    lines.append("[HAR] 各站点当前生效文件：")
+    lines.append("[HAR] 各站点当前生效文件（缺失时请打开页面导出 HAR 放入对应目录）：")
     for status in report.sites:
         current = status.current
         if current is None:
-            lines.append(f"  [{status.name}] 缺失 —— 请导出 HAR 放入 {status.directory}")
-            continue
-        lines.append(
-            f"  [{status.name}] {current.name}"
-            f"（{current.saved_at_text}，{current.size_text}，{current.kind}）"
-        )
-        if status.extra_count:
-            lines.append(f"      目录内另有 {status.extra_count} 个文件")
+            lines.append(f"  [{status.name}] 缺失 —— 请放入 {paths.relative(status.directory)}")
+        else:
+            lines.append(
+                f"  [{status.name}] {current.name}"
+                f"（{current.saved_at_text}，{current.size_text}，{current.kind}）"
+            )
+            if status.extra_count:
+                lines.append(f"      目录内另有 {status.extra_count} 个文件")
+        lines.append(f"      页面: {status.url}")
     return lines
 
 
