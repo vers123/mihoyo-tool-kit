@@ -34,6 +34,7 @@ class TaskController(QObject):
         started: 任务已启动。
         progress: 百分比进度（0-100）。
         message: 一行日志输出。
+        progress_message: 回车刷新的进度行。
         finished: 任务成功结束，携带返回值。
         failed: 任务异常结束，携带错误描述。
         cancelled: 任务被用户中断。
@@ -42,6 +43,7 @@ class TaskController(QObject):
     started = Signal()
     progress = Signal(int)
     message = Signal(str)
+    progress_message = Signal(str)
     finished = Signal(object)
     failed = Signal(str)
     cancelled = Signal()
@@ -71,6 +73,7 @@ class TaskController(QObject):
 
         worker.progress.connect(self.progress)
         worker.message.connect(self.message)
+        worker.progress_message.connect(self.progress_message)
         worker.finished_ok.connect(self._on_finished)
         worker.failed.connect(self._on_failed)
         worker.cancelled.connect(self._on_cancelled)

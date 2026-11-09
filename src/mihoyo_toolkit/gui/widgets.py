@@ -25,6 +25,7 @@ class LogViewer(QPlainTextEdit):
         self.setMaximumBlockCount(theme.LOG_MAX_BLOCKS)
         self.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         self._messages: list[str] = []
+        self._progress_message: str | None = None
 
     def append_log(self, message: str) -> None:
         """追加一条日志。
@@ -36,6 +37,13 @@ class LogViewer(QPlainTextEdit):
         if not text:
             return
 
+        if self._progress_message is not None:
+            cursor = self.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            cursor.insertBlock()
+            self.setTextCursor(cursor)
+            self._progress_message = None
+
         with suppress(OSError):
             # 日志文件不可写不应影响界面
             append_gui_log(text)
@@ -46,18 +54,40 @@ class LogViewer(QPlainTextEdit):
 
         self._render(text)
 
+    def update_progress(self, message: str) -> None:
+        """覆盖显示临时进度行，不写入 GUI 日志文件。"""
+        text = message.rstrip("\r\n")
+        if not text:
+            return
+
+        cursor = self.textCursor()
+        if self._progress_message is None:
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+        else:
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+        cursor.insertText(text, self._text_format(text))
+        self._progress_message = text
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+
     def reapply_theme(self) -> None:
         """主题切换后按新配色重绘已有日志（不重复写入日志文件）。"""
-        if not self._messages:
+        if not self._messages and self._progress_message is None:
             return
         messages = list(self._messages)
+        progress_message = self._progress_message
         self.clear()
+        self._progress_message = None
         for text in messages:
             self._render(text)
+        if progress_message is not None:
+            self.update_progress(progress_message)
 
     def clear_log(self) -> None:
         """清空面板显示（不影响日志文件）。"""
         self._messages.clear()
+        self._progress_message = None
         self.clear()
 
     # ------------------------------------------------------------------ #
@@ -68,16 +98,20 @@ class LogViewer(QPlainTextEdit):
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
 
+        cursor.insertText(text, self._text_format(text))
+        cursor.insertBlock()
+        self.setTextCursor(cursor)
+        self.ensureCursorVisible()
+
+    @staticmethod
+    def _text_format(text: str) -> QTextCharFormat:
+        """按当前主题生成日志文本格式。"""
         fmt = QTextCharFormat()
         fmt.setForeground(QColor(theme.log_color(text)))
         lower = text.lower()
         if "[error]" in lower or "[fail" in lower:
             fmt.setFontWeight(QFont.Weight.Bold)
-
-        cursor.setCharFormat(fmt)
-        cursor.insertText(text + "\n")
-        self.setTextCursor(cursor)
-        self.ensureCursorVisible()
+        return fmt
 
 
 class ProgressWidget(QWidget):

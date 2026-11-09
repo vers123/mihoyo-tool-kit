@@ -36,6 +36,8 @@ from mihoyo_toolkit.core.exceptions import GuiError
 from mihoyo_toolkit.gui import MainWindow, theme
 from mihoyo_toolkit.gui.controllers import TaskController
 from mihoyo_toolkit.gui.nav import build_nav
+from mihoyo_toolkit.gui.widgets import LogViewer
+from mihoyo_toolkit.gui.workers import _SignalStream
 from mihoyo_toolkit.utils import har_site_status
 
 #: 等待后台线程信号的最长秒数
@@ -176,3 +178,41 @@ def test_worker_cooperative_cancellation(qt_app: QApplication) -> None:
 
     assert _spin_until(qt_app, lambda: bool(cancelled))
     assert _spin_until(qt_app, lambda: not controller.is_running)
+
+
+def test_signal_stream_separates_progress_and_log_lines() -> None:
+    """回车输出作为进度更新，普通换行仍作为日志行。"""
+    messages: list[str] = []
+    progress: list[str] = []
+    stream = _SignalStream(messages.append, progress.append, lambda: False)
+
+    stream.write("\r微博抓取：5%")
+    stream.flush()
+    stream.write("\r微博抓取：6%\r微博抓取：7%")
+    stream.flush()
+    stream.write("第一行\r\n第二行\n")
+    stream.flush()
+
+    assert progress == ["微博抓取：5%", "微博抓取：6%", "微博抓取：7%"]
+    assert messages == ["第一行", "第二行"]
+
+
+def test_log_viewer_replaces_progress_line(qt_app: QApplication, monkeypatch) -> None:
+    """连续进度刷新只显示一行，且不会写入持久化 GUI 日志。"""
+    from mihoyo_toolkit.gui import widgets
+
+    persisted: list[str] = []
+    monkeypatch.setattr(widgets, "append_gui_log", persisted.append)
+    viewer = LogViewer()
+
+    viewer.append_log("开始抓取")
+    viewer.update_progress("微博抓取：5%")
+    viewer.update_progress("微博抓取：6%")
+    viewer.append_log("抓取完成")
+
+    assert viewer.toPlainText().splitlines() == [
+        "开始抓取",
+        "微博抓取：6%",
+        "抓取完成",
+    ]
+    assert persisted == ["开始抓取", "抓取完成"]

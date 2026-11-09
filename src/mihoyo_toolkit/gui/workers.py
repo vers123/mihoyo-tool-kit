@@ -26,16 +26,24 @@ class TaskCancelledError(Exception):
 
 
 class _SignalStream(io.TextIOBase):
-    """把写入内容按行转成 Qt 信号，并作为取消检查点。"""
+    """把普通行和回车进度更新转成 Qt 信号，并作为取消检查点。"""
 
     encoding = "utf-8"
     errors = "replace"
 
-    def __init__(self, emit: Callable[[str], None], is_cancelled: Callable[[], bool]) -> None:
+    def __init__(
+        self,
+        emit: Callable[[str], None],
+        emit_progress: Callable[[str], None],
+        is_cancelled: Callable[[], bool],
+    ) -> None:
         super().__init__()
         self._emit = emit
+        self._emit_progress = emit_progress
         self._is_cancelled = is_cancelled
         self._buffer = ""
+        self._pending_cr = False
+        self._line_is_progress = False
 
     def writable(self) -> bool:
         return True
@@ -43,16 +51,52 @@ class _SignalStream(io.TextIOBase):
     def write(self, text: str) -> int:
         if self._is_cancelled():
             raise TaskCancelledError
-        self._buffer += text
-        while "\n" in self._buffer:
-            line, self._buffer = self._buffer.split("\n", 1)
-            self._emit_line(line)
+        i = 0
+        while i < len(text):
+            char = text[i]
+            if self._pending_cr:
+                self._pending_cr = False
+                if char == "\n":
+                    self._emit_buffer()
+                    self._buffer = ""
+                    self._line_is_progress = False
+                    i += 1
+                    continue
+                if self._buffer:
+                    self._emit_buffer()
+                    self._buffer = ""
+                self._line_is_progress = True
+
+            if char == "\r":
+                self._pending_cr = True
+            elif char == "\n":
+                self._emit_buffer()
+                self._buffer = ""
+                self._line_is_progress = False
+            else:
+                self._buffer += char
+            i += 1
         return len(text)
 
     def flush(self) -> None:
+        if self._pending_cr:
+            self._pending_cr = False
+            self._emit_progress_line(self._buffer)
+            self._buffer = ""
+            self._line_is_progress = False
         if self._buffer:
             line, self._buffer = self._buffer, ""
-            self._emit_line(line)
+            if self._line_is_progress:
+                self._emit_progress_line(line)
+            else:
+                self._emit_line(line)
+            self._line_is_progress = False
+
+    def _emit_buffer(self) -> None:
+        if self._line_is_progress:
+            self._emit_progress_line(self._buffer)
+        else:
+            self._emit_line(self._buffer)
 
     def _emit_line(self, line: str) -> None:
         line = line.rstrip("\r")
@@ -62,6 +106,12 @@ class _SignalStream(io.TextIOBase):
             # 接收者（窗口 / 面板）已销毁，静默丢弃
             self._emit(line)
 
+    def _emit_progress_line(self, line: str) -> None:
+        if not line.strip():
+            return
+        with suppress(RuntimeError):
+            self._emit_progress(line)
+
 
 class TaskWorker(QThread):
     """在后台线程执行任意可调用对象的 Worker。
@@ -69,6 +119,7 @@ class TaskWorker(QThread):
     Signals:
         progress: 百分比进度（0-100），由任务主动上报。
         message: 任务输出的一行日志。
+        progress_message: 任务输出的回车进度更新。
         finished_ok: 任务正常结束，携带函数返回值。
         failed: 任务异常结束，携带错误描述。
         cancelled: 任务被用户中断。
@@ -80,6 +131,7 @@ class TaskWorker(QThread):
 
     progress = Signal(int)
     message = Signal(str)
+    progress_message = Signal(str)
     finished_ok = Signal(object)
     failed = Signal(str)
     cancelled = Signal()
@@ -114,8 +166,10 @@ class TaskWorker(QThread):
         return self._cancel_requested or self.isInterruptionRequested()
 
     def run(self) -> None:
-        stream = _SignalStream(self.message.emit, self.is_cancelled)
-        error_stream = _SignalStream(self.message.emit, self.is_cancelled)
+        stream = _SignalStream(self.message.emit, self.progress_message.emit, self.is_cancelled)
+        error_stream = _SignalStream(
+            self.message.emit, self.progress_message.emit, self.is_cancelled
+        )
         try:
             with redirect_stdout(stream), redirect_stderr(error_stream):
                 result = self._func(*self._args, **self._kwargs)

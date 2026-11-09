@@ -96,6 +96,8 @@ class MainWindow(QMainWindow):
         self.splitter.addWidget(top)
 
         self.splitter.addWidget(self._build_log_panel())
+        for page in self._pages:
+            page.progress_message.connect(self.log_viewer.update_progress)
         self.splitter.setSizes([500, 220])
         self.splitter.setStretchFactor(0, 3)
         self.splitter.setStretchFactor(1, 1)

@@ -35,9 +35,11 @@ class BasePage(QWidget):
 
     Signals:
         log_message: 需要写入全局日志面板的一行文本。
+        progress_message: 需要覆盖显示的进度文本。
     """
 
     log_message = Signal(str)
+    progress_message = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -63,6 +65,7 @@ class BasePage(QWidget):
     def _connect_controller(self) -> None:
         """把控制器信号接到页面槽函数。"""
         self.controller.message.connect(self.log_message.emit)
+        self.controller.progress_message.connect(self.progress_message.emit)
         self.controller.progress.connect(self.progress.set_percent)
         self.controller.finished.connect(self._on_task_finished)
         self.controller.failed.connect(self._on_task_failed)
