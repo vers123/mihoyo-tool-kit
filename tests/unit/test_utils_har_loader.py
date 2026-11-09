@@ -272,6 +272,8 @@ def test_har_site_status_uses_configured_user_url(tmp_home: Path) -> None:
 def test_update_har_files_reports_sites(har_factory, tmp_home: Path) -> None:
     target_dir = get_har_dir("news_genshin")
     manual = har_factory("news_genshin")
+    manual_time = datetime(2026, 10, 30).timestamp()
+    os.utime(manual, (manual_time, manual_time))
     stale = _write_har(target_dir / "auto-20261030-000000.har")
     newest = _write_har(target_dir / "auto-20261101-000000.har")
 
