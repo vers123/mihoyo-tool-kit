@@ -82,3 +82,62 @@ def test_setup_console_log_idempotent(tmp_home: Path) -> None:
         sys.stdout, sys.stderr = original_stdout, original_stderr
         if hasattr(sys, "_mihoyo_console_configured"):
             del sys._mihoyo_console_configured
+
+
+# ---------------------------------------------------------------------- #
+#  handler 去重与轮转
+# ---------------------------------------------------------------------- #
+def test_handlers_are_installed_once_on_root_only(tmp_home: Path) -> None:
+    """handler 只装在包级根 logger 上，子 logger 不重复持有文件句柄。"""
+    import logging
+
+    alpha = get_module_logger("alpha")
+    beta = get_module_logger("beta")
+    root = logging.getLogger("mihoyo_toolkit")
+
+    assert alpha.handlers == []
+    assert beta.handlers == []
+    assert alpha.propagate is True
+    file_handlers = [h for h in root.handlers if isinstance(h, logging.FileHandler)]
+    assert len(file_handlers) == 1
+
+
+def test_message_written_exactly_once(tmp_home: Path) -> None:
+    """同一行只落盘一次（重复 handler 会写多份）。"""
+    logger = get_module_logger("once")
+    logger.info("unique-marker-once")
+    for handler in logger.handlers:
+        handler.flush()
+    import logging
+
+    for handler in logging.getLogger("mihoyo_toolkit").handlers:
+        handler.flush()
+
+    text = (tmp_home / "logs" / "app.log").read_text(encoding="utf-8")
+    assert text.count("unique-marker-once") == 1
+
+
+def test_rotation_settings_come_from_config(tmp_home: Path) -> None:
+    """轮转参数来自 [logging] 配置。"""
+    import logging
+
+    setup_logger()
+    root = logging.getLogger("mihoyo_toolkit")
+    file_handler = next(h for h in root.handlers if isinstance(h, logging.FileHandler))
+    assert file_handler.maxBytes == 0  # 测试配置 max_bytes = 0（不轮转）
+    assert file_handler.backupCount == 0
+
+
+def test_gui_log_rotates_when_oversized(tmp_home: Path, monkeypatch) -> None:
+    """gui.log 超过上限时滚动为 gui.log.1。"""
+    from mihoyo_toolkit.utils import logger as logger_module
+
+    monkeypatch.setattr(logger_module, "_logging_settings", lambda: (20, 64, 1))
+    gui_log = tmp_home / "logs" / "gui.log"
+    gui_log.parent.mkdir(parents=True, exist_ok=True)
+    gui_log.write_text("x" * 200, encoding="utf-8")
+
+    append_gui_log("after-rotate")
+
+    assert (tmp_home / "logs" / "gui.log.1").is_file()
+    assert "after-rotate" in gui_log.read_text(encoding="utf-8")

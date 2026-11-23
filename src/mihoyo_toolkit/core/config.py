@@ -92,6 +92,27 @@ class HarSettings(BaseModel):
     keep_files: int = Field(default=1, ge=1)
 
 
+class LoggingSettings(BaseModel):
+    """日志设置（``app.log`` 轮转 + 级别）。"""
+
+    #: 日志级别：DEBUG / INFO / WARNING / ERROR / CRITICAL
+    level: str = "INFO"
+    #: 单个日志文件体积上限（字节），0 表示不轮转
+    max_bytes: int = Field(default=5 * 1024 * 1024, ge=0)
+    #: 保留的历史文件份数
+    backup_count: int = Field(default=3, ge=0)
+
+    @field_validator("level")
+    @classmethod
+    def _normalize_level(cls, value: str) -> str:
+        """统一大写并校验合法级别。"""
+        normalized = value.strip().upper()
+        allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if normalized not in allowed:
+            raise ValueError(f"日志级别必须是 {', '.join(sorted(allowed))} 之一")
+        return normalized
+
+
 class UserSource(BaseModel):
     """米游社用户来源。"""
 
@@ -181,6 +202,7 @@ class ToolkitSettings(BaseSettings):
     backup: BackupSettings = Field(default_factory=BackupSettings)
     cookies: CookieSettings = Field(default_factory=CookieSettings)
     har: HarSettings = Field(default_factory=HarSettings)
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
     sources: SourcesSettings
 
     @field_validator("sources")
@@ -239,6 +261,7 @@ __all__ = [
     "FetchSettings",
     "HarSettings",
     "IncrementalSettings",
+    "LoggingSettings",
     "NewsSiteSource",
     "NewsSources",
     "RetrySettings",

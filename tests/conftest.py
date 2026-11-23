@@ -53,6 +53,11 @@ max_backups = 3
 [cookies]
 use_firefox = false
 
+[logging]
+level = "DEBUG"
+max_bytes = 0
+backup_count = 0
+
 [sources.user]
 url = "https://www.miyoushe.com/ys/accountCenter/postList?id=10000000"
 
