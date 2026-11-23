@@ -41,7 +41,7 @@ class OtherPage(BasePage):
             self.make_header("其他抓取", "角色图鉴、教程页面、图片提取、自定义抓取与 3D 模型下载")
         )
 
-        self.btn_baike = self.make_button("抓取图鉴", self._run_baike)
+        self.btn_baike = self.make_button("抓取图鉴", self._run_baike, kind="primary")
         self.btn_extract_images = self.make_button("提取图片", self._run_extract_images)
         baike_row = QHBoxLayout()
         baike_row.setSpacing(8)

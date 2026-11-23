@@ -12,9 +12,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from PySide6.QtCore import QAbstractItemModel, Signal
+from PySide6.QtCore import QAbstractItemModel, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -75,13 +76,14 @@ class BasePage(QWidget):
     #  控件工厂
     # ------------------------------------------------------------------ #
     def make_header(self, title: str, subtitle: str = "") -> QWidget:
-        """构建页面标题区（标题 + 灰字说明）。"""
+        """构建页面标题区（标题 + 灰字说明 + 细分隔线）。"""
         box = QWidget()
         layout = QVBoxLayout(box)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
+        layout.setSpacing(4)
 
         title_label = QLabel(title)
+        title_label.setObjectName("pageTitle")
         font = title_label.font()
         font.setPointSizeF(font.pointSizeF() + theme.TITLE_OFFSET)
         font.setBold(True)
@@ -94,11 +96,24 @@ class BasePage(QWidget):
             subtitle_label.setObjectName("pageSubtitle")
             subtitle_label.setWordWrap(True)
             layout.addWidget(subtitle_label)
+
+        divider = QFrame()
+        divider.setObjectName("pageHeaderDivider")
+        divider.setFixedHeight(1)
+        layout.addWidget(divider)
         return box
 
-    def make_button(self, text: str, handler: Callable[..., Any]) -> QPushButton:
-        """创建按钮并绑定点击处理。"""
+    def make_button(
+        self, text: str, handler: Callable[..., Any], *, kind: str = "secondary"
+    ) -> QPushButton:
+        """创建按钮并绑定点击处理。
+
+        Args:
+            kind: ``"primary"`` 为品牌色实心主操作，``"secondary"``（默认）为描边样式。
+        """
         button = QPushButton(text)
+        button.setProperty("variant", kind)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
         button.clicked.connect(handler)
         return button
 

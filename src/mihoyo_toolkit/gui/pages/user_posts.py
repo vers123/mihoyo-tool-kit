@@ -39,7 +39,9 @@ class UserPostsPage(BasePage):
         layout.addWidget(self.make_header("米游社用户", "抓取用户发帖页面 HTML，并提取发帖时间"))
 
         self.btn_fetch = self.make_button("全量抓取", lambda: self._fetch(incremental=False))
-        self.btn_incremental = self.make_button("增量抓取", lambda: self._fetch(incremental=True))
+        self.btn_incremental = self.make_button(
+            "增量抓取", lambda: self._fetch(incremental=True), kind="primary"
+        )
         self.btn_extract = self.make_button("提取时间", lambda: self._extract(incremental=False))
         self.btn_incremental_extract = self.make_button(
             "增量提取", lambda: self._extract(incremental=True)

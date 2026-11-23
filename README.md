@@ -230,6 +230,19 @@ GUI 采用 **PySide6** 框架，遵循 **MVC** 分层：
 mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```
 
+#### 界面预览
+
+| 首页（浅色） | 首页（深色） |
+| --- | --- |
+| ![首页浅色](docs/screenshots/after/gui-home-light.png) | ![首页深色](docs/screenshots/after/gui-home-dark.png) |
+
+| 功能页（浅色） |
+| --- |
+| ![新闻页浅色](docs/screenshots/after/gui-news-light.png) |
+
+> 截图由 `python scripts/render_gui_screenshots.py --out docs/screenshots/after`
+> 在 offscreen 平台生成，可用于视觉回归对比（`docs/screenshots/before/` 为改版前基线）。
+
 #### 字体资源
 
 全局界面字体为思源黑体 CN（Source Han Sans CN，Regular / Bold），位于

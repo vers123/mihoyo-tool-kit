@@ -70,7 +70,7 @@ class FilterPage(BasePage):
         button_row.setSpacing(8)
         button_row.addStretch()
         self.btn_preview = self.make_button("预览", self._preview)
-        self.btn_run = self.make_button("执行过滤", self._run_filter)
+        self.btn_run = self.make_button("执行过滤", self._run_filter, kind="primary")
         button_row.addWidget(self.btn_preview)
         button_row.addWidget(self.btn_run)
         button_row.addWidget(self.btn_stop)

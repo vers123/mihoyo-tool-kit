@@ -216,3 +216,65 @@ def test_log_viewer_replaces_progress_line(qt_app: QApplication, monkeypatch) ->
         "抓取完成",
     ]
     assert persisted == ["开始抓取", "抓取完成"]
+
+
+# ---------------------------------------------------------------------- #
+#  首页与主题切换
+# ---------------------------------------------------------------------- #
+def test_home_is_first_page_and_has_cards(qt_app: QApplication) -> None:
+    """首页固定为第 0 页，卡片数量 = 除首页外的导航项数量。"""
+    from mihoyo_toolkit.gui.pages.home import HomeCard, HomePage
+
+    window = MainWindow()
+    try:
+        assert window.nav_entries[0].title == "首页"
+        assert isinstance(window._pages[0], HomePage)
+
+        home = window._pages[0]
+        assert isinstance(home, HomePage)
+        cards = home.findChildren(HomeCard)
+        assert len(cards) == len(window.nav_entries) - 1
+        assert all(card.isVisible() or card.parent() is not None for card in cards)
+    finally:
+        window.close()
+
+
+def test_home_card_click_navigates(qt_app: QApplication) -> None:
+    """点击首页卡片跳转到对应导航行。"""
+    from mihoyo_toolkit.gui.pages.home import HomeCard, HomePage
+
+    window = MainWindow()
+    try:
+        home = window._pages[0]
+        assert isinstance(home, HomePage)
+        window.select_page(0)
+        assert window.content_stack.currentIndex() == 0
+
+        cards = home.findChildren(HomeCard)
+        assert cards
+        cards[0].clicked.emit()
+
+        assert window.content_stack.currentIndex() == 1
+    finally:
+        window.close()
+
+
+def test_theme_segments_switch_mode(qt_app: QApplication, tmp_path) -> None:
+    """点击顶栏主题分段切换模式、刷新调色板并写入状态文件。"""
+    from mihoyo_toolkit.gui import ui_state
+
+    window = MainWindow()
+    try:
+        dark_button = window._theme_buttons["dark"]
+        dark_button.click()
+
+        assert theme.current_mode() == "dark"
+        assert theme.current() is theme.DARK
+        assert ui_state.load_theme_mode() == "dark"
+
+        window._theme_buttons["light"].click()
+        assert theme.current_mode() == "light"
+        assert theme.current() is theme.LIGHT
+    finally:
+        theme.set_mode(theme.DEFAULT_MODE)
+        window.close()

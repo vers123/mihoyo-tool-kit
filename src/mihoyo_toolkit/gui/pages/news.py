@@ -43,7 +43,9 @@ class NewsPage(BasePage):
         )
 
         self.btn_fetch = self.make_button("全量抓取", lambda: self._fetch(incremental=False))
-        self.btn_incremental = self.make_button("增量抓取", lambda: self._fetch(incremental=True))
+        self.btn_incremental = self.make_button(
+            "增量抓取", lambda: self._fetch(incremental=True), kind="primary"
+        )
         self.btn_extract = self.make_button("提取数据", lambda: self._extract(incremental=False))
         self.btn_incremental_extract = self.make_button(
             "增量提取", lambda: self._extract(incremental=True)

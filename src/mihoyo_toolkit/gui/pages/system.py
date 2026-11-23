@@ -223,7 +223,7 @@ class ExportPage(BasePage):
         output_dir = get_path_manager().relative(get_path_manager().output)
         layout.addWidget(self.make_header("数据导出", f"把数据库中的新闻导出到 {output_dir}"))
 
-        self.btn_excel = self.make_button("导出 Excel", self._export_excel)
+        self.btn_excel = self.make_button("导出 Excel", self._export_excel, kind="primary")
         self.btn_rss = self.make_button("导出 RSS", self._export_rss)
         self.btn_json = self.make_button("导出 JSON Feed", self._export_json)
         self.register_buttons(self.btn_excel, self.btn_rss, self.btn_json)

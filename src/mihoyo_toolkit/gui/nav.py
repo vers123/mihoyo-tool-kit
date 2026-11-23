@@ -20,6 +20,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
 
+from PySide6.QtWidgets import QWidget
+
 from ..cli.commands import registry as cli_registry
 from ..cli.registry import CommandRegistry
 from ..core.exceptions import GuiError
@@ -33,10 +35,9 @@ from .pages import (
     UserPostsPage,
     WeiboPage,
 )
-from .pages.base import BasePage
 
-#: 页面工厂：无参可调用对象，返回页面实例
-PageFactory = Callable[[], BasePage]
+#: 页面工厂：无参可调用对象，返回页面实例（首页不是命令页，故类型放宽到 QWidget）
+PageFactory = Callable[[], QWidget]
 
 #: 注册表分组名 → 页面工厂（分组名必须与注册表一致）
 _GROUP_FACTORIES: dict[str, PageFactory] = {

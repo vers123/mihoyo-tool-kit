@@ -17,11 +17,11 @@ __all__ = ["MainWindow", "NavEntry", "build_nav", "launch_gui"]
 
 
 def _ensure_application():
-    """创建或复用 ``QApplication`` 单例，并应用跟随系统的主题与图标。"""
+    """创建或复用 ``QApplication`` 单例，并应用持久化的主题与图标。"""
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication
 
-    from . import theme
+    from . import theme, ui_state
 
     app = QApplication.instance()
     if app is not None:
@@ -35,8 +35,9 @@ def _ensure_application():
     app.setApplicationName("米游社工具箱")
     app.setOrganizationName("miHoYo ToolKit")
 
-    # 自动跟随系统深浅色：Fusion 样式 + 与系统匹配的调色板/样式表
-    theme.apply_to_application(app)
+    # 恢复用户上次选择的主题模式（auto = 跟随系统）
+    theme.set_mode(ui_state.load_theme_mode())
+    theme.apply_to_application(app, theme.resolve_mode())
 
     icon = load_app_icon()
     if icon is not None:
@@ -45,7 +46,7 @@ def _ensure_application():
 
 
 def _watch_system_theme(app, window: MainWindow) -> None:
-    """监听系统深浅色变化并实时切换界面主题。"""
+    """监听系统深浅色变化；仅在「跟随系统」模式时实时切换。"""
     from . import theme
 
     hints = app.styleHints()
@@ -54,7 +55,9 @@ def _watch_system_theme(app, window: MainWindow) -> None:
         return
 
     def _on_scheme_changed(*_args: object) -> None:
-        theme.apply_to_application(app)
+        if theme.current_mode() != "auto":
+            return
+        theme.apply_to_application(app, theme.resolve_mode())
         window.apply_theme()
 
     signal.connect(_on_scheme_changed)

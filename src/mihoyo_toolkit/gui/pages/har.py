@@ -72,7 +72,7 @@ class HarPage(BasePage):
         )
 
         self.btn_refresh = self.make_button("刷新列表", self.refresh_har)
-        self.btn_update = self.make_button("更新 HAR", self._update_har)
+        self.btn_update = self.make_button("更新 HAR", self._update_har, kind="primary")
         self.btn_open_page = self.make_button("打开站点页面", self._open_site_page)
         self.btn_open = self.make_button("打开 HAR 目录", self._open_har_dir)
         self.register_buttons(self.btn_refresh, self.btn_update)
