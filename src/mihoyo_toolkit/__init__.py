@@ -13,8 +13,11 @@ v2.0.0 架构级重构：
 
 from __future__ import annotations
 
-__version__ = "3.2.1"
+from ._version import get_version
+
+#: 版本号单一来源为 ``pyproject.toml``（源码运行）或包元数据（安装 / 冻结运行）
+__version__ = get_version()
 __author__ = "LingLan"
 __license__ = "MIT"
 
-__all__ = ["__author__", "__license__", "__version__"]
+__all__ = ["__author__", "__license__", "__version__", "get_version"]
