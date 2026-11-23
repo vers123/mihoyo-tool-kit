@@ -1,5 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for 米游社工具箱 (miHoYo ToolKit) v3.2.1。
+"""PyInstaller spec for 米游社工具箱 (miHoYo ToolKit)。
+
+版本号由 ``pyproject.toml`` 决定（``copy_metadata`` 会把包元数据打进 EXE，
+运行时可被 ``mihoyo_toolkit._version`` 读取），本文件不写死版本号。
 
 本项目为 **src/ layout**（包体位于 ``src/mihoyo_toolkit``），PyInstaller 以根级
 垫片 ``run.py`` 作为分析入口；``pathex`` 同时加入 ``src`` 与仓库根。
@@ -23,6 +26,8 @@
 
 import os
 
+from PyInstaller.utils.hooks import copy_metadata
+
 block_cipher = None
 
 # ---- 模式选择 ----
@@ -41,6 +46,8 @@ datas = [
     (os.path.join(project_root, "config.toml"), "."),
     (os.path.join(project_root, "resources"), "resources"),
 ]
+# 打包本项目元数据，使冻结运行时 importlib.metadata 能读到版本号
+datas += copy_metadata("mihoyo-toolkit")
 
 # ---- 隐藏导入（PySide6 / Playwright / 动态 import 的可选依赖）----
 hiddenimports = [

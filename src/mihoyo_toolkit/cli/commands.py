@@ -696,8 +696,13 @@ def _collect_cache_targets(root: Path) -> tuple[list[Path], list[Path]]:
     order=7,
 )
 @log_function_call
-def system_clean() -> None:
-    """清理缓存（需输入 YES 确认）。"""
+def system_clean(*, assume_yes: bool = False) -> None:
+    """清理缓存。
+
+    Args:
+        assume_yes: 为 ``True`` 时跳过交互确认（供 ``mihoyo-toolkit --clean --yes``
+            与构建脚本调用）。
+    """
     root = get_path_manager().root
     dirs, files = _collect_cache_targets(root)
     logs_dir = root / "logs"
@@ -708,7 +713,7 @@ def system_clean() -> None:
     print(f"  文件: {len(files)} 个（*.pyc / *.pyo / {' / '.join(BUILD_FILES)}）")
     print(f"  日志: {len(logs)} 个（logs/*.log）")
     print(f"  跳过: {', '.join(sorted(PROTECTED_DIRS))}")
-    if input("确认清理? 输入 YES 继续: ").strip() != "YES":
+    if not assume_yes and input("确认清理? 输入 YES 继续: ").strip() != "YES":
         print("[取消] 已取消清理")
         return
 

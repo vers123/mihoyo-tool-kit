@@ -13,7 +13,6 @@ import re
 import time
 from typing import Any
 
-from tenacity import retry, stop_after_attempt, wait_fixed
 from tqdm import tqdm
 
 from ..core.config import get_settings
@@ -21,18 +20,12 @@ from ..core.models import WeiboItem
 from ..core.storage import Storage
 from ..utils.har_loader import load_har_entries
 from ..utils.logger import get_module_logger
+from ..utils.retry_policy import with_retry
 from .base import BaseScraper
 from .browser import BrowserSession
 from .config import ScrapeConfig
 
 logger = get_module_logger("weibo")
-
-_settings = get_settings()
-_retry = retry(
-    stop=stop_after_attempt(_settings.retry.max_attempts),
-    wait=wait_fixed(_settings.retry.delay),
-    reraise=True,
-)
 
 _DEFAULT_UID = "6593199887"
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -310,7 +303,7 @@ class WeiboScraper(BaseScraper[WeiboItem]):
         return new
 
 
-@_retry
+@with_retry()
 def run_weibo(incremental: bool = False) -> int:
     """抓取微博用户主页并落库，返回新增条数。"""
     mode = "增量" if incremental else "全量"

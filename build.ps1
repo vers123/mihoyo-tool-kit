@@ -4,9 +4,9 @@
     米游社工具箱 (miHoYo ToolKit) 构建脚本
 
 .DESCRIPTION
-    v3.2.1 构建脚本。支持依赖安装、测试、lint、类型检查、EXE 打包（PyInstaller）、
-    Docker 构建与缓存清理。版本号从 version_info.txt 解析（单一数据源），
-    解析失败时回退到 pyproject.toml。
+    构建脚本。支持依赖安装、测试、lint、类型检查、EXE 打包（PyInstaller）、
+    Docker 构建与缓存清理。版本号单一来源为 pyproject.toml
+    （``clean`` 委托 CLI，避免清理规则与 CLI 各维护一份）。
 
 .PARAMETER Command
     要执行的构建命令：
@@ -39,17 +39,17 @@ $ProjectDir = $PSScriptRoot
 Set-Location $ProjectDir
 
 # ============================================================
-#  版本号（version_info.txt 优先，回退 pyproject.toml）
+#  版本号（单一来源：pyproject.toml）
 # ============================================================
 function Get-ProjectVersion {
-    if (Test-Path "version_info.txt") {
-        $content = Get-Content "version_info.txt" -Raw
-        $match = [regex]::Match($content, "ProductVersion', u'([\d.]+)'")
-        if ($match.Success) { return $match.Groups[1].Value }
-    }
     if (Test-Path "pyproject.toml") {
         $content = Get-Content "pyproject.toml" -Raw
         $match = [regex]::Match($content, '(?m)^version\s*=\s*"([^"]+)"')
+        if ($match.Success) { return $match.Groups[1].Value }
+    }
+    if (Test-Path "version_info.txt") {
+        $content = Get-Content "version_info.txt" -Raw
+        $match = [regex]::Match($content, "ProductVersion', u'([\d.]+)'")
         if ($match.Success) { return $match.Groups[1].Value }
     }
     return "0.0.0"
@@ -73,7 +73,6 @@ function Get-Python {
         Pip    = "pip"
     }
 }
-
 $py = Get-Python
 
 # ============================================================
@@ -198,74 +197,13 @@ function Invoke-Docker {
 #  clean
 # ============================================================
 function Invoke-Clean {
-    Write-Host "[INFO] Will clean:"
-    Write-Host "  - __pycache__ dirs and *.pyc / *.pyo files"
-    Write-Host "  - logs/*.log files"
-    Write-Host "  - build/ and dist/ temp dirs"
-    Write-Host "  - .pytest_cache / .ruff_cache / .mypy_cache"
-    Write-Host "  - .coverage / htmlcov"
-    Write-Host "  (skips .venv / .git / browser / data / har / resources)"
-    Write-Host ""
-
-    $confirm = Read-Host "Confirm? Type YES to continue"
-    if ($confirm -ne "YES") {
-        Write-Host "[INFO] Clean cancelled"
-        return
+    Write-Host "[INFO] 清理委托给 CLI（与 mihoyo-toolkit --clean 同一套规则）"
+    if (-not (Test-Path (Join-Path $ProjectDir "run.py"))) {
+        throw "未找到 run.py，无法委托 CLI 清理"
     }
-
-    Write-Host ""
-    Write-Host "[INFO] Cleaning..."
-    $count = 0
-    $skip = '\\\.venv\\|\\\.git\\|\\browser\\|\\data\\|\\har\\|\\resources\\'
-
-    # __pycache__ dirs
-    Get-ChildItem -Path $ProjectDir -Recurse -Directory -Filter "__pycache__" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch $skip } |
-        ForEach-Object {
-            Write-Host "  Removing: $($_.FullName.Substring($ProjectDir.Length + 1))"
-            Remove-Item $_.FullName -Recurse -Force
-            $count++
-        }
-
-    # *.pyc / *.pyo files
-    Get-ChildItem -Path $ProjectDir -Recurse -File -Include "*.pyc", "*.pyo" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch $skip } |
-        ForEach-Object {
-            Write-Host "  Removing: $($_.FullName.Substring($ProjectDir.Length + 1))"
-            Remove-Item $_.FullName -Force
-            $count++
-        }
-
-    # logs/*.log
-    $logsDir = Join-Path $ProjectDir "logs"
-    if (Test-Path $logsDir) {
-        Get-ChildItem -Path $logsDir -Filter "*.log" -ErrorAction SilentlyContinue | ForEach-Object {
-            Write-Host "  Removing: logs\$($_.Name)"
-            Remove-Item $_.FullName -Force
-            $count++
-        }
-    }
-
-    # build/ dist/ .pytest_cache/ .ruff_cache/ .mypy_cache/ htmlcov/
-    foreach ($d in @("build", "dist", ".pytest_cache", ".ruff_cache", ".mypy_cache", "htmlcov")) {
-        $dir = Join-Path $ProjectDir $d
-        if (Test-Path $dir) {
-            Write-Host "  Removing: $d\"
-            Remove-Item $dir -Recurse -Force
-            $count++
-        }
-    }
-
-    # .coverage
-    $coverage = Join-Path $ProjectDir ".coverage"
-    if (Test-Path $coverage) {
-        Write-Host "  Removing: .coverage"
-        Remove-Item $coverage -Force
-        $count++
-    }
-
-    Write-Host ""
-    Write-Host "[OK] Clean complete, removed $count items"
+    & $py.Python run.py --clean --yes
+    if ($LASTEXITCODE -ne 0) { throw "Clean failed" }
+    Write-Host "[OK] Clean complete"
 }
 
 # ============================================================

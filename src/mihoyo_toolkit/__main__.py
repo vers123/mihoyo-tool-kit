@@ -47,6 +47,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--filter", action="store_true", help="运行 TXT 过滤")
     parser.add_argument("--migrate", action="store_true", help="运行数据迁移")
     parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="清理缓存（__pycache__ / 构建产物 / 日志 / dev 缓存）",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="配合 --clean 跳过确认（供构建脚本调用）",
+    )
+    parser.add_argument(
         "--har",
         action="store_true",
         help="检查并更新 HAR 文件（清理旧 HAR，列出各站点当前生效文件）",
@@ -95,11 +105,7 @@ def _run_count() -> None:
 
 
 def _dispatch(args: argparse.Namespace) -> int:
-    """执行非交互动作。"""
-    if args.version:
-        print(f"米游社工具箱 v{__version__}")
-        return 0
-
+    """执行非交互动作（``--version`` 已在 :func:`main` 中零副作用处理）。"""
     if args.gui:
         from .gui import launch_gui  # 延迟导入：仅 GUI 模式需要 Qt 依赖
 
@@ -133,6 +139,12 @@ def _dispatch(args: argparse.Namespace) -> int:
         print("[完成] 数据迁移检查结束（详情见日志）")
         return 0
 
+    if args.clean:
+        from .cli import commands
+
+        commands.system_clean(assume_yes=args.yes)
+        return 0
+
     if args.har:
         _run_har_update()
         return 0
@@ -140,31 +152,42 @@ def _dispatch(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """程序主入口，返回退出码。"""
-    setup_console_log()
-    setup_logger()
-    get_path_manager().ensure_dirs()
-
-    args = _build_parser().parse_args(argv)
-
-    # GUI 启动时由 gui.launch_gui() 清理（结果写入欢迎弹窗），--har 也会清理一次，
-    # 故这两种模式跳过启动清理，避免重复扫描
-    if not (args.version or args.gui or args.har):
-        _cleanup_har_on_startup()
-
-    has_action = bool(
-        args.version
-        or args.gui
+def _has_action(args: argparse.Namespace) -> bool:
+    """是否指定了任意非交互动作。"""
+    return bool(
+        args.gui
         or args.fetch
         or args.export_excel
         or args.export_feed
         or args.count
         or args.filter
         or args.migrate
+        or args.clean
         or args.har
     )
-    if has_action:
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """程序主入口，返回退出码。"""
+    # 先解析参数：--version / --help 这类纯查询不应创建 data/logs/har 目录，
+    # 也不应触发 HAR 清理等副作用
+    args = _build_parser().parse_args(argv)
+
+    if args.version:
+        # 版本查询零副作用：不装日志、不建目录、不清理 HAR
+        print(f"米游社工具箱 v{__version__}")
+        return 0
+
+    setup_console_log()
+    setup_logger()
+    get_path_manager().ensure_dirs()
+
+    # GUI 启动时由 gui.launch_gui() 清理（结果写入欢迎弹窗），--har 也会清理一次，
+    # 故这两种模式跳过启动清理，避免重复扫描
+    if not (args.gui or args.har):
+        _cleanup_har_on_startup()
+
+    if _has_action(args):
         return _dispatch(args)
 
     # 无参数：展示 HAR 指引后进入交互菜单

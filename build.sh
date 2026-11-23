@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 # 米游社工具箱 (miHoYo ToolKit) 构建脚本 (Linux/macOS)
-# 版本号从 version_info.txt 解析（单一数据源），失败回退 pyproject.toml。
+# 版本号单一来源为 pyproject.toml；clean 委托 CLI（与 mihoyo-toolkit --clean 同规则）。
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
 
-# ---- 版本号 ----
-VERSION="$(grep -oE "ProductVersion', u'[0-9]+\.[0-9]+\.[0-9]+" version_info.txt 2>/dev/null | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | head -1 || true)"
-if [ -z "$VERSION" ]; then
-    VERSION="$(grep -oE '^version = "[^"]+"' pyproject.toml 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
-fi
+# ---- 版本号（单一来源：pyproject.toml）----
+VERSION="$(grep -oE '^version = "[^"]+"' pyproject.toml 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
 VERSION="${VERSION:-0.0.0}"
 
 # ---- Python 探测（优先 .venv）----
@@ -91,30 +88,8 @@ case "$CMD" in
         echo "[OK] Docker image built: mihoyo-toolkit:$VERSION"
         ;;
     clean)
-        echo "[INFO] Will clean:"
-        echo "  - __pycache__ dirs and *.pyc / *.pyo files"
-        echo "  - logs/*.log files"
-        echo "  - build/ and dist/ temp dirs"
-        echo "  - .pytest_cache / .ruff_cache / .mypy_cache"
-        echo "  - .coverage / htmlcov"
-        echo "  (skips .venv / .git / browser / data / har / resources)"
-        echo ""
-        read -r -p "Confirm? Type YES to continue: " CONFIRM
-        if [ "$CONFIRM" != "YES" ]; then
-            echo "[INFO] Clean cancelled"
-            exit 0
-        fi
-        echo ""
-        echo "[INFO] Cleaning..."
-        find . \( -name ".venv" -o -name ".git" -o -name "browser" -o -name "data" \
-            -o -name "har" -o -name "resources" \) -prune -o \
-            -name "__pycache__" -type d -print -exec rm -rf {} + 2>/dev/null || true
-        find . \( -name ".venv" -o -name ".git" -o -name "browser" -o -name "data" \
-            -o -name "har" -o -name "resources" \) -prune -o \
-            \( -name "*.pyc" -o -name "*.pyo" \) -type f -print -exec rm -f {} + 2>/dev/null || true
-        rm -f logs/*.log 2>/dev/null || true
-        rm -rf build dist .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage 2>/dev/null || true
-        echo ""
+        echo "[INFO] 清理委托给 CLI（与 mihoyo-toolkit --clean 同一套规则）"
+        "$PYTHON" run.py --clean --yes
         echo "[OK] Clean complete"
         ;;
     all)

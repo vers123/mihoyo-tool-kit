@@ -128,7 +128,7 @@ no_implicit_optional = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["playwright.*", "PySide6.*", "pypinyin.*", "openpyxl.*", "PIL.*"]
+module = ["playwright.*", "PySide6.*", "pypinyin.*", "openpyxl.*"]
 ignore_missing_imports = true
 
 # ============================================================

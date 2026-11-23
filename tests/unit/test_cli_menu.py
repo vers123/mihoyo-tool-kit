@@ -29,11 +29,18 @@ def test_render_prints_groups(capsys) -> None:
     assert "退出" in out
 
 
-def test_clear_calls_os_system(monkeypatch) -> None:
-    calls: list[str] = []
-    monkeypatch.setattr("mihoyo_toolkit.cli.menu.os.system", lambda cmd: calls.append(cmd))
+def test_clear_writes_ansi_when_tty(monkeypatch, capsys) -> None:
+    """TTY 下输出 ANSI 清屏序列，且不调用外部 shell 命令。"""
+    monkeypatch.setattr("sys.stdout.isatty", lambda: True)
     Menu._clear()
-    assert calls
+    assert capsys.readouterr().out == "\033[2J\033[H"
+
+
+def test_clear_is_noop_when_not_tty(monkeypatch, capsys) -> None:
+    """非 TTY（管道 / 日志重定向）时不输出控制序列。"""
+    monkeypatch.setattr("sys.stdout.isatty", lambda: False)
+    Menu._clear()
+    assert capsys.readouterr().out == ""
 
 
 def test_execute_success(capsys) -> None:
@@ -77,7 +84,7 @@ def test_execute_generic_error(capsys) -> None:
 
 
 def _patch_clear(monkeypatch) -> None:
-    monkeypatch.setattr("mihoyo_toolkit.cli.menu.os.system", lambda cmd: None)
+    monkeypatch.setattr("sys.stdout.isatty", lambda: False)
 
 
 def test_run_exits_on_zero(monkeypatch, capsys) -> None:

@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-import os
+import sys
 
 from .. import __version__
 from ..core.exceptions import MihoyoError
@@ -14,6 +14,9 @@ from ..utils import get_module_logger
 from .registry import Command, CommandRegistry, registry
 
 logger = get_module_logger("menu")
+
+#: ANSI 清屏 + 光标归位（非 TTY 时不输出，避免污染日志/管道）
+_CLEAR_SEQUENCE = "\033[2J\033[H"
 
 
 class Menu:
@@ -27,8 +30,17 @@ class Menu:
     # ------------------------------------------------------------------ #
     @staticmethod
     def _clear() -> None:
-        """清屏（跨平台）。"""
-        os.system("cls" if os.name == "nt" else "clear")
+        """清屏（跨平台，纯 ANSI，不起子 shell）。
+
+        输出被重定向（非 TTY）时不输出任何字符，避免把控制序列写进日志文件。
+        """
+        try:
+            if not sys.stdout.isatty():
+                return
+        except (AttributeError, ValueError):  # pragma: no cover - 非常规标准流
+            return
+        sys.stdout.write(_CLEAR_SEQUENCE)
+        sys.stdout.flush()
 
     def _ordered(self) -> list[Command]:
         """按分组顺序展平命令，得到全局编号顺序。"""

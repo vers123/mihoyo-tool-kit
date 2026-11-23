@@ -1,3 +1,6 @@
+# 默认统一 LF（仓库内文本文件换行一致，不受检出平台影响）
+* text=auto eol=lf
+
 # 字体 / 图标为二进制资源，不做文本 diff 与换行符转换
 *.otf binary
 *.ttf binary

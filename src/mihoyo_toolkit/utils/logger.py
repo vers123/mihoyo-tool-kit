@@ -111,6 +111,29 @@ class _TeeStream:
             return False
 
 
+class _LazyRotatingFileHandler(RotatingFileHandler):
+    """首次写日志时才创建目录与文件的 ``RotatingFileHandler``。
+
+    模块级 ``logger = get_module_logger(...)`` 在 import 阶段就会配置 handler，
+    若此处立即建目录，``--version`` / ``--help`` 这类纯查询也会产生 ``logs/`` 副作用。
+    延迟到真正输出日志时再建目录，保证「纯查询零副作用」。
+    """
+
+    def __init__(self, path: Path, *, max_bytes: int, backup_count: int) -> None:
+        self._log_path = path
+        super().__init__(
+            str(path),
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+            encoding="utf-8",
+            delay=True,
+        )
+
+    def _open(self) -> Any:
+        self._log_path.parent.mkdir(parents=True, exist_ok=True)
+        return super()._open()
+
+
 def _logs_dir() -> Path:
     path = get_path_manager().logs
     path.mkdir(parents=True, exist_ok=True)
@@ -143,14 +166,16 @@ def setup_console_log() -> None:
 
 
 def _build_handlers(level: int, max_bytes: int, backup_count: int) -> list[logging.Handler]:
-    """构造包级根 logger 的 handler（文件 + 终端各一个）。"""
+    """构造包级根 logger 的 handler（文件 + 终端各一个）。
+
+    文件 handler 延迟到首次输出时才创建目录/文件，避免 import 期产生 ``logs/``。
+    """
     fmt = logging.Formatter(_LOG_FORMAT, datefmt=_DATE_FORMAT)
 
-    file_handler = RotatingFileHandler(
-        _logs_dir() / "app.log",
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding="utf-8",
+    file_handler = _LazyRotatingFileHandler(
+        get_path_manager().logs / "app.log",
+        max_bytes=max_bytes,
+        backup_count=backup_count,
     )
     file_handler.setFormatter(fmt)
 
