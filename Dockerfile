@@ -1,4 +1,6 @@
-# 米游社工具箱 Docker 镜像 (v2.0.0)
+# 米游社工具箱 Docker 镜像
+#
+# 版本号由构建上下文中的 pyproject.toml 决定（镜像不再写死版本）。
 #
 # 两种构建模式（通过 --build-arg MODE 切换）：
 #   MODE=cli    （默认）CLI / API 模式，轻量：仅 httpx / tenacity / pydantic /

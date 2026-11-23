@@ -6,7 +6,7 @@
 [![Playwright](https://img.shields.io/badge/Playwright-1.40%2B-45ba4b?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![PySide6](https://img.shields.io/badge/PySide6-6.5%2B-41CD52?logo=qt&logoColor=white)](https://www.qt.io/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-3.2.1-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.3.0-green)](CHANGELOG.md)
 
 **[快速开始](#快速开始)** ·
 **[功能列表](#功能列表)** ·
@@ -177,17 +177,23 @@ CLI 模式启动后输入对应序号执行功能，输入 `0` 退出；GUI 模�
 | `--count` | 开关 | 显示 SQLite 中各游戏新闻条数 |
 | `--filter` | 开关 | 运行 TXT 过滤（交互式选择文件与关键词） |
 | `--migrate` | 开关 | 运行旧版数据迁移检查 |
+| `--clean` | 开关 | 清理缓存（`__pycache__` / 构建产物 / `logs/*.log` / dev 缓存） |
+| `--yes` | 开关 | 配合 `--clean` 跳过确认（构建脚本使用） |
 | `--har` | 开关 | 检查并更新 HAR：清理旧 HAR 并列出各站点当前生效文件 |
 | `--gui` | 开关 | 启动图形界面 |
-| `--version` | 开关 | 打印版本号 |
+| `--version` | 开关 | 打印版本号（纯查询，不创建目录） |
 
 ```bash
 # 示例
 mihoyo-toolkit --fetch all --export-excel --count
 mihoyo-toolkit --export-feed rss
+mihoyo-toolkit --clean --yes
 mihoyo-toolkit --har
 mihoyo-toolkit --version
 ```
+
+> `build.ps1 clean` / `build.sh clean` 已委托给 `python run.py --clean --yes`，
+> 清理规则只在 CLI 维护一份。
 
 ### GUI 界面
 
@@ -200,12 +206,15 @@ GUI 采用 **PySide6** 框架，遵循 **MVC** 分层：
 
 **布局与特性：**
 
-- **左侧导航 + 右侧内容区 + 底部全局日志面板**（`QSplitter` 可拖拽）
-- **自动跟随系统深浅色主题**：启动时探测系统色彩方案（Qt `QStyleHints.colorScheme()`，
-  Windows 下回退注册表 `AppsUseLightTheme`），并监听 `colorSchemeChanged`
-  在系统切换主题时实时更新界面与日志配色
-- **11 个导航项**：米游社用户、原神新闻、原神英文版新闻、绝区零新闻、星穹铁道新闻、
-  其他抓取、微博、数据导出、TXT 过滤、系统工具、更新 HAR 文件
+- **官网风视觉**：配色与控件样式参考 [mihoyo.com](https://www.mihoyo.com/)（主色 `#3778e5`、
+  页面底 `#f8f9fb`、分割线 `#e6e7eb`、圆角与留白规范）；顶部品牌栏 + 左侧导航 +
+  右侧内容区 + 底部全局日志面板（`QSplitter` 可拖拽）
+- **首页卡片入口**：启动落在「首页」，以卡片网格展示各功能分组的说明与动作数，
+  点击卡片直达对应页面
+- **三态主题**：顶栏右侧分段控件切换「跟随系统 / 浅色 / 深色」，选择持久化到
+  `data/ui_state.json`（工作区内，不写注册表）；浅色/深色均使用官网令牌
+- **11 个导航项**（不含首页）：米游社用户、原神新闻、原神英文版新闻、绝区零新闻、
+  星穹铁道新闻、其他抓取、微博、数据导出、TXT 过滤、系统工具、更新 HAR 文件
 - **思源黑体主字体**：全局界面字体使用思源黑体 CN（Source Han Sans CN），中文字形统一
 - **游戏字体主题化**：导航项使用各游戏专属字体（原神 Teyvat-Black、绝区零 ZZZ-System、
   星穹铁道 Star-Rail-Neue）
@@ -248,12 +257,13 @@ mihoyo-toolkit --gui      # 或 Python: python -m mihoyo_toolkit --gui
 ```toml
 [app]
 mode = "cli"          # cli | gui
-version = "3.2.1"
+# 版本号不在此配置：唯一来源是 pyproject.toml
 
 [fetch]
 headless = true       # 浏览器后台运行
 wait_seconds = 3      # 页面额外等待秒数
-timeout = 120000      # 超时（毫秒）
+timeout = 120000      # 超时（毫秒；API 直连与浏览器共用）
+max_scroll_attempts = 500   # 滚动加载硬上限，防页面无限增长死循环
 
 [retry]
 max_attempts = 3
@@ -277,6 +287,11 @@ max_files = 3               # 每个抓取器保留的自动 HAR 数量
 cleanup_on_startup = true   # 启动时自动清理旧 HAR（保留日期最新的）
 keep_files = 1              # 每个 HAR 目录保留的自动 HAR 数量（最新优先；另保留最新手动 HAR）
 
+[logging]
+level = "INFO"              # DEBUG / INFO / WARNING / ERROR / CRITICAL
+max_bytes = 5242880         # 单个日志文件上限（字节），0 表示不轮转
+backup_count = 3            # 保留历史日志份数
+
 [sources.user]
 # 米游社用户 UID，默认为原神官方账号；也可用环境变量 MIHOYO_SOURCES__USER__URL 覆盖
 url = "https://www.miyoushe.com/ys/accountCenter/postList?id=75276539"
@@ -286,6 +301,8 @@ url = "https://weibo.com/u/6593199887"
 
 # [sources.baike] / [sources.news.genshin|genshin_en|zzz|starrail] ... 详见 config.toml
 ```
+
+> 旧配置里残留的 `[app].version` 会被静默忽略（pydantic `extra="ignore"`），无需手工删除。
 
 #### 环境变量覆盖
 
@@ -299,7 +316,16 @@ MIHOYO_SOURCES__USER__URL="..."       # 覆盖嵌套来源 URL
 
 **加载优先级：** `init 参数 > 环境变量 > config.toml 文件`。
 
-此外 `MIHOYO_HOME` 可覆盖项目根目录，`MIHOYO_DATA_DIR` 可覆盖数据目录。
+路径类环境变量：
+
+| 变量 | 作用 |
+|---|---|
+| `MIHOYO_HOME` | 覆盖工作区根目录（显式设置但不可写时启动报错，不会静默搬家） |
+| `MIHOYO_DATA_DIR` | 只覆盖数据目录（`data/`） |
+| `MIHOYO_TEMP_DIR` | 覆盖临时根（默认系统 Temp；本项目临时文件都在其下的 `mihoyo-toolkit-*` 子目录） |
+
+完整约定见 [`docs/standard-paths.md`](docs/standard-paths.md)：可写区域、只读区域、
+外部文件「先复制再处理」流程与权限审计脚本。
 
 ### 数据与目录结构
 
@@ -314,15 +340,21 @@ mihoyo-tool-kit/
 ├── Dockerfile                  # Docker（cli / full 双模式）
 ├── .github/                    # CI：build.yml（主流水线）/ e2e.yml（手动端到端）
 ├── docs/
-│   └── create-plan.md          # 角色模型抓取计划（模型下载运行时输入）
+│   ├── create-plan.md          # 角色模型抓取计划（模型下载运行时输入）
+│   └── standard-paths.md       # 路径 / 临时文件 / 权限规范
+├── scripts/
+│   ├── workspace_audit.py      # 工作区权限与可写性审计（只读）
+│   └── render_gui_screenshots.py  # GUI 截图（视觉回归基准）
 ├── src/
 │   └── mihoyo_toolkit/         # 包体（src/ layout）
-│       ├── __init__.py         # 版本元信息（__version__ = "3.2.1"）
+│       ├── __init__.py         # 版本元信息（__version__ 由 pyproject.toml 解析）
+│       ├── _version.py         # 版本解析（源码 pyproject / 安装元数据 / 占位值）
 │       ├── __main__.py         # 双模式入口：CLI / --gui
 │       ├── py.typed            # 类型标记
 │       ├── core/               # 配置 / 路径 / 存储 / 模型 / 异常
 │       │   ├── config.py       #   pydantic-settings 配置
-│       │   ├── paths.py        #   PathManager 单例
+│       │   ├── paths.py        #   PathManager 单例（根探测 / 降级）
+│       │   ├── temp.py         #   临时目录（系统 Temp + temp_workspace）
 │       │   ├── storage.py      #   统一 SQLite 存储层
 │       │   ├── models.py       #   pydantic v2 数据模型
 │       │   └── exceptions.py   #   异常层级
@@ -347,11 +379,14 @@ mihoyo-tool-kit/
 │       ├── gui/                # PySide6 MVC 图形界面
 │       │   ├── main_window.py / models.py / controllers.py / nav.py
 │       │   ├── workers.py / widgets.py / theme.py / fonts.py / paths.py
-│       │   └── pages/          #   各功能页面
+│       │   ├── ui_state.py     #   主题偏好持久化（data/ui_state.json）
+│       │   └── pages/          #   各功能页面（含首页卡片页 home.py）
 │       └── utils/              # 工具层
-│           ├── logger.py       #   三类日志
+│           ├── logger.py       #   三类日志（单 handler + 轮转）
+│           ├── fsio.py         #   原子写入 + 工作区边界校验
+│           ├── retry_policy.py #   按当前配置构造重试策略
 │           ├── har_loader.py   #   HAR 解析 / 回退
-│           ├── cookie_loader.py#   Firefox Cookie
+│           ├── cookie_loader.py#   Firefox Cookie（复制到临时区再读）
 │           ├── backup_manager.py
 │           ├── migration.py    #   旧版数据迁移
 │           └── txt_filter.py   #   TXT 过滤
@@ -387,12 +422,16 @@ mihoyo-tool-kit/
 | 文件 | 内容 | 来源 |
 | ------ | ------ | ------ |
 | `logs/console.log` | 控制台全部输出 | `print()`、`stdout`/`stderr`（经 `_TeeStream` 镜像） |
-| `logs/gui.log` | GUI 界面日志 | `append_gui_log()`，带时间戳、自动去重 |
-| `logs/app.log` | 模块结构化日志 | `setup_logger()` / `get_module_logger()` 的 logging 输出 |
+| `logs/gui.log` | GUI 界面日志 | `append_gui_log()`，带时间戳；超限滚动为 `gui.log.1` |
+| `logs/app.log` | 模块结构化日志 | 包级根 logger 的 `RotatingFileHandler`（按 `[logging]` 轮转） |
 
 - `setup_console_log()` 用 `_TeeStream` 将 stdout/stderr 同时写终端与文件；
 - `append_gui_log()` 供底部面板同步写入，已在消息内带时间戳时不重复添加；
-- 模块日志由 `logging.FileHandler` 写入 `app.log`，同时经 `_LiveStdout` 代理输出到当前终端。
+- handler **只在包级根 logger `mihoyo_toolkit` 上装一次**，子模块 logger 通过
+  `propagate` 汇总，避免重复行与多份文件句柄；
+- 级别与轮转由 `[logging]` 配置（`level` / `max_bytes` / `backup_count`）；
+- 文件 handler 延迟到首次写日志时才创建 `logs/`，因此 `--version` / `--help`
+  这类纯查询不会留下任何目录。
 
 ### HAR 回退与 Firefox Cookie
 
@@ -612,4 +651,4 @@ Three test tiers (`unit` / `integration` / `e2e`; `e2e` skipped by default), cov
 
 ---
 
-**V3.2.1** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)
+**V3.3.0** · Licensed under [MIT](LICENSE) · Maintained by LingLan · [Changelog](CHANGELOG.md)

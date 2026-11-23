@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-24
+
+规范化版本（SemVer MINOR）：统一临时文件与写入行为、收敛配置来源、重做 GUI 视觉；
+对外配置只新增带默认值的 `[logging]` 段，旧配置可直接沿用。
+
+### Added
+
+- **`[logging]` 配置段**：`level` / `max_bytes` / `backup_count`，`app.log` 按体积轮转，
+  `gui.log` 超限滚动为 `gui.log.1`。
+- **`MIHOYO_TEMP_DIR`** 环境变量：覆盖临时根；默认使用系统 Temp 下的
+  `mihoyo-toolkit-*` 随机子目录，进程异常退出后的残留由下次启动清扫（>24 小时）。
+- **`--clean` / `--yes`**：非交互清理缓存；`build.ps1 clean` / `build.sh clean`
+  改为委托 `python run.py --clean --yes`，清理规则只维护一份。
+- **`scripts/workspace_audit.py`**：只读审计工作区 ACL 拒绝项、各运行时目录的
+  create/write/read/delete 探针、只读属性文件、临时目录残留与缓存体积。
+- **`docs/standard-paths.md`**：可写区域 / 只读区域 / 外部文件复制流程 / 环境变量优先级。
+- **GUI 官网风视觉**：配色与控件样式参考 mihoyo.com（主色 `#3778e5`），新增首页
+  卡片入口与顶栏「跟随系统 / 浅色 / 深色」三态主题切换（持久化到 `data/ui_state.json`）。
+
+### Changed
+
+- **临时文件统一走系统 Temp**：Firefox `cookies.sqlite` 先复制到临时工作区再读取
+  （源目录只读），不再使用固定文件名的临时数据库。
+- **写入全部原子化**：`config.toml`、抓取 HTML、提取 TXT/JSON、RSS/JSON Feed、Excel、
+  TXT 过滤结果、模型下载统一「同目录临时文件 → `os.replace`」，中途失败不破坏原文件。
+- **文本写入统一 UTF-8 + LF**：消除 Windows 下产物 CRLF 漂移。
+- **工作区外只读**：写入层校验目标必须位于「工作区根或临时根」，否则抛 `StorageError`
+  并提示先复制；`.gitattributes` 统一 `eol=lf`。
+- **版本号单一来源**：`__version__` 由 `pyproject.toml`（源码）或包元数据（安装/冻结）解析；
+  删除 `[app].version` 与 `AppSettings.version`；`version_info.txt` 同步为 3.3.0。
+- **重试与超时读取最新配置**：`with_retry` 在每次调用时读取 `[retry]`，替换各抓取模块
+  的 import 期快照；API 客户端超时改用 `[fetch].timeout`。
+- **`[fetch].max_scroll_attempts` 真正生效**：滚动加载达到上限即停止并告警。
+- **包导入不再要求 `config.toml` 就绪**（删除了 import 期 `get_settings()` 调用）。
+- **构建脚本版本号改从 `pyproject.toml` 读取**；`app.spec` 打包 dist-info 元数据。
+
+### Fixed
+
+- 日志 handler 重复安装：每个模块各开一份 `app.log` 句柄导致重复行、句柄泄漏，
+  Windows 上还会让日志文件无法删除；现在只在包级根 logger 装一次。
+- `--version` / `--help` 不再创建 `data/`、`logs/`、`har/` 或触发 HAR 清理。
+- 交互菜单清屏不再调用 `os.system("cls" / "clear")`；非 TTY 时不输出控制序列，
+  避免污染重定向日志。
+- `Storage.upsert_*` 用 `rowcount` 统计新增行，去掉写入前后两次 `COUNT(*)`。
+- `cookie_loader` 临时数据库不再固定文件名，并发运行不再互相覆盖。
+- PyInstaller onefile 下项目根误判为解包临时目录、只读安装目录写入失败的问题：
+  冻结运行取 exe 目录，自动探测根不可写时降级到用户数据目录。
+- 模型下载先写 `.part`，失败清理，不再留下半截文件。
+
+### Removed
+
+- `AppSettings.version` 与 `config.toml` 中 `[app].version`（旧配置残留字段会被忽略）。
+- 各抓取模块的 import 期 `_settings` / `_retry` 配置快照。
+- `pyproject.toml` 中无用的 mypy `PIL.*` override。
+
+### Housekeeping
+
+- 清理构建产物与 git 中断遗留的临时对象（`.git/objects/**/tmp_obj_*`），释放约 640 MB；
+  git 可达对象数与 `fsck` 结果保持不变。
+
 ## [3.2.1] - 2026-11-09
 
 补丁版本（SemVer PATCH）：修复 HAR 清理误删最新自动录制文件的问题，并确保代码格式检查通过。
