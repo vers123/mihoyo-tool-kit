@@ -16,6 +16,7 @@ from ..core.config import get_settings
 from ..core.models import NewsItem
 from ..core.paths import get_path_manager
 from ..core.storage import Storage
+from ..utils.fsio import atomic_write_text
 from ..utils.logger import get_module_logger
 
 logger = get_module_logger("exporters.feed")
@@ -76,10 +77,7 @@ class FeedGenerator:
 
         ET.indent(rss, space="  ")
         xml_str = ET.tostring(rss, encoding="unicode")
-        self.rss_path.parent.mkdir(parents=True, exist_ok=True)
-        self.rss_path.write_text(
-            f'<?xml version="1.0" encoding="UTF-8"?>\n{xml_str}', encoding="utf-8"
-        )
+        atomic_write_text(self.rss_path, f'<?xml version="1.0" encoding="UTF-8"?>\n{xml_str}')
         logger.info("RSS feed 已生成: %s（%d 条）", self.rss_path, total)
         return self.rss_path
 
@@ -107,7 +105,7 @@ class FeedGenerator:
             "items": items,
         }
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
-        self.json_path.write_text(json.dumps(feed, ensure_ascii=False, indent=2), encoding="utf-8")
+        atomic_write_text(self.json_path, json.dumps(feed, ensure_ascii=False, indent=2))
         logger.info("JSON feed 已生成: %s（%d 条）", self.json_path, len(items))
         return self.json_path
 

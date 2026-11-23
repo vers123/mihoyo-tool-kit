@@ -22,6 +22,7 @@ from ...core.config import NewsSiteSource, get_settings
 from ...core.models import NewsItem
 from ...core.paths import get_path_manager
 from ...core.storage import Storage
+from ...utils.fsio import atomic_write_text
 from ...utils.logger import get_module_logger
 
 logger = get_module_logger("extractors.news")
@@ -97,9 +98,8 @@ class GameNewsBaseExtractor:
     def save_news_data(self, items: list[NewsItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [self.format_line(index, item) for index, item in enumerate(items, 1)]
-        self.output_path.write_text("\n".join(lines), encoding="utf-8")
+        atomic_write_text(self.output_path, "\n".join(lines))
         logger.info(
             "[%s] 已导出 %d 条新闻 → %s",
             self.game,

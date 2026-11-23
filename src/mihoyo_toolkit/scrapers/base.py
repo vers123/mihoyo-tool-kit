@@ -17,6 +17,7 @@ from collections.abc import Callable
 from typing import Any, Generic, TypeVar
 
 from ..core.paths import get_path_manager
+from ..utils.fsio import atomic_write_text
 from ..utils.har_loader import find_har_file, print_har_instructions
 from ..utils.logger import get_module_logger
 from .browser import BrowserSession
@@ -131,8 +132,7 @@ class BaseScraper(ABC, Generic[T]):
 
     def save_html(self, html: str) -> None:
         """保存 HTML 至 ``data/html/<html_subdir>/<output_filename>``。"""
-        self.html_path.parent.mkdir(parents=True, exist_ok=True)
-        self.html_path.write_text(html, encoding="utf-8")
+        atomic_write_text(self.html_path, html)
         logger.info("已保存 HTML: %s", get_path_manager().relative(self.html_path))
 
     # ------------------------------------------------------------------ #

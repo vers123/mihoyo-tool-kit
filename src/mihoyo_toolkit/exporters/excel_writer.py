@@ -9,8 +9,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..core.config import get_settings
+from ..core.exceptions import StorageError
 from ..core.paths import get_path_manager
 from ..core.storage import Storage
+from ..utils.fsio import atomic_save
 from ..utils.logger import get_module_logger
 
 logger = get_module_logger("exporters.excel")
@@ -43,13 +45,18 @@ class ExcelWriter:
     def export(self) -> Path:
         """读取 SQLite 并写出 xlsx，返回输出路径。"""
         # openpyxl 懒加载：仅导出时导入，避免非 Excel 场景强依赖
-        from openpyxl import Workbook
-        from openpyxl.styles import Alignment, Font, PatternFill
-        from openpyxl.utils import get_column_letter
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Alignment, Font, PatternFill
+            from openpyxl.utils import get_column_letter
+        except ImportError as exc:
+            raise StorageError(
+                "缺少 openpyxl，无法导出 Excel",
+                detail="请安装可选依赖：pip install mihoyo-toolkit[excel]",
+            ) from exc
 
         settings = get_settings()
         path_manager = get_path_manager()
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
         header_font = Font(bold=True, color="FFFFFF")
         header_fill = PatternFill("solid", fgColor="4472C4")
@@ -90,7 +97,7 @@ class ExcelWriter:
                 sheet.freeze_panes = "A2"
                 total += len(items)
 
-        workbook.save(self.output_path)
+        atomic_save(self.output_path, workbook.save)
         logger.info(
             "Excel 已导出: %s（%d 个 sheet，共 %d 条）",
             path_manager.relative(self.output_path),

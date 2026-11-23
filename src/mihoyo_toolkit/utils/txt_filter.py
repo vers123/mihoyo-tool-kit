@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 
 from ..core.exceptions import StorageError
 from ..core.paths import get_path_manager
+from .fsio import atomic_write_text
 from .logger import get_module_logger
 
 logger = get_module_logger("txt_filter")
@@ -259,14 +260,12 @@ class TxtFilter:
         joined = "_".join(self._collect_keywords(items))
         kw_str = _ILLEGAL_RE.sub("_", joined) or "matched"
         out_path = dest / subfolder / f"{base}_{kw_str}.txt"
-        out_path.parent.mkdir(parents=True, exist_ok=True)
 
+        lines = [_INDEX_RE.sub(f"{index:04d}-", item.text) for index, item in enumerate(items, 1)]
         try:
-            with out_path.open("w", encoding="utf-8") as fh:
-                for index, item in enumerate(items, 1):
-                    fh.write(_INDEX_RE.sub(f"{index:04d}-", item.text) + "\n")
-        except OSError as exc:
-            raise StorageError(f"写入过滤结果失败: {out_path}", detail=str(exc)) from exc
+            atomic_write_text(out_path, "\n".join(lines) + "\n")
+        except StorageError as exc:
+            raise StorageError(f"写入过滤结果失败: {out_path}", detail=exc.detail) from exc
 
         logger.info("已导出 %d 行 -> %s", len(items), out_path)
         return out_path

@@ -11,7 +11,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -399,7 +401,11 @@ def fetch_page_html(url: str) -> str:
     reraise=True,
 )
 def _stream_to_file(url: str, save_path: Path, timeout: float) -> int:
-    """流式下载并返回字节数（HTTP 错误触发重试）。"""
+    """流式下载并返回字节数（HTTP 错误触发重试）。
+
+    先写 ``<目标>.part``，由 :func:`download_file` 在完整下载后原子替换为最终文件，
+    避免中断后留下半截的「看起来已下载完成」文件。
+    """
     total = 0
     with httpx.stream("GET", url, timeout=timeout, follow_redirects=True) as resp:
         resp.raise_for_status()
@@ -411,18 +417,21 @@ def _stream_to_file(url: str, save_path: Path, timeout: float) -> int:
 
 
 def download_file(url: str, save_path: Path, timeout: float = 300.0) -> bool:
-    """下载单个模型文件。"""
+    """下载单个模型文件（先写 ``.part`` 再原子替换）。"""
     if save_path.exists():
         logger.info("文件已存在，跳过: %s", save_path)
         return True
 
     logger.info("下载: %s", url)
     save_path.parent.mkdir(parents=True, exist_ok=True)
+    part_path = save_path.with_name(f"{save_path.name}.part")
     try:
-        downloaded = _stream_to_file(url, save_path, timeout)
+        downloaded = _stream_to_file(url, part_path, timeout)
+        os.replace(part_path, save_path)
     except Exception as exc:
         logger.error("下载失败 %s: %s", url, exc)
-        save_path.unlink(missing_ok=True)
+        with suppress(OSError):
+            part_path.unlink(missing_ok=True)
         return False
     logger.info("下载完成: %s (%d bytes)", save_path, downloaded)
     return True

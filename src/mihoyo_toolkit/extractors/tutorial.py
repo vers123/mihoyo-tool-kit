@@ -17,6 +17,7 @@ from ..core.exceptions import ParseError
 from ..core.models import TutorialItem
 from ..core.paths import TUTORIAL_HTML_SUBDIR, get_path_manager
 from ..core.storage import Storage
+from ..utils.fsio import atomic_write_text
 from ..utils.logger import get_module_logger
 
 logger = get_module_logger("extractors.tutorial")
@@ -119,11 +120,10 @@ class TutorialExtractor:
     def save_character_data(self, items: list[TutorialItem]) -> Path:
         """写出 TXT，返回输出路径。"""
         path_manager = get_path_manager()
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = [
             f"{index:04d}-{item.character_id}-{item.name}" for index, item in enumerate(items, 1)
         ]
-        self.output_path.write_text("\n".join(lines), encoding="utf-8")
+        atomic_write_text(self.output_path, "\n".join(lines))
         logger.info(
             "[%s] 已导出 %d 个角色 → %s",
             self.tutorial_id,
@@ -324,10 +324,7 @@ class ChangelogExtractor:
     def save(self, data: dict) -> Path:
         """写出 JSON，返回输出路径。"""
         path_manager = get_path_manager()
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        self.output_path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        atomic_write_text(self.output_path, json.dumps(data, ensure_ascii=False, indent=2))
         logger.info(
             "[%s] 已导出更新日志 → %s", self.tutorial_id, path_manager.relative(self.output_path)
         )

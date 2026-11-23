@@ -49,6 +49,7 @@ from ..utils import (
     run_filter,
     update_har_files,
 )
+from ..utils.fsio import atomic_write_text
 from ..utils.logger import _release_log_handles
 from .registry import registry
 
@@ -597,7 +598,7 @@ def system_config_edit() -> None:
         print(f"[错误] 修改后配置非法，已放弃写入: {exc}")
         return
 
-    config_path.write_text(updated, encoding="utf-8")
+    atomic_write_text(config_path, updated)
     reload_settings()
     print(f"[完成] 已更新: {', '.join(changed)}")
     print(f"配置文件: {config_path}")

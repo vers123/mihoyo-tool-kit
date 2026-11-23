@@ -16,8 +16,9 @@ from typing import Any
 from PySide6.QtCore import QObject, Signal
 
 from ..core import Storage, get_path_manager, reload_settings
-from ..core.exceptions import ConfigError
+from ..core.exceptions import ConfigError, StorageError
 from ..utils import BackupInfo, backup_manager, check_and_migrate
+from ..utils.fsio import atomic_write_text
 from .workers import TaskWorker
 
 #: 后台任务的可调用对象
@@ -152,12 +153,12 @@ class SystemController(QObject):
         return path.read_text(encoding="utf-8") if path.is_file() else ""
 
     def write_config_text(self, text: str) -> None:
-        """写入 ``config.toml`` 并重新加载配置。"""
+        """原子写入 ``config.toml`` 并重新加载配置。"""
         path = get_path_manager().config_file
         try:
-            path.write_text(text, encoding="utf-8")
-        except OSError as exc:
-            raise ConfigError(f"写入配置文件失败: {path}", detail=str(exc)) from exc
+            atomic_write_text(path, text)
+        except StorageError as exc:
+            raise ConfigError(f"写入配置文件失败: {path}", detail=exc.detail) from exc
         reload_settings()
 
     def reload_config(self) -> object:
