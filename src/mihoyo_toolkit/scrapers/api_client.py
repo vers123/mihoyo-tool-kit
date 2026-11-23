@@ -47,7 +47,8 @@ class MiHoYoApiClient:
         self.existing_urls = existing_urls or set()
         self.stop_on_existing = settings.incremental.stop_on_existing
         self.user_agent = settings.fetch.user_agent
-        self.timeout = 30.0
+        #: 超时统一取自 [fetch].timeout（配置以毫秒为单位）
+        self.timeout = settings.fetch.timeout / 1000
         self._tag = f"[{self.game}]"
 
     # ------------------------------------------------------------------ #

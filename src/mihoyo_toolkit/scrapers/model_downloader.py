@@ -19,25 +19,15 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 from tqdm import tqdm
 
-from ..core.config import get_settings
 from ..core.paths import get_path_manager
 from ..utils.logger import get_module_logger
+from ..utils.retry_policy import with_retry
 from .browser import open_browser
 from .config import ScrapeConfig
 
 logger = get_module_logger("model_downloader")
-
-_settings = get_settings()
-_ATTEMPTS = _settings.retry.max_attempts
-_DELAY = _settings.retry.delay
-_retry = retry(
-    stop=stop_after_attempt(_ATTEMPTS),
-    wait=wait_fixed(_DELAY),
-    reraise=True,
-)
 
 
 @dataclass
@@ -394,12 +384,7 @@ def fetch_page_html(url: str) -> str:
         return session.content()
 
 
-@retry(
-    stop=stop_after_attempt(_ATTEMPTS),
-    wait=wait_fixed(_DELAY),
-    retry=retry_if_exception_type(httpx.HTTPError),
-    reraise=True,
-)
+@with_retry(httpx.HTTPError)
 def _stream_to_file(url: str, save_path: Path, timeout: float) -> int:
     """流式下载并返回字节数（HTTP 错误触发重试）。
 
@@ -437,7 +422,7 @@ def download_file(url: str, save_path: Path, timeout: float = 300.0) -> bool:
     return True
 
 
-@_retry
+@with_retry()
 def run_model_download() -> int:
     """执行模型下载主流程，返回成功下载的文件数。"""
     output_dir = get_path_manager().models

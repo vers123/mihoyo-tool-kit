@@ -6,8 +6,8 @@
 
 [app]
 # 运行模式：cli（交互菜单）| gui（图形界面）
+# 注：版本号不在此配置，唯一来源为 pyproject.toml
 mode = "cli"
-version = "3.2.1"
 
 [fetch]
 # 浏览器是否后台运行（无头）

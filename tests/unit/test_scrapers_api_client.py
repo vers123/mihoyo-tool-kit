@@ -208,3 +208,9 @@ def test_fetch_all_games_async(monkeypatch) -> None:
     monkeypatch.setattr(MiHoYoApiClient, "fetch_all_async", fake_fetch)
     result = asyncio.run(fetch_all_games_async(["genshin"]))
     assert result == {"genshin": []}
+
+
+def test_timeout_comes_from_fetch_settings(settings) -> None:
+    """HTTP 超时取自 [fetch].timeout（毫秒 → 秒），而非硬编码。"""
+    client = MiHoYoApiClient("genshin")
+    assert client.timeout == settings.fetch.timeout / 1000

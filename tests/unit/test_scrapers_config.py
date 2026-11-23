@@ -18,6 +18,7 @@ def test_from_settings_uses_global_defaults(settings) -> None:
     assert config.user_agent == settings.fetch.user_agent
     assert config.browser_args == list(settings.fetch.browser_args)
     assert config.scroll_delay == settings.fetch.scroll_delay
+    assert config.max_scroll_attempts == settings.fetch.max_scroll_attempts
     assert config.incremental_mode == settings.incremental.enabled
     assert config.use_firefox_cookies == settings.cookies.use_firefox
     assert config.existing_urls == set()

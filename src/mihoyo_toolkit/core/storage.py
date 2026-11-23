@@ -161,7 +161,6 @@ class Storage:
         ]
         if not rows:
             return 0
-        before = self.count_news(game)
         with self._cursor() as cur:
             cur.executemany(
                 """
@@ -171,7 +170,9 @@ class Storage:
                 """,
                 rows,
             )
-        return self.count_news(game) - before
+            # ``INSERT OR IGNORE`` 下 executemany 的 rowcount 即真实新增行数，
+            # 无需再比较前后 COUNT(*)（省掉两次全表扫描）。
+            return max(cur.rowcount, 0)
 
     def get_existing_urls(self, game: str) -> set[str]:
         """获取指定游戏已存在的 URL 集合（用于增量抓取终止判断）。"""
@@ -353,10 +354,10 @@ class Storage:
     def _upsert_generic(self, sql: str, rows: list[tuple[Any, ...]], table: str) -> int:
         if not rows:
             return 0
-        before = self._count_table(table)
         with self._cursor() as cur:
             cur.executemany(sql, rows)
-        return self._count_table(table) - before
+            # 同 upsert_news：INSERT OR IGNORE 的 rowcount 即新增行数
+            return max(cur.rowcount, 0)
 
     def _count_table(self, table: str, where: str = "", params: tuple[Any, ...] = ()) -> int:
         # table 仅来自内部常量，无注入风险

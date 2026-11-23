@@ -167,12 +167,13 @@ class BrowserSession:
     ) -> int:
         """滚动至底部加载全部内容，返回滚动次数。
 
-        * 无硬上限，依赖「页面高度连续不变」作为终止条件。
-        * ``is_stopped`` 由调用方注入（如增量模式命中已存在数据）。
+        * 终止条件：页面高度连续 3 次不变，或调用方通过 ``is_stopped`` 提前中断；
+        * **硬上限** ``config.max_scroll_attempts`` 防无限增长页面死循环。
         """
         last_height = self.page.evaluate("document.body.scrollHeight")
         height_unchanged = 0
         scroll_count = 0
+        max_attempts = max(self.config.max_scroll_attempts, 1)
 
         while True:
             self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -191,6 +192,12 @@ class BrowserSession:
             last_height = new_height
 
             if height_unchanged >= 3:
+                break
+
+            if scroll_count >= max_attempts:
+                logger.warning(
+                    "滚动达到上限 %d 次（[fetch].max_scroll_attempts），提前结束", max_attempts
+                )
                 break
 
         logger.info("滚动完成，共 %d 次", scroll_count)

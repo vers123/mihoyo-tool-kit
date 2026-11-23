@@ -27,6 +27,8 @@ class ScrapeConfig(BaseModel):
     user_agent: str = ""
     browser_args: list[str] = Field(default_factory=list)
     scroll_delay: float = 2.0
+    #: 滚动加载的硬上限（防止页面无限增长导致死循环）
+    max_scroll_attempts: int = 500
 
     #: 增量模式
     incremental_mode: bool = False
@@ -57,6 +59,7 @@ class ScrapeConfig(BaseModel):
             "user_agent": s.fetch.user_agent,
             "browser_args": list(s.fetch.browser_args),
             "scroll_delay": s.fetch.scroll_delay,
+            "max_scroll_attempts": s.fetch.max_scroll_attempts,
             "incremental_mode": s.incremental.enabled,
             "use_firefox_cookies": s.cookies.use_firefox,
             "har_auto_update": s.har.auto_update,

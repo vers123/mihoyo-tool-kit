@@ -26,7 +26,6 @@ import pytest
 MINIMAL_CONFIG = """\
 [app]
 mode = "cli"
-version = "3.2.1"
 
 [fetch]
 headless = true

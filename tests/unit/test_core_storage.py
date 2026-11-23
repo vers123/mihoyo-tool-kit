@@ -200,3 +200,30 @@ def test_clear_by_game_and_all(store: Storage) -> None:
     assert store.count_news() == 1
     assert store.clear() == 1
     assert store.count_news() == 0
+
+
+def test_upsert_news_partial_duplicates_counts_only_new(store: Storage) -> None:
+    """部分重复时新增数等于真实插入数（rowcount 语义）。"""
+    first = _news("genshin", 1, "2024-01-01 00:00:00")
+    second = _news("genshin", 2, "2024-01-02 00:00:00")
+    assert store.upsert_news("genshin", [first]) == 1
+    assert store.upsert_news("genshin", [first, second]) == 1
+    assert store.count_news("genshin") == 2
+
+
+def test_upsert_generic_partial_duplicates(store: Storage) -> None:
+    """通用实体（posts）同样只统计真实新增行。"""
+    from mihoyo_toolkit.core.models import PostItem
+
+    def _post(post_id: str) -> PostItem:
+        return PostItem(
+            post_id=post_id,
+            title="t",
+            created_at="2024-01-01 00:00:00",
+            url=f"https://example.com/{post_id}",
+            content="c",
+        )
+
+    assert store.upsert_posts([_post("a")]) == 1
+    assert store.upsert_posts([_post("a"), _post("b")]) == 1
+    assert store.count_table("posts") == 2

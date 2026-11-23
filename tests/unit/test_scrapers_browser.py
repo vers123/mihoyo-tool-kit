@@ -275,3 +275,23 @@ def test_config_output_filename_is_used(tmp_path: Path) -> None:
     # html_path 基于输出文件名解析
     session = BrowserSession(_config())
     assert session.config.output_filename == "page.html"
+
+
+def test_scroll_to_bottom_stops_at_max_attempts() -> None:
+    """页面高度持续增长时，到达 max_scroll_attempts 后停止，不会死循环。"""
+    session = BrowserSession(_config(scroll_delay=0.0, max_scroll_attempts=4))
+    session._page = _FakePage(heights=[1000, 2000, 3000, 4000, 5000, 6000, 7000])
+    ticks: list[int] = []
+
+    count = session.scroll_to_bottom(on_tick=ticks.append)
+
+    assert count == 4
+    assert ticks == [1, 2, 3, 4]
+
+
+def test_scroll_to_bottom_ignores_non_positive_limit() -> None:
+    """上限被配置为 0 或负数时按 1 处理，至少滚动一次。"""
+    session = BrowserSession(_config(scroll_delay=0.0, max_scroll_attempts=0))
+    session._page = _FakePage(heights=[1000, 2000, 3000])
+
+    assert session.scroll_to_bottom() == 1

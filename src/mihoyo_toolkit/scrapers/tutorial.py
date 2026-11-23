@@ -12,24 +12,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from tenacity import retry, stop_after_attempt, wait_fixed
-
-from ..core.config import get_settings
 from ..core.models import TutorialItem
 from ..core.paths import TUTORIAL_HTML_SUBDIR
 from ..core.storage import Storage
 from ..utils.logger import get_module_logger
+from ..utils.retry_policy import with_retry
 from .base import BaseScraper
 from .config import ScrapeConfig
 
 logger = get_module_logger("tutorial")
-
-_settings = get_settings()
-_retry = retry(
-    stop=stop_after_attempt(_settings.retry.max_attempts),
-    wait=wait_fixed(_settings.retry.delay),
-    reraise=True,
-)
 
 DEFAULT_TUTORIAL_ID = "mh4imrrhzdzi"
 DEFAULT_INDEX_ID = "mhs2w008wf14"
@@ -146,7 +137,7 @@ class TutorialScraper(BaseScraper[TutorialItem]):
         ]
 
 
-@_retry
+@with_retry()
 def run_tutorial(tutorial_id: str, lang: str | None = None) -> None:
     """抓取单个教程详情页并落库角色数据。"""
     if not tutorial_id:

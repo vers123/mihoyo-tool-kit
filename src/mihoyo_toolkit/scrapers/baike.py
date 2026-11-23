@@ -11,23 +11,15 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from tenacity import retry, stop_after_attempt, wait_fixed
-
 from ..core.config import get_settings
 from ..core.models import ImageItem
 from ..core.storage import Storage
 from ..utils.logger import get_module_logger
+from ..utils.retry_policy import with_retry
 from .base import BaseScraper
 from .config import ScrapeConfig
 
 logger = get_module_logger("baike")
-
-_settings = get_settings()
-_retry = retry(
-    stop=stop_after_attempt(_settings.retry.max_attempts),
-    wait=wait_fixed(_settings.retry.delay),
-    reraise=True,
-)
 
 _IMAGE_PATTERN = re.compile(
     r'class="collection-avatar__item".*?'
@@ -67,7 +59,7 @@ class BaikeScraper(BaseScraper[ImageItem]):
         return items
 
 
-@_retry
+@with_retry()
 def run_baike() -> int:
     """抓取角色图鉴页面并落库，返回新增图片条数。"""
     logger.info("开始抓取角色图鉴页面")

@@ -29,10 +29,13 @@ from .paths import get_path_manager
 
 
 class AppSettings(BaseModel):
-    """应用级设置。"""
+    """应用级设置。
+
+    版本号不再是配置项：唯一来源是 ``pyproject.toml``（见 :mod:`mihoyo_toolkit._version`），
+    避免配置文件与包版本各写一份、长期漂移。
+    """
 
     mode: Literal["cli", "gui"] = "cli"
-    version: str = "3.2.1"
 
 
 class FetchSettings(BaseModel):
