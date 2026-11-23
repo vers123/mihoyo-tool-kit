@@ -103,3 +103,61 @@ def test_find_firefox_profile_handles_missing_dir(tmp_path: Path, monkeypatch) -
     missing = tmp_path / "nope"
     monkeypatch.setattr(cookie_loader, "_firefox_profile_dirs", lambda: [missing])
     assert find_firefox_profile() is None
+
+
+# ---------------------------------------------------------------------- #
+#  临时工作区与外部只读
+# ---------------------------------------------------------------------- #
+def test_cookie_db_is_copied_to_temp_workspace_and_cleaned(tmp_path: Path, monkeypatch) -> None:
+    """源库只读：复制到临时工作区读取，结束后临时目录被清理。"""
+    profiles = tmp_path / "Profiles"
+    profile = profiles / "abc.default-release"
+    _make_cookies_db(profile)
+    monkeypatch.setattr(cookie_loader, "_firefox_profile_dirs", lambda: [profiles])
+
+    created: list[Path] = []
+    original = cookie_loader.temp_workspace
+
+    import contextlib
+
+    @contextlib.contextmanager
+    def _spy():
+        with original() as workdir:
+            created.append(workdir)
+            yield workdir
+
+    monkeypatch.setattr(cookie_loader, "temp_workspace", _spy)
+    cookies = load_firefox_cookies()
+
+    assert cookies
+    assert created and not created[0].exists()
+
+
+def test_source_profile_is_not_modified(tmp_path: Path, monkeypatch) -> None:
+    """读取过程中不修改 Firefox 源数据库（mtime 与内容都不变）。"""
+    profiles = tmp_path / "Profiles"
+    profile = profiles / "abc.default-release"
+    _make_cookies_db(profile)
+    source = profile / "cookies.sqlite"
+    before = source.read_bytes()
+    before_mtime = source.stat().st_mtime
+    monkeypatch.setattr(cookie_loader, "_firefox_profile_dirs", lambda: [profiles])
+
+    load_firefox_cookies()
+
+    assert source.read_bytes() == before
+    assert source.stat().st_mtime == before_mtime
+
+
+def test_failed_copy_returns_empty(tmp_path: Path, monkeypatch) -> None:
+    """复制失败时返回空列表，不抛出异常。"""
+    profiles = tmp_path / "Profiles"
+    profile = profiles / "abc.default-release"
+    _make_cookies_db(profile)
+    monkeypatch.setattr(cookie_loader, "_firefox_profile_dirs", lambda: [profiles])
+
+    def _boom(*_args, **_kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(cookie_loader.shutil, "copy2", _boom)
+    assert load_firefox_cookies() == []

@@ -167,6 +167,19 @@ def _has_action(args: argparse.Namespace) -> bool:
     )
 
 
+def _sweep_temp_on_startup() -> None:
+    """清理系统 Temp 下超龄的本项目临时目录（进程被强杀时的兜底）。"""
+    from .core.temp import sweep_stale_temp
+
+    try:
+        removed = sweep_stale_temp()
+    except Exception as exc:  # pragma: no cover - 环境相关，清理失败不应阻塞启动
+        print(f"[WARN] 清理临时目录失败: {exc}")
+        return
+    if removed:
+        print(f"[TEMP] 已清理 {removed} 个陈旧临时目录")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """程序主入口，返回退出码。"""
     # 先解析参数：--version / --help 这类纯查询不应创建 data/logs/har 目录，
@@ -181,6 +194,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     setup_console_log()
     setup_logger()
     get_path_manager().ensure_dirs()
+    _sweep_temp_on_startup()
 
     # GUI 启动时由 gui.launch_gui() 清理（结果写入欢迎弹窗），--har 也会清理一次，
     # 故这两种模式跳过启动清理，避免重复扫描

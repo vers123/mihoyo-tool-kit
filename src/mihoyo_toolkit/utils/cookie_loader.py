@@ -2,6 +2,9 @@
 
 从 Firefox 的 ``cookies.sqlite`` 读取 Cookie 并转换为 Playwright 格式，
 实现米游社 / 微博免登录。
+
+Firefox 配置目录位于工作区外，按「工作区外只读」约定：**只读取**，先复制到
+系统 Temp 下的临时工作区再打开，结束时连同临时目录一起清理。
 """
 
 from __future__ import annotations
@@ -9,10 +12,10 @@ from __future__ import annotations
 import platform
 import shutil
 import sqlite3
-import tempfile
 from pathlib import Path
 from typing import Any
 
+from ..core.temp import temp_workspace
 from .logger import get_module_logger
 
 logger = get_module_logger("cookie_loader")
@@ -64,6 +67,9 @@ def find_firefox_profile() -> Path | None:
 def load_firefox_cookies(domain_filter: str | None = None) -> list[dict[str, Any]]:
     """从 Firefox 读取 Cookie。
 
+    源数据库位于工作区外（Firefox 配置目录），因此**只读**：先复制到临时工作区
+    再打开，绝不回写源文件。临时目录用完即删，并发运行互不干扰。
+
     Args:
         domain_filter: 按域名过滤，例如 ``"weibo.com"``。
 
@@ -80,53 +86,57 @@ def load_firefox_cookies(domain_filter: str | None = None) -> list[dict[str, Any
         logger.warning("Firefox cookie 数据库不存在")
         return []
 
-    tmp_db = Path(tempfile.gettempdir()) / "mihoyo_firefox_cookies.sqlite"
-    try:
-        shutil.copy2(cookies_db, tmp_db)
-    except OSError as exc:
-        logger.warning("复制 cookie 数据库失败: %s", exc)
-        return []
-
     cookies: list[dict[str, Any]] = []
-    try:
-        conn = sqlite3.connect(tmp_db)
+    with temp_workspace() as workdir:
+        tmp_db = workdir / "cookies.sqlite"
         try:
-            query = (
-                "SELECT name, value, host, path, expiry, isSecure, isHttpOnly, sameSite"
-                " FROM moz_cookies"
-            )
-            params: list[str] = []
-            if domain_filter:
-                query += " WHERE host LIKE ?"
-                params.append(f"%{domain_filter}%")
-            rows = conn.execute(query, params).fetchall()
-        finally:
-            conn.close()
+            shutil.copy2(cookies_db, tmp_db)
+            # Firefox 使用 WAL：连同 -wal / -shm 一起复制，避免读到旧快照
+            for suffix in ("-wal", "-shm"):
+                sidecar = cookies_db.with_name(cookies_db.name + suffix)
+                if sidecar.is_file():
+                    shutil.copy2(sidecar, workdir / f"cookies.sqlite{suffix}")
+        except OSError as exc:
+            logger.warning("复制 cookie 数据库失败: %s", exc)
+            return []
 
-        for name, value, host, path, expiry, secure, http_only, samesite in rows:
-            if not expiry or expiry <= 0:
-                expires = -1
-            elif expiry > 1_000_000_000_000:
-                expires = int(expiry / 1000)
-            else:
-                expires = int(expiry)
-            cookies.append(
-                {
-                    "name": name,
-                    "value": value,
-                    "domain": host,
-                    "path": path,
-                    "expires": expires,
-                    "secure": bool(secure),
-                    "httpOnly": bool(http_only),
-                    "sameSite": _SAMESITE_MAP.get(samesite, "Lax"),
-                }
-            )
-    except sqlite3.Error as exc:
-        logger.warning("读取 cookie 失败: %s", exc)
-        return []
-    finally:
-        tmp_db.unlink(missing_ok=True)
+        try:
+            conn = sqlite3.connect(tmp_db)
+            try:
+                query = (
+                    "SELECT name, value, host, path, expiry, isSecure, isHttpOnly, sameSite"
+                    " FROM moz_cookies"
+                )
+                params: list[str] = []
+                if domain_filter:
+                    query += " WHERE host LIKE ?"
+                    params.append(f"%{domain_filter}%")
+                rows = conn.execute(query, params).fetchall()
+            finally:
+                conn.close()
+
+            for name, value, host, path, expiry, secure, http_only, samesite in rows:
+                if not expiry or expiry <= 0:
+                    expires = -1
+                elif expiry > 1_000_000_000_000:
+                    expires = int(expiry / 1000)
+                else:
+                    expires = int(expiry)
+                cookies.append(
+                    {
+                        "name": name,
+                        "value": value,
+                        "domain": host,
+                        "path": path,
+                        "expires": expires,
+                        "secure": bool(secure),
+                        "httpOnly": bool(http_only),
+                        "sameSite": _SAMESITE_MAP.get(samesite, "Lax"),
+                    }
+                )
+        except sqlite3.Error as exc:
+            logger.warning("读取 cookie 失败: %s", exc)
+            return []
 
     logger.info(
         "从 Firefox 加载 %d 条 cookie%s",
