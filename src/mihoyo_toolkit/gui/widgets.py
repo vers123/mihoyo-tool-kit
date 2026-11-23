@@ -74,17 +74,35 @@ class LogViewer(QPlainTextEdit):
         self.ensureCursorVisible()
 
     def reapply_theme(self) -> None:
-        """主题切换后按新配色重绘已有日志（不重复写入日志文件）。"""
+        """主题切换后按新配色重绘已有日志（不重复写入日志文件）。
+
+        主题切换的体感延迟主要来自这里：逐行 ``setTextCursor`` + ``ensureCursorVisible``
+        在几千行日志下是秒级开销。这里改为「暂停刷新 + 单个游标一次写完」，
+        只在最后恢复光标可见性。
+        """
         if not self._messages and self._progress_message is None:
             return
+
         messages = list(self._messages)
         progress_message = self._progress_message
-        self.clear()
-        self._progress_message = None
-        for text in messages:
-            self._render(text)
+
+        self.setUpdatesEnabled(False)
+        try:
+            self.clear()
+            self._progress_message = None
+            if messages:
+                cursor = QTextCursor(self.document())
+                for text in messages:
+                    cursor.insertText(text, self._text_format(text))
+                    cursor.insertBlock()
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                self.setTextCursor(cursor)
+        finally:
+            self.setUpdatesEnabled(True)
+
         if progress_message is not None:
             self.update_progress(progress_message)
+        self.ensureCursorVisible()
 
     def clear_log(self) -> None:
         """清空面板显示（不影响日志文件）。"""

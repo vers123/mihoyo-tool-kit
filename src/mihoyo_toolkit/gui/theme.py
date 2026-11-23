@@ -129,6 +129,9 @@ _current: Palette = LIGHT
 #: 当前主题模式（由 :func:`set_mode` 更新）
 _current_mode: ThemeMode = DEFAULT_MODE
 
+#: 是否已对 QApplication 设置过 Fusion 样式（切换主题时不再重复设置）
+_style_applied = False
+
 
 def set_current(palette: Palette) -> None:
     """设置当前生效调色板。"""
@@ -573,17 +576,32 @@ QDialog QLabel, QMessageBox QLabel {{
 """
 
 
-def apply_to_application(app: QApplication, palette: Palette | None = None) -> Palette:
+def apply_to_application(
+    app: QApplication, palette: Palette | None = None, *, set_style: bool = False
+) -> Palette:
     """对 ``QApplication`` 应用主题，返回生效的调色板。
 
     ``palette`` 为 ``None`` 时按当前模式解析（``auto`` 跟随系统）。
+
+    ``QApplication.setStyle()`` 会重建样式对象并触发**全量重绘**（实测每次约
+    350ms，是切换主题最贵的操作），因此只在首次调用时执行一次；之后切换主题
+    只更新调色板与样式表。
     """
     chosen = palette or resolve_mode()
-    app.setStyle("Fusion")
+    _ensure_style(app, force=set_style)
     app.setPalette(build_palette(chosen))
     app.setStyleSheet(app_stylesheet(chosen))
     set_current(chosen)
     return chosen
+
+
+def _ensure_style(app: QApplication, *, force: bool = False) -> None:
+    """只在必要时（首次或显式要求）设置 Fusion 样式，避免切换主题时全量重绘。"""
+    global _style_applied
+    if _style_applied and not force:
+        return
+    app.setStyle("Fusion")
+    _style_applied = True
 
 
 def apply_mode(app: QApplication, mode: str | None = None) -> Palette:

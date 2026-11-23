@@ -278,3 +278,36 @@ def test_theme_segments_switch_mode(qt_app: QApplication, tmp_path) -> None:
     finally:
         theme.set_mode(theme.DEFAULT_MODE)
         window.close()
+
+
+def test_theme_switch_defers_log_rerender(qt_app: QApplication, monkeypatch) -> None:
+    """切主题时日志重着色延后执行，点击立即返回。"""
+    window = MainWindow()
+    calls: list[int] = []
+    monkeypatch.setattr(window, "apply_theme", lambda: calls.append(1))
+    theme.set_mode("light")
+
+    try:
+        window._theme_buttons["dark"].click()
+        assert calls == []  # 同步路径不做日志重绘
+
+        qt_app.processEvents()
+        assert calls == [1]
+    finally:
+        theme.set_mode(theme.DEFAULT_MODE)
+        window.close()
+
+
+def test_theme_switch_same_mode_is_noop(qt_app: QApplication, monkeypatch) -> None:
+    """重复点击当前主题不做任何重绘。"""
+    window = MainWindow()
+    calls: list[str] = []
+    monkeypatch.setattr(theme, "apply_to_application", lambda *a, **k: calls.append("apply"))
+    theme.set_mode("light")
+
+    try:
+        window._on_theme_mode("light")
+        assert calls == []
+    finally:
+        theme.set_mode(theme.DEFAULT_MODE)
+        window.close()

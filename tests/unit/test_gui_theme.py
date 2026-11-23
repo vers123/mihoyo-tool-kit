@@ -117,3 +117,27 @@ def test_ui_state_invalid_mode_falls_back(app, tmp_home: Path) -> None:
     path.write_text(json.dumps({"theme": "neon"}), encoding="utf-8")
 
     assert ui_state.load_theme_mode() == theme.DEFAULT_MODE
+
+
+def test_apply_to_application_does_not_reset_style_each_time(app, monkeypatch) -> None:
+    """主题切换不重复调用 setStyle（每次约 350ms 的全量重绘）。"""
+    calls: list[str] = []
+    monkeypatch.setattr(app, "setStyle", lambda name: calls.append(name), raising=False)
+    monkeypatch.setattr(theme, "_style_applied", False)
+
+    theme.apply_to_application(app, theme.LIGHT)
+    theme.apply_to_application(app, theme.DARK)
+    theme.apply_mode(app, "light")
+
+    assert calls == ["Fusion"]
+
+
+def test_apply_to_application_can_force_style(app, monkeypatch) -> None:
+    """显式 set_style=True 时仍会重新设置样式（上限留给启动路径使用）。"""
+    calls: list[str] = []
+    monkeypatch.setattr(app, "setStyle", lambda name: calls.append(name), raising=False)
+    monkeypatch.setattr(theme, "_style_applied", True)
+
+    theme.apply_to_application(app, theme.LIGHT, set_style=True)
+
+    assert calls == ["Fusion"]

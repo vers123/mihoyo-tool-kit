@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -44,11 +44,21 @@ class MainWindow(QMainWindow):
     Args:
         fonts: ``load_game_fonts()`` 的返回值，用于导航项的游戏字体；
             为空字典时全部使用系统默认字体。
+        theme_mode: 覆盖本次会话的主题模式（``auto``/``light``/``dark``）；
+            为 ``None`` 时读取 ``data/ui_state.json`` 中持久化的偏好。
+            截图脚本用它保证输出可复现。
     """
 
-    def __init__(self, fonts: dict[str, str] | None = None, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        fonts: dict[str, str] | None = None,
+        parent: QWidget | None = None,
+        *,
+        theme_mode: str | None = None,
+    ) -> None:
         super().__init__(parent)
         self.fonts: dict[str, str] = dict(fonts or {})
+        self._initial_theme_mode = theme_mode
         self._pages: list[QWidget] = []
         self._setup_ui()
 
@@ -58,7 +68,9 @@ class MainWindow(QMainWindow):
     def _setup_ui(self) -> None:
         self.setWindowTitle(f"米游社工具箱 v{__version__}")
         self.resize(1040, 720)
-        self.setStyleSheet(theme.app_stylesheet())
+        # 样式表由 QApplication 统一持有（见 gui._ensure_application）；
+        # 窗口级再设一份会让每次主题切换多付一次全量重绘。
+        self._ensure_app_stylesheet()
 
         icon = load_app_icon()
         if icon is not None:
@@ -114,6 +126,16 @@ class MainWindow(QMainWindow):
         self.nav_list.setCurrentRow(0)
         self.statusBar().showMessage("就绪")
 
+    @staticmethod
+    def _ensure_app_stylesheet() -> None:
+        """独立使用 MainWindow（未经 launch_gui）时补一次应用级样式表。"""
+        from PySide6.QtWidgets import QApplication
+
+        app = QApplication.instance()
+        if not isinstance(app, QApplication) or app.styleSheet():
+            return
+        theme.apply_to_application(app, theme.resolve_mode())
+
     def _with_home(self, entries: list[NavEntry]) -> list[NavEntry]:
         """在导航列表最前插入首页项（不参与命令覆盖校验）。"""
         home = NavEntry(key="home", title=HOME_TITLE, commands=(), factory=HomePage)
@@ -159,7 +181,11 @@ class MainWindow(QMainWindow):
         self._theme_group.setExclusive(True)
         self._theme_buttons: dict[str, QToolButton] = {}
 
-        current_mode = ui_state.load_theme_mode()
+        current_mode = (
+            theme.set_mode(self._initial_theme_mode)
+            if self._initial_theme_mode is not None
+            else ui_state.load_theme_mode()
+        )
         theme.set_mode(current_mode)
         for mode, label in theme.MODE_LABELS.items():
             button = QToolButton()
@@ -236,20 +262,33 @@ class MainWindow(QMainWindow):
         self.log_viewer.append_log(message)
 
     def _on_theme_mode(self, mode: str) -> None:
-        """切换主题：立即重绘并持久化偏好。"""
+        """切换主题：立即换色，日志重着色排到下一轮事件循环。
+
+        主题切换的主要开销是「应用级样式表重绘」（~190ms）与「日志面板按语义
+        重新着色」（几千行时 ~170ms）。前者必须同步（否则界面先闪旧配色），
+        后者对观感无影响，故延后执行，点击后立刻就能看到新主题。
+        """
         from PySide6.QtWidgets import QApplication
+
+        if mode == theme.current_mode():
+            return  # 已经是该主题：避免不必要的全量重绘
 
         theme.set_mode(mode)
         app = QApplication.instance()
         if isinstance(app, QApplication):
+            # 只更新调色板 + 样式表（不再重复 setStyle，避免数百 ms 的全量重绘）
             theme.apply_to_application(app, theme.resolve_mode())
-        self.apply_theme()
+
         ui_state.save_theme_mode(mode)
         self.statusBar().showMessage(f"主题：{theme.MODE_LABELS[theme.current_mode()]}")
+        QTimer.singleShot(0, self.apply_theme)
 
     def apply_theme(self) -> None:
-        """按当前主题模式刷新窗口样式与日志配色。"""
-        self.setStyleSheet(theme.app_stylesheet())
+        """按当前主题模式刷新界面。
+
+        应用级样式表已由 :func:`theme.apply_to_application` 更新，这里只重绘
+        日志面板（它按语义着色，无法通过 QSS 表达）。
+        """
         self.log_viewer.reapply_theme()
 
 

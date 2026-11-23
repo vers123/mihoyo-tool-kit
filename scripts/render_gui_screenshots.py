@@ -80,7 +80,8 @@ def main(argv: list[str] | None = None) -> int:
 
     for mode, suffix in (("light", "light"), ("dark", "dark")):
         theme.apply_to_application(app, theme.LIGHT if mode == "light" else theme.DARK)
-        window = MainWindow(fonts=fonts)
+        # 显式传入主题模式，避免受 data/ui_state.json 里用户偏好的影响（截图需可复现）
+        window = MainWindow(fonts=fonts, theme_mode=mode)
         try:
             _select(window, 0)
             window.show()

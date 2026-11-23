@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-11-24
+
+补丁版本（SemVer PATCH）：修复 GUI 主题切换卡顿，无行为/配置变更。
+
+### Fixed
+
+- **切换浅色/深色明显卡顿**（实测约 2.2s → 约 0.2s 立即响应）：
+  - 不再每次切换都调用 `QApplication.setStyle("Fusion")` —— 该调用会重建样式对象并
+    触发全量重绘，单次约 350ms，是切换最贵的开销；现在只在启动时设置一次。
+  - 去掉窗口级重复的样式表（应用级与窗口级各设一份会让每次切换多一次全量重绘）。
+  - 日志面板主题重着色改为「暂停刷新 + 单游标批量写入」，5000 行从约 640ms 降到约 170ms。
+  - 日志重着色延后到下一轮事件循环执行，点击后立即看到新主题，不再阻塞交互。
+  - 重复点击当前已选主题直接跳过，不再触发任何重绘。
+
+### Changed
+
+- `scripts/render_gui_screenshots.py` 显式指定主题模式，截图不再受
+  `data/ui_state.json` 里用户偏好影响（可复现）。
+
 ## [3.3.0] - 2026-11-24
 
 规范化版本（SemVer MINOR）：统一临时文件与写入行为、收敛配置来源、重做 GUI 视觉；
