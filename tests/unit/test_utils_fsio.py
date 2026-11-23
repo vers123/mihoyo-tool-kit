@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,15 @@ from mihoyo_toolkit.utils.fsio import (
     ensure_writable_location,
     is_writable_location,
 )
+
+
+def _outside_path(name: str = "denied.txt") -> Path:
+    """构造一个跨平台都位于「工作区与临时根之外」的路径。
+
+    取系统临时目录的**父目录**：Windows 下是 ``%LOCALAPPDATA%``，Linux 下是 ``/``，
+    两者都不会落在工作区或临时根内（且测试只校验拒绝，不会真正写盘）。
+    """
+    return Path(tempfile.gettempdir()).resolve().parent / "__mihoyo_outside__" / name
 
 
 def test_is_writable_location_inside_root(tmp_home: Path) -> None:
@@ -29,13 +39,13 @@ def test_is_writable_location_allows_temp_root(tmp_home: Path, tmp_path: Path) -
 
 def test_is_writable_location_rejects_outside(tmp_home: Path) -> None:
     """工作区与临时根之外一律拒绝。"""
-    assert not is_writable_location(Path("C:/Windows/System32/drivers/etc/hosts"))
+    assert not is_writable_location(_outside_path("hosts"))
 
 
 def test_ensure_writable_location_raises_storage_error(tmp_home: Path) -> None:
     """越界写入的异常类型与提示都要明确。"""
     with pytest.raises(StorageError) as excinfo:
-        ensure_writable_location(Path("C:/Windows/System32/denied.txt"))
+        ensure_writable_location(_outside_path())
     assert "工作区外只读" in str(excinfo.value)
 
 
@@ -116,4 +126,4 @@ def test_atomic_save_wraps_oserror(tmp_home: Path) -> None:
 def test_atomic_write_rejects_outside_path(tmp_home: Path) -> None:
     """越界写入在落盘前就被拒绝。"""
     with pytest.raises(StorageError):
-        atomic_write_text(Path("C:/Windows/System32/denied.txt"), "x")
+        atomic_write_text(_outside_path(), "x")
